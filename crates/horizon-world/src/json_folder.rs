@@ -115,6 +115,10 @@ pub fn list(dir: &Path) -> io::Result<Vec<(String, PathBuf)>> {
                     continue;
                 }
             };
+            // macOS's `._stick.json` beside `stick.json` on an SD card is not JSON.
+            if horizon_core::prepared_files::is_mac_metadata(&entry.file_name()) {
+                continue;
+            }
             let path = entry.path();
             if path.is_dir() {
                 match fs::read_dir(&path) {
@@ -170,6 +174,18 @@ mod tests {
         drop((first, second));
         // Let go: the next reader reads the folder again.
         assert_eq!(read(&dir).unwrap().files[1].bytes().unwrap(), b"{\"a\":2}");
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    /// A Mac's copy to an SD card leaves `._name` files beside the real ones:
+    /// they are not listed.
+    #[test]
+    fn mac_metadata_files_are_not_listed() {
+        let dir = folder("mac");
+        fs::write(dir.join("._stick.json"), b"\0\x05\x16\x07").unwrap();
+        fs::write(dir.join("brewing/._awkward.json"), b"\0\x05\x16\x07").unwrap();
+        let names: Vec<_> = list(&dir).unwrap().into_iter().map(|(n, _)| n).collect();
+        assert_eq!(names, ["brewing/awkward", "stick"]);
         fs::remove_dir_all(&dir).unwrap();
     }
 

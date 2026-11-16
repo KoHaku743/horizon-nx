@@ -54,6 +54,15 @@ fn holds_folder(dir: &str) -> bool {
         .any(|f| dir == *f || dir.strip_prefix(f).is_some_and(|r| r.starts_with('/')))
 }
 
+/// Whether `name` is a file macOS leaves beside the real ones when it copies
+/// to a FAT or exFAT volume (the Switch's SD card): `._x`, binary metadata
+/// named after the file `x`, or `.DS_Store`. A folder's readers skip them: a
+/// `._stick.json` is not a recipe.
+pub fn is_mac_metadata(name: &std::ffi::OsStr) -> bool {
+    name.to_str()
+        .is_some_and(|n| n.starts_with("._") || n == ".DS_Store")
+}
+
 struct Entry {
     name: (u32, u32),
     data: (u64, u64),
@@ -340,6 +349,9 @@ fn walk(dir: &Path, name: &str, out: &mut Vec<(String, PathBuf, u64)>) -> io::Re
     };
     for entry in entries {
         let entry = entry?;
+        if is_mac_metadata(&entry.file_name()) {
+            continue;
+        }
         let path = entry.path();
         let Some(file_name) = entry.file_name().to_str().map(str::to_owned) else {
             // A name a reader of the file couldn't ask for: list the folder instead.
@@ -466,6 +478,25 @@ mod tests {
         // `recipe` is not a prefix of `recipes`.
         assert!(files.list("data/minecraft/recipes").is_none());
         assert!(files.list("worldgen").is_none());
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    /// What macOS adds on an SD card is not written into the file.
+    #[test]
+    fn mac_metadata_files_are_left_out() {
+        let root = root("mac");
+        let recipes = root.join("data/minecraft/recipe");
+        fs::write(recipes.join("._stick.json"), b"\0\x05\x16\x07").unwrap();
+        fs::write(recipes.join(".DS_Store"), b"Bud1").unwrap();
+        write(&root).unwrap();
+        let files = PreparedFiles::open(&root).unwrap().unwrap();
+        assert_eq!(
+            files.list("data/minecraft/recipe").unwrap(),
+            [
+                "data/minecraft/recipe/brewing/awkward.json",
+                "data/minecraft/recipe/stick.json"
+            ]
+        );
         let _ = fs::remove_dir_all(&root);
     }
 
