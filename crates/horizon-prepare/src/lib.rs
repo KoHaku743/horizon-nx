@@ -21,6 +21,7 @@ mod pool;
 pub mod pyjson;
 mod sounds;
 mod survival;
+pub mod switch_export;
 mod worker;
 
 pub use check::{check, missing_extras, STAMP};

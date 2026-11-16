@@ -43,7 +43,7 @@ const ENTRY: usize = 24;
 
 /// Whether `name` (from the root) is a file this holds: under its folders,
 /// and not a sound (hundreds of MB, read one at a time while playing).
-fn holds_file(name: &str) -> bool {
+pub fn holds_file(name: &str) -> bool {
     holds_folder(name) && !name.ends_with(".ogg")
 }
 
@@ -139,8 +139,11 @@ impl PreparedFiles {
         let (written_root, rest) = index.split_at(pad(root_len) as usize);
         let (source, rest) = rest.split_at(pad(source_len) as usize);
         let (raw_entries, pool) = rest.split_at(index_len as usize);
-        if written_root[..root_len as usize]
-            != *fs::canonicalize(root)?.as_os_str().as_encoded_bytes()
+        // A portable file names no root (`write_portable`): it is for
+        // whichever folder it was copied into with its preparation.
+        if (root_len != 0
+            && written_root[..root_len as usize]
+                != *fs::canonicalize(root)?.as_os_str().as_encoded_bytes())
             || source[..source_len as usize] != *fs::read(root.join(SOURCE))?
         {
             return Ok(None);
@@ -274,9 +277,25 @@ pub fn read_to_string(path: &Path) -> io::Result<String> {
 /// into place, so a reader sees the old file or the new one. Nothing is
 /// written for a root without `horizon-resources.json`.
 pub fn write(root: &Path) -> io::Result<()> {
-    let source = fs::read(root.join(SOURCE))?;
     let canonical = fs::canonicalize(root)?;
-    let root_bytes = canonical.as_os_str().as_encoded_bytes();
+    write_to(
+        root,
+        canonical.as_os_str().as_encoded_bytes(),
+        &root.join(FILE_NAME),
+    )
+}
+
+/// Write `root`'s file as `to`, for a copy of the prepared folder somewhere
+/// else: another machine, or a Switch's SD card, where the game would
+/// otherwise read every file one by one at its first start. It names no root,
+/// so it is used wherever it lies beside the same `horizon-resources.json`.
+/// Not for a mirror of the root, whose files differ.
+pub fn write_portable(root: &Path, to: &Path) -> io::Result<()> {
+    write_to(root, &[], to)
+}
+
+fn write_to(root: &Path, root_bytes: &[u8], to: &Path) -> io::Result<()> {
+    let source = fs::read(root.join(SOURCE))?;
     let mut files = Vec::new();
     for folder in FOLDERS {
         walk(&root.join(folder), folder, &mut files)?;
@@ -288,7 +307,7 @@ pub fn write(root: &Path) -> io::Result<()> {
         + pad(source.len() as u64)
         + (files.len() * ENTRY) as u64
         + pad(pool_len as u64);
-    let tmp = root.join(format!("{FILE_NAME}.{}.tmp", std::process::id()));
+    let tmp = to.with_file_name(format!("{FILE_NAME}.{}.tmp", std::process::id()));
     let result = (|| {
         let mut out = BufWriter::new(File::create(&tmp)?);
         out.write_all(&MAGIC)?;
@@ -331,7 +350,7 @@ pub fn write(root: &Path) -> io::Result<()> {
         out.into_inner()
             .map_err(io::IntoInnerError::into_error)?
             .sync_all()?;
-        fs::rename(&tmp, root.join(FILE_NAME))
+        fs::rename(&tmp, to)
     })();
     if result.is_err() {
         let _ = fs::remove_file(&tmp);
@@ -478,6 +497,38 @@ mod tests {
         // `recipe` is not a prefix of `recipes`.
         assert!(files.list("data/minecraft/recipes").is_none());
         assert!(files.list("worldgen").is_none());
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    /// A portable file is used by a copy of the folder at another path, and
+    /// still not beside another preparation.
+    #[test]
+    fn a_portable_file_is_used_in_a_copy_of_the_folder() {
+        let root = root("portable");
+        let copy = std::env::temp_dir().join(format!("hz-prepared-copy-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&copy);
+        fs::create_dir_all(&copy).unwrap();
+        fs::copy(root.join(SOURCE), copy.join(SOURCE)).unwrap();
+        write_portable(&root, &copy.join(FILE_NAME)).unwrap();
+        // The copy has no loose files: everything read comes from the file.
+        let files = PreparedFiles::open(&copy).unwrap().unwrap();
+        assert_eq!(
+            files
+                .read("data/minecraft/recipe/stick.json")
+                .unwrap()
+                .unwrap(),
+            b"{\"stick\":1}"
+        );
+        assert!(
+            !root.join(FILE_NAME).exists(),
+            "the root's own is untouched"
+        );
+        fs::write(copy.join(SOURCE), b"{\"client_sha256\":\"b\"}").unwrap();
+        assert!(
+            PreparedFiles::open(&copy).unwrap().is_none(),
+            "another preparation"
+        );
+        let _ = fs::remove_dir_all(&copy);
         let _ = fs::remove_dir_all(&root);
     }
 

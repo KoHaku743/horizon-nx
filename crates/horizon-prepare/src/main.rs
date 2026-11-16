@@ -26,6 +26,7 @@ Usage: horizon-prepare [--prepare] [--server-jar PATH] [--minecraft-dir PATH] [-
        horizon-prepare fonts [--minecraft-dir PATH] [--version-json PATH] [--assets-dir PATH] [--root PATH] [--output PATH]
        horizon-prepare packs [--minecraft-dir PATH] [--version-json PATH] [--assets-dir PATH] [--root PATH] [--output PATH]
        horizon-prepare languages [--minecraft-dir PATH] [--version-json PATH] [--assets-dir PATH] [--root PATH] [--output PATH]
+       horizon-prepare switch-export --resources PATH [--slim] DEST
 
   --prepare             Import the pinned game files from your own copy first
   --server-jar PATH     The pinned server jar you downloaded yourself
@@ -55,6 +56,10 @@ Usage: horizon-prepare [--prepare] [--server-jar PATH] [--minecraft-dir PATH] [-
                         {\"fraction\": F} as the work advances (0 to 1), {\"error\": ...} on failure
   --launch-api          Print what this preparer supports as JSON (the Launch API's version, the
                         pinned Minecraft and Java, the resources' layout, the options) and exit 0
+
+switch-export copies prepared resources (--resources: the folder with horizon-resources.json)
+into DEST for a Nintendo Switch's SD card (/switch/horizon/resources), with a data file the
+Switch can use at its first start. --slim leaves out the files that data file holds.
 
 Needs Minecraft played once from the official launcher, and Java of the version
 research-lock.json pins. Releases use a runtime; development or changed exporters need a JDK.
@@ -89,6 +94,50 @@ fn default_root() -> Option<PathBuf> {
         .map(Path::to_path_buf)
 }
 
+/// `switch-export --resources PATH [--slim] DEST`.
+fn switch_export(args: impl Iterator<Item = std::ffi::OsString>) -> ExitCode {
+    let (mut resources, mut dest, mut slim) = (None, None, false);
+    let mut args = args.peekable();
+    while let Some(arg) = args.next() {
+        match arg.to_str() {
+            Some("--slim") => slim = true,
+            Some("--resources") => resources = args.next().map(PathBuf::from),
+            Some(flag) if flag.starts_with("--resources=") => {
+                resources = Some(PathBuf::from(&flag["--resources=".len()..]));
+            }
+            _ if dest.is_none() => dest = Some(PathBuf::from(arg)),
+            _ => {
+                eprintln!(
+                    "horizon-prepare: error: unexpected {}",
+                    arg.to_string_lossy()
+                );
+                return ExitCode::from(2);
+            }
+        }
+    }
+    let (Some(resources), Some(dest)) = (resources, dest) else {
+        eprintln!(
+            "horizon-prepare: error: switch-export needs --resources PATH and a destination folder"
+        );
+        return ExitCode::from(2);
+    };
+    match horizon_prepare::switch_export::export(&resources, &dest, slim) {
+        Ok(exported) => {
+            println!(
+                "{} files, {} MB in {}: copy its contents to /switch/horizon/resources on the SD card",
+                exported.files,
+                exported.bytes / 1_000_000,
+                dest.display()
+            );
+            ExitCode::SUCCESS
+        }
+        Err(e) => {
+            eprintln!("horizon-prepare: error: {e}");
+            ExitCode::FAILURE
+        }
+    }
+}
+
 fn main() -> ExitCode {
     let mut options = horizon_prepare::Options {
         root: PathBuf::new(),
@@ -105,6 +154,9 @@ fn main() -> ExitCode {
     let mut json = false;
     let mut launch_api = false;
     let mut args = std::env::args_os().skip(1).peekable();
+    if args.next_if(|a| a == "switch-export").is_some() {
+        return switch_export(args);
+    }
     let assets = args.next_if(|a| {
         matches!(
             a.to_str(),
