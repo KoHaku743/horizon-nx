@@ -324,6 +324,7 @@ pub fn heap_tag(name: &'static str) -> Option<heap_census::Tag> {
 
 /// `mi_option_purge_delay` in mimalloc.h (index 15 in v2 and v3); the bindings
 /// don't name it.
+#[cfg(not(target_os = "horizon"))]
 const PURGE_DELAY: libmimalloc_sys::mi_option_t = 15;
 
 /// Set the allocator up, first thing in `main`: free pages go back to the OS
@@ -333,15 +334,24 @@ const PURGE_DELAY: libmimalloc_sys::mi_option_t = 15;
 /// back (the heap is fixed and always backed), so it never purges: a purge
 /// would only walk free pages for nothing.
 pub fn configure_allocator() {
-    let delay = if cfg!(target_os = "horizon") { -1 } else { 0 };
     // SAFETY: sets one integer option, which mimalloc reads at each purge.
+    #[cfg(not(target_os = "horizon"))]
     unsafe {
-        libmimalloc_sys::mi_option_set(PURGE_DELAY, delay);
+        libmimalloc_sys::mi_option_set(PURGE_DELAY, 0);
     }
 }
 
 /// The bytes the allocator has committed now and at its peak (mimalloc's
 /// process info), for `horizon-ctl memory`.
+/// On the Switch there is no mimalloc: what the capped allocator counts live, which is the same
+/// number when its ceiling is set (horizon-nx's heap is fixed and always backed).
+#[cfg(target_os = "horizon")]
+pub fn allocator_commit() -> (usize, usize) {
+    let live = capped::live_bytes() as usize;
+    (live, live)
+}
+
+#[cfg(not(target_os = "horizon"))]
 pub fn allocator_commit() -> (usize, usize) {
     let mut info = [0usize; 8];
     let [
@@ -376,6 +386,7 @@ pub fn allocator_commit() -> (usize, usize) {
 /// thread that allocated them, and macOS in its zones until memory runs short.
 pub fn release_free_memory() {
     // SAFETY: frees only pages no allocation uses (this thread's heap, shared arenas).
+    #[cfg(not(target_os = "horizon"))]
     unsafe {
         libmimalloc_sys::mi_collect(true);
     }

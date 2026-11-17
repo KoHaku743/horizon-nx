@@ -10,6 +10,10 @@
 //! Each block costs a header of 16 bytes (its alignment when larger) and an
 //! atomic add: heaptrack's interpreter needed more than 7 GB for the game
 //! (18 GB with line tables), this needs nothing beside it.
+#[cfg(not(target_os = "horizon"))]
+use mimalloc::MiMalloc as Inner;
+#[cfg(target_os = "horizon")]
+use std::alloc::System as Inner;
 use std::{
     alloc::{GlobalAlloc, Layout},
     cell::Cell,
@@ -173,7 +177,7 @@ unsafe impl GlobalAlloc for CensusAllocator {
             return std::ptr::null_mut();
         };
         // SAFETY: `outer` has a nonzero size.
-        let base = unsafe { mimalloc::MiMalloc.alloc(outer) };
+        let base = unsafe { Inner.alloc(outer) };
         if base.is_null() {
             return base;
         }
@@ -194,7 +198,7 @@ unsafe impl GlobalAlloc for CensusAllocator {
             LIVE[tag as usize].fetch_sub(layout.size() as isize, Relaxed);
             let outer =
                 Layout::from_size_align_unchecked(layout.size() + h, layout.align().max(16));
-            mimalloc::MiMalloc.dealloc(block.sub(h), outer);
+            Inner.dealloc(block.sub(h), outer);
         }
     }
     unsafe fn realloc(&self, block: *mut u8, layout: Layout, new_size: usize) -> *mut u8 {
@@ -204,7 +208,7 @@ unsafe impl GlobalAlloc for CensusAllocator {
             let outer =
                 Layout::from_size_align_unchecked(layout.size() + h, layout.align().max(16));
             let tag = block.sub(4).cast::<u32>().read_unaligned();
-            let base = mimalloc::MiMalloc.realloc(block.sub(h), outer, new_size + h);
+            let base = Inner.realloc(block.sub(h), outer, new_size + h);
             if base.is_null() {
                 return base;
             }

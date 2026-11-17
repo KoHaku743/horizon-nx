@@ -107,9 +107,17 @@ impl<A> Capped<A> {
 }
 
 /// The game's allocator, over mimalloc (`#[global_allocator]` in its `main.rs`).
+#[cfg(not(target_os = "horizon"))]
 pub type Allocator = Capped<mimalloc::MiMalloc>;
 /// A const instance, so `main.rs` can name it in a `static`.
+#[cfg(not(target_os = "horizon"))]
 pub const ALLOCATOR: Allocator = Capped(mimalloc::MiMalloc);
+/// On the Switch, over newlib's heap; the game's own build replaces it with horizon-nx's
+/// (`nx-allocator`).
+#[cfg(target_os = "horizon")]
+pub type Allocator = Capped<std::alloc::System>;
+#[cfg(target_os = "horizon")]
+pub const ALLOCATOR: Allocator = Capped(std::alloc::System);
 
 // SAFETY: every method forwards to the wrapped allocator with the same layout
 // and pointer, and only decides whether to pass the request on at all.
