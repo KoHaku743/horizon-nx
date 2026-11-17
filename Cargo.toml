@@ -1,7 +1,8 @@
 [workspace]
-exclude = ["launcher", "crates/horizon-telemetry-server", "crates/horizon-mod-registry", "third_party/wgpu-hal", "third_party/naga", "third_party/libmimalloc-sys", "third_party/gilrs-core"]
+exclude = ["launcher", "crates/horizon-telemetry-server", "crates/horizon-mod-registry", "third_party/wgpu-hal", "third_party/naga", "third_party/libmimalloc-sys", "third_party/gilrs-core", "third_party/wgpu", "third_party/wgpu-core", "third_party/wgpu-core-deps-windows-linux-android", "third_party/winit", "third_party/getrandom-0.3", "third_party/mio", "third_party/socket2", "packaging/switch/stubs/arboard", "packaging/switch/stubs/if-addrs", "packaging/switch/stubs/fs4"]
 members = [
     "crates/horizon-nx",
+    "crates/horizon-switch",
     "crates/horizon-core",
     "crates/horizon-dualsense",
     "crates/horizon-narrator",

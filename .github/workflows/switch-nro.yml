@@ -1,0 +1,101 @@
+# Builds horizon.nro (the Nintendo Switch homebrew build) with packaging/switch/build.sh:
+# docs/switch.md. Run it from the Actions tab (Run workflow), or push to switch-build.
+#
+# The build's log is also committed to the ci-logs branch (switch-nro/<run>.log), so that it can
+# be read with git alone.
+name: Switch NRO
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [switch-build]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: switch-nro-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # The revisions packaging/switch/build.sh was written against.
+  BEVY_HORIZON_REV: 3eac779b232ee47cd0eb957676c64386ac7b0f1d
+  MESA_SWITCH_REV: 606441c90e459028a50fca352daebfc20211f890
+
+jobs:
+  nro:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          df -h /
+
+      - uses: actions/checkout@v4
+        with:
+          path: horizon-nx
+
+      - name: Check out bevy-horizon (toolchain, patched crates, NVK scripts)
+        run: |
+          git clone https://github.com/JohnUzoka/bevy-horizon.git bevy-horizon
+          git -C bevy-horizon checkout --quiet "$BEVY_HORIZON_REV"
+
+      - name: Toolchain image
+        run: |
+          set -o pipefail
+          horizon-nx/packaging/switch/build.sh image 2>&1 | tee -a build.log
+
+      - name: NVK cache
+        id: nvk
+        uses: actions/cache@v4
+        with:
+          path: bevy-horizon/nvk
+          key: nvk-${{ env.BEVY_HORIZON_REV }}-${{ env.MESA_SWITCH_REV }}-v1
+
+      - name: Build NVK (Mesa's Vulkan driver; slow, cached)
+        if: steps.nvk.outputs.cache-hit != 'true'
+        run: |
+          set -o pipefail
+          git clone https://github.com/danfromtico/mesa-switch.git mesa-switch
+          git -C mesa-switch checkout --quiet "$MESA_SWITCH_REV"
+          JOBS=4 horizon-nx/packaging/switch/build.sh nvk 2>&1 | tee -a build.log
+
+      - name: Build horizon.nro
+        run: |
+          set -o pipefail
+          JOBS=4 VERSION="dev ${GITHUB_SHA::7}" horizon-nx/packaging/switch/build.sh nro 2>&1 | tee -a build.log
+
+      - name: Package
+        run: |
+          mkdir -p out/switch/horizon
+          cp horizon-nx/target/aarch64-nintendo-horizon/release/horizon.nro out/switch/horizon/
+          printf 'This file makes horizon.nro start the game. Without it, it runs a dedicated server.\n' > out/switch/horizon/client.txt
+          sha256sum out/switch/horizon/horizon.nro | tee -a build.log
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: horizon-switch-${{ github.sha }}
+          path: out
+          if-no-files-found: error
+
+      - name: Commit the log to ci-logs
+        if: always()
+        run: |
+          set -e
+          [ -f build.log ] || echo "no build log: the job failed before the build" > build.log
+          # The last part is where a failure shows; the whole log stays in the run's page.
+          tail -c 400000 build.log > tail.log
+          git -C horizon-nx fetch --quiet --depth 1 origin ci-logs 2>/dev/null && base=FETCH_HEAD || base=
+          work="$(mktemp -d)"
+          git -C horizon-nx worktree add --quiet --detach "$work" ${base:-HEAD}
+          cd "$work"
+          if [ -z "$base" ]; then git checkout --quiet --orphan ci-logs && git rm -rqf . ; else git checkout --quiet -B ci-logs; fi
+          mkdir -p switch-nro
+          cp "$GITHUB_WORKSPACE/tail.log" "switch-nro/${GITHUB_RUN_NUMBER}-${GITHUB_SHA::7}-${{ job.status }}.log"
+          cp "$GITHUB_WORKSPACE/tail.log" switch-nro/latest.log
+          echo "${GITHUB_RUN_NUMBER} ${GITHUB_SHA} ${{ job.status }} ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" > switch-nro/latest.txt
+          git add switch-nro
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit --quiet -m "Switch NRO run ${GITHUB_RUN_NUMBER}: ${{ job.status }}"
+          git push --quiet origin HEAD:ci-logs
