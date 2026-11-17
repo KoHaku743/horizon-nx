@@ -1,1 +1,1 @@
-9 0fb85785ca307806f19569cfa99a46a302cf07a9 success https://github.com/KoHaku743/horizon-nx/actions/runs/44187176084
+10 ca725cea33b6e7eb2c6594a4adcfd1646ecec240 cancelled https://github.com/KoHaku743/horizon-nx/actions/runs/44192541940
