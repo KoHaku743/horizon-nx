@@ -1,0 +1,95 @@
+==> building horizon-switch-toolchain:local
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Containerfile
+#1 transferring dockerfile: 1.75kB 0.0s done
+#1 DONE 0.0s
+
+#2 [auth] devkitpro/devkita64:pull token for registry-1.docker.io
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/devkitpro/devkita64:latest
+#3 DONE 0.5s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 2B done
+#4 DONE 0.0s
+
+#5 [1/4] FROM docker.io/devkitpro/devkita64:latest@sha256:1fc388c3a0d34bd2045a6dadcb1020e069d5f876a187fd705de14b4440c00282
+#5 resolve docker.io/devkitpro/devkita64:latest@sha256:1fc388c3a0d34bd2045a6dadcb1020e069d5f876a187fd705de14b4440c00282 0.0s done
+#5 sha256:da5be4661c9ac4e389f9e5f939e58bff7d32bc60569fa7c14e849d5246881691 15.73MB / 382.98MB 0.2s
+#5 sha256:da5be4661c9ac4e389f9e5f939e58bff7d32bc60569fa7c14e849d5246881691 38.80MB / 382.98MB 0.3s
+#5 sha256:ea5d3216df1fb580c54c016ee13ff58eb965c0a0b0ef08afd8dfd5a1c03e95a8 9.44MB / 28.38MB 0.2s
+#5 sha256:59e22667830bf04fb35e15ed9c70023e9d121719bb87f0db7f3159ee7c7e0b8d 7.34MB / 28.23MB 0.2s
+#5 sha256:74701f26999d7854982cfa51dafd83beeaf644031b943c4cbd0a245139a742a4 9.44MB / 265.08MB 0.2s
+#5 sha256:da5be4661c9ac4e389f9e5f939e58bff7d32bc60569fa7c14e849d5246881691 74.45MB / 382.98MB 0.5s
+#5 sha256:ea5d3216df1fb580c54c016ee13ff58eb965c0a0b0ef08afd8dfd5a1c03e95a8 28.38MB / 28.38MB 0.3s
+#5 sha256:59e22667830bf04fb35e15ed9c70023e9d121719bb87f0db7f3159ee7c7e0b8d 28.23MB / 28.23MB 0.3s
+#5 sha256:74701f26999d7854982cfa51dafd83beeaf644031b943c4cbd0a245139a742a4 36.70MB / 265.08MB 0.3s
+#5 sha256:ea5d3216df1fb580c54c016ee13ff58eb965c0a0b0ef08afd8dfd5a1c03e95a8 28.38MB / 28.38MB 0.6s done
+#5 sha256:74701f26999d7854982cfa51dafd83beeaf644031b943c4cbd0a245139a742a4 70.25MB / 265.08MB 0.5s
+#5 sha256:da5be4661c9ac4e389f9e5f939e58bff7d32bc60569fa7c14e849d5246881691 123.73MB / 382.98MB 0.8s
+#5 sha256:59e22667830bf04fb35e15ed9c70023e9d121719bb87f0db7f3159ee7c7e0b8d 28.23MB / 28.23MB 0.6s done
+#5 sha256:74701f26999d7854982cfa51dafd83beeaf644031b943c4cbd0a245139a742a4 93.32MB / 265.08MB 0.6s
+#5 extracting sha256:59e22667830bf04fb35e15ed9c70023e9d121719bb87f0db7f3159ee7c7e0b8d
+#5 sha256:da5be4661c9ac4e389f9e5f939e58bff7d32bc60569fa7c14e849d5246881691 154.14MB / 382.98MB 0.9s
+#5 sha256:74701f26999d7854982cfa51dafd83beeaf644031b943c4cbd0a245139a742a4 120.59MB / 265.08MB 0.8s
+#5 sha256:da5be4661c9ac4e389f9e5f939e58bff7d32bc60569fa7c14e849d5246881691 184.55MB / 382.98MB 1.1s
+#5 sha256:74701f26999d7854982cfa51dafd83beeaf644031b943c4cbd0a245139a742a4 150.99MB / 265.08MB 0.9s
+#5 sha256:da5be4661c9ac4e389f9e5f939e58bff7d32bc60569fa7c14e849d5246881691 212.86MB / 382.98MB 1.2s
+#5 sha256:74701f26999d7854982cfa51dafd83beeaf644031b943c4cbd0a245139a742a4 180.36MB / 265.08MB 1.1s
+#5 sha256:da5be4661c9ac4e389f9e5f939e58bff7d32bc60569fa7c14e849d5246881691 244.32MB / 382.98MB 1.4s
+#5 sha256:74701f26999d7854982cfa51dafd83beeaf644031b943c4cbd0a245139a742a4 208.67MB / 265.08MB 1.2s
+#5 sha256:da5be4661c9ac4e389f9e5f939e58bff7d32bc60569fa7c14e849d5246881691 276.82MB / 382.98MB 1.5s
+#5 sha256:74701f26999d7854982cfa51dafd83beeaf644031b943c4cbd0a245139a742a4 238.03MB / 265.08MB 1.4s
+#5 sha256:da5be4661c9ac4e389f9e5f939e58bff7d32bc60569fa7c14e849d5246881691 305.14MB / 382.98MB 1.7s
+#5 sha256:74701f26999d7854982cfa51dafd83beeaf644031b943c4cbd0a245139a742a4 265.08MB / 265.08MB 1.5s
+#5 sha256:da5be4661c9ac4e389f9e5f939e58bff7d32bc60569fa7c14e849d5246881691 348.13MB / 382.98MB 1.8s
+#5 sha256:da5be4661c9ac4e389f9e5f939e58bff7d32bc60569fa7c14e849d5246881691 382.98MB / 382.98MB 2.0s
+#5 extracting sha256:59e22667830bf04fb35e15ed9c70023e9d121719bb87f0db7f3159ee7c7e0b8d 2.1s done
+#5 sha256:74701f26999d7854982cfa51dafd83beeaf644031b943c4cbd0a245139a742a4 265.08MB / 265.08MB 3.7s done
+#5 extracting sha256:74701f26999d7854982cfa51dafd83beeaf644031b943c4cbd0a245139a742a4
+#5 sha256:da5be4661c9ac4e389f9e5f939e58bff7d32bc60569fa7c14e849d5246881691 382.98MB / 382.98MB 4.9s done
+#5 extracting sha256:74701f26999d7854982cfa51dafd83beeaf644031b943c4cbd0a245139a742a4 5.0s done
+#5 DONE 9.6s
+
+#5 [1/4] FROM docker.io/devkitpro/devkita64:latest@sha256:1fc388c3a0d34bd2045a6dadcb1020e069d5f876a187fd705de14b4440c00282
+#5 extracting sha256:ea5d3216df1fb580c54c016ee13ff58eb965c0a0b0ef08afd8dfd5a1c03e95a8
+#5 extracting sha256:ea5d3216df1fb580c54c016ee13ff58eb965c0a0b0ef08afd8dfd5a1c03e95a8 0.4s done
+#5 DONE 10.0s
+
+#5 [1/4] FROM docker.io/devkitpro/devkita64:latest@sha256:1fc388c3a0d34bd2045a6dadcb1020e069d5f876a187fd705de14b4440c00282
+#5 extracting sha256:da5be4661c9ac4e389f9e5f939e58bff7d32bc60569fa7c14e849d5246881691
+#5 extracting sha256:da5be4661c9ac4e389f9e5f939e58bff7d32bc60569fa7c14e849d5246881691 5.7s done
+#5 DONE 15.7s
+
+#6 [2/4] RUN dkp-pacman -Syu --noconfirm         switch-mesa         switch-sdl2         switch-tools         libnx         devkitA64 &&     dkp-pacman -Scc --noconfirm
+#6 0.980 :: Synchronizing package databases...
+#6 1.799 error: failed retrieving file 'dkp-linux.db' from pkg.devkitpro.org : The requested URL returned error: 403
+#6 1.799 error: failed retrieving file 'dkp-libs.db' from pkg.devkitpro.org : The requested URL returned error: 403
+#6 1.799 error: failed to synchronize all databases (failed to retrieve some files)
+#6 1.799  dkp-libs downloading...
+#6 1.799  dkp-linux downloading...
+#6 ERROR: process "/bin/sh -c dkp-pacman -Syu --noconfirm         switch-mesa         switch-sdl2         switch-tools         libnx         devkitA64 &&     dkp-pacman -Scc --noconfirm" did not complete successfully: exit code: 1
+------
+ > [2/4] RUN dkp-pacman -Syu --noconfirm         switch-mesa         switch-sdl2         switch-tools         libnx         devkitA64 &&     dkp-pacman -Scc --noconfirm:
+0.980 :: Synchronizing package databases...
+1.799 error: failed retrieving file 'dkp-linux.db' from pkg.devkitpro.org : The requested URL returned error: 403
+1.799 error: failed retrieving file 'dkp-libs.db' from pkg.devkitpro.org : The requested URL returned error: 403
+1.799 error: failed to synchronize all databases (failed to retrieve some files)
+1.799  dkp-libs downloading...
+1.799  dkp-linux downloading...
+------
+Containerfile:8
+--------------------
+   7 |     # plus the tools that make the NRO (nacptool, elf2nro).
+   8 | >>> RUN dkp-pacman -Syu --noconfirm \
+   9 | >>>         switch-mesa \
+  10 | >>>         switch-sdl2 \
+  11 | >>>         switch-tools \
+  12 | >>>         libnx \
+  13 | >>>         devkitA64 && \
+  14 | >>>     dkp-pacman -Scc --noconfirm
+  15 |     
+--------------------
+ERROR: failed to build: failed to solve: process "/bin/sh -c dkp-pacman -Syu --noconfirm         switch-mesa         switch-sdl2         switch-tools         libnx         devkitA64 &&     dkp-pacman -Scc --noconfirm" did not complete successfully: exit code: 1
