@@ -118,9 +118,10 @@ cfg_os_poll! {
         target_os = "cygwin",
         all(target_os = "wasi", target_env = "p1")
     ), path = "waker/pipe.rs")]
-    #[cfg_attr(any(all(target_os = "horizon", not(target_arch = "aarch64")), all(target_os = "wasi", not(target_env = "p1"))), path = "waker/single_threaded.rs")]
-    // Horizon patch: the Switch (aarch64) has threads and no pipe (waker/udp_loopback.rs).
-    #[cfg_attr(all(target_os = "horizon", target_arch = "aarch64"), path = "waker/udp_loopback.rs")]
+    // Horizon patch: the Switch (aarch64) has threads but no pipe or eventfd, so it takes the
+    // flag waker too, and its poll selector waits in short slices and looks at the flag between
+    // them (selector/poll.rs, `SLICE`).
+    #[cfg_attr(any(target_os = "horizon", all(target_os = "wasi", not(target_env = "p1"))), path = "waker/single_threaded.rs")]
     mod waker;
     #[cfg(all(not(mio_unsupported_force_poll_poll), target_os = "solaris"))]
     pub(crate) use self::waker::Waker;

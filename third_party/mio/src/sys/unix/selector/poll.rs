@@ -191,6 +191,40 @@ impl SelectorState {
         })
     }
 
+    /// Horizon patch: `poll(2)` in slices of at most [`SLICE`], returning early once the flag
+    /// waker is set. On the Switch the waker has no descriptor (libnx has no pipe or eventfd),
+    /// so a wake from another thread cannot interrupt a poll in progress; this bounds how late
+    /// it is seen. With no descriptor to poll, it sleeps instead.
+    #[cfg(all(target_os = "horizon", target_arch = "aarch64"))]
+    fn poll_sliced(&self, fds: &mut [PollFd], timeout: Option<Duration>) -> io::Result<usize> {
+        const SLICE: Duration = Duration::from_millis(4);
+        let deadline = timeout.map(|t| std::time::Instant::now() + t);
+        loop {
+            if self.notify_waker.woken() {
+                return if fds.is_empty() { Ok(0) } else { poll(fds, Some(Duration::ZERO)) };
+            }
+            let slice = match deadline {
+                Some(deadline) => {
+                    let left = deadline.saturating_duration_since(std::time::Instant::now());
+                    if left.is_zero() {
+                        return if fds.is_empty() { Ok(0) } else { poll(fds, Some(Duration::ZERO)) };
+                    }
+                    left.min(SLICE)
+                }
+                None => SLICE,
+            };
+            let n = if fds.is_empty() {
+                std::thread::sleep(slice);
+                0
+            } else {
+                poll(fds, Some(slice))?
+            };
+            if n > 0 {
+                return Ok(n);
+            }
+        }
+    }
+
     pub fn select(&self, events: &mut Events, mut timeout: Option<Duration>) -> io::Result<()> {
         events.clear();
 
@@ -218,10 +252,18 @@ impl SelectorState {
 
             // Perform the poll.
             trace!("Polling on {:?}", &fds);
+            #[cfg(not(all(target_os = "horizon", target_arch = "aarch64")))]
             let num_events = poll(&mut fds.poll_fds, timeout)?;
+            #[cfg(all(target_os = "horizon", target_arch = "aarch64"))]
+            let num_events = self.poll_sliced(&mut fds.poll_fds, timeout)?;
             trace!("Poll finished: {:?}", &fds);
 
-            if num_events == 0 {
+            // Horizon patch: a wake-up of the flag waker comes with no event of a descriptor.
+            #[cfg(not(all(target_os = "horizon", target_arch = "aarch64")))]
+            let woken_alone = false;
+            #[cfg(all(target_os = "horizon", target_arch = "aarch64"))]
+            let woken_alone = self.notify_waker.woken();
+            if num_events == 0 && !woken_alone {
                 return Ok(());
             }
 

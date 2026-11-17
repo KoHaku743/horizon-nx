@@ -88,9 +88,14 @@ static NO_SUSPEND_SET: core::sync::atomic::AtomicBool = core::sync::atomic::Atom
 static SUSPENDED_NANOS: core::sync::atomic::AtomicU64 = core::sync::atomic::AtomicU64::new(0);
 /// Set if switching to `SuspendHomeSleepNotify` once gave `InFocus` back without suspending the
 /// app; from then on `suspend_until_out_of_background` waits in `NoSuspend` instead.
+///
+/// It starts set: on a real console (Mariko, Atmosphère, the fork's build of 2026-11-17)
+/// `SetFocusHandlingMode(SuspendHomeSleepNotify)` from the background froze the whole system,
+/// HOME menu included, until a forced power-off. Waiting without frames is safe everywhere;
+/// asking the system to suspend was only seen to work on eden.
 #[cfg(target_os = "horizon")]
 static SUSPEND_UNRELIABLE: core::sync::atomic::AtomicBool =
-    core::sync::atomic::AtomicBool::new(false);
+    core::sync::atomic::AtomicBool::new(true);
 
 /// The most hooks `register_release_hook` keeps.
 const MAX_RELEASE_HOOKS: usize = 8;
