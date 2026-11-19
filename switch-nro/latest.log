@@ -9,7 +9,7 @@
 #2 DONE 0.0s
 
 #3 [internal] load metadata for docker.io/devkitpro/devkita64:latest
-#3 DONE 0.3s
+#3 DONE 0.4s
 
 #4 [internal] load .dockerignore
 #4 transferring context: 2B done
@@ -21,150 +21,195 @@
 
 #6 [1/5] FROM docker.io/devkitpro/devkita64:latest@sha256:1fc388c3a0d34bd2045a6dadcb1020e069d5f876a187fd705de14b4440c00282
 #6 resolve docker.io/devkitpro/devkita64:latest@sha256:1fc388c3a0d34bd2045a6dadcb1020e069d5f876a187fd705de14b4440c00282 done
-#6 sha256:da5be4661c9ac4e389f9e5f939e58bff7d32bc60569fa7c14e849d5246881691 3.15MB / 382.98MB 0.2s
-#6 sha256:da5be4661c9ac4e389f9e5f939e58bff7d32bc60569fa7c14e849d5246881691 27.26MB / 382.98MB 0.3s
-#6 sha256:ea5d3216df1fb580c54c016ee13ff58eb965c0a0b0ef08afd8dfd5a1c03e95a8 12.58MB / 28.38MB 0.2s
-#6 sha256:74701f26999d7854982cfa51dafd83beeaf644031b943c4cbd0a245139a742a4 3.15MB / 265.08MB 0.2s
-#6 sha256:59e22667830bf04fb35e15ed9c70023e9d121719bb87f0db7f3159ee7c7e0b8d 11.53MB / 28.23MB 0.2s
+#6 sha256:da5be4661c9ac4e389f9e5f939e58bff7d32bc60569fa7c14e849d5246881691 0B / 382.98MB 0.2s
+#6 sha256:ea5d3216df1fb580c54c016ee13ff58eb965c0a0b0ef08afd8dfd5a1c03e95a8 0B / 28.38MB 0.2s
+#6 sha256:74701f26999d7854982cfa51dafd83beeaf644031b943c4cbd0a245139a742a4 4.19MB / 265.08MB 0.2s
+#6 sha256:59e22667830bf04fb35e15ed9c70023e9d121719bb87f0db7f3159ee7c7e0b8d 12.58MB / 28.23MB 0.2s
+#6 sha256:da5be4661c9ac4e389f9e5f939e58bff7d32bc60569fa7c14e849d5246881691 31.46MB / 382.98MB 0.5s
 #6 sha256:ea5d3216df1fb580c54c016ee13ff58eb965c0a0b0ef08afd8dfd5a1c03e95a8 28.38MB / 28.38MB 0.3s done
-#6 sha256:74701f26999d7854982cfa51dafd83beeaf644031b943c4cbd0a245139a742a4 26.21MB / 265.08MB 0.3s
+#6 sha256:74701f26999d7854982cfa51dafd83beeaf644031b943c4cbd0a245139a742a4 27.26MB / 265.08MB 0.3s
 #6 sha256:59e22667830bf04fb35e15ed9c70023e9d121719bb87f0db7f3159ee7c7e0b8d 28.23MB / 28.23MB 0.3s done
 #6 extracting sha256:59e22667830bf04fb35e15ed9c70023e9d121719bb87f0db7f3159ee7c7e0b8d
-#6 sha256:da5be4661c9ac4e389f9e5f939e58bff7d32bc60569fa7c14e849d5246881691 58.72MB / 382.98MB 0.6s
+#6 sha256:da5be4661c9ac4e389f9e5f939e58bff7d32bc60569fa7c14e849d5246881691 51.38MB / 382.98MB 0.8s
 #6 sha256:74701f26999d7854982cfa51dafd83beeaf644031b943c4cbd0a245139a742a4 56.62MB / 265.08MB 0.6s
 #6 extracting sha256:59e22667830bf04fb35e15ed9c70023e9d121719bb87f0db7f3159ee7c7e0b8d 0.5s done
-#6 sha256:da5be4661c9ac4e389f9e5f939e58bff7d32bc60569fa7c14e849d5246881691 94.37MB / 382.98MB 1.1s
-#6 sha256:74701f26999d7854982cfa51dafd83beeaf644031b943c4cbd0a245139a742a4 73.40MB / 265.08MB 0.9s
-#6 sha256:74701f26999d7854982cfa51dafd83beeaf644031b943c4cbd0a245139a742a4 99.61MB / 265.08MB 1.1s
-#6 sha256:da5be4661c9ac4e389f9e5f939e58bff7d32bc60569fa7c14e849d5246881691 125.83MB / 382.98MB 1.4s
+#6 sha256:74701f26999d7854982cfa51dafd83beeaf644031b943c4cbd0a245139a742a4 87.03MB / 265.08MB 0.9s
+#6 sha256:da5be4661c9ac4e389f9e5f939e58bff7d32bc60569fa7c14e849d5246881691 81.79MB / 382.98MB 1.2s
 #6 sha256:74701f26999d7854982cfa51dafd83beeaf644031b943c4cbd0a245139a742a4 117.44MB / 265.08MB 1.2s
-#6 sha256:da5be4661c9ac4e389f9e5f939e58bff7d32bc60569fa7c14e849d5246881691 161.48MB / 382.98MB 1.7s
-#6 sha256:74701f26999d7854982cfa51dafd83beeaf644031b943c4cbd0a245139a742a4 133.17MB / 265.08MB 1.5s
-#6 sha256:74701f26999d7854982cfa51dafd83beeaf644031b943c4cbd0a245139a742a4 152.04MB / 265.08MB 1.7s
-#6 sha256:da5be4661c9ac4e389f9e5f939e58bff7d32bc60569fa7c14e849d5246881691 189.79MB / 382.98MB 2.0s
-#6 sha256:74701f26999d7854982cfa51dafd83beeaf644031b943c4cbd0a245139a742a4 166.72MB / 265.08MB 1.8s
-#6 sha256:74701f26999d7854982cfa51dafd83beeaf644031b943c4cbd0a245139a742a4 191.89MB / 265.08MB 2.0s
-#6 sha256:da5be4661c9ac4e389f9e5f939e58bff7d32bc60569fa7c14e849d5246881691 211.81MB / 382.98MB 2.3s
+#6 sha256:da5be4661c9ac4e389f9e5f939e58bff7d32bc60569fa7c14e849d5246881691 115.34MB / 382.98MB 1.5s
+#6 sha256:74701f26999d7854982cfa51dafd83beeaf644031b943c4cbd0a245139a742a4 132.12MB / 265.08MB 1.4s
+#6 sha256:da5be4661c9ac4e389f9e5f939e58bff7d32bc60569fa7c14e849d5246881691 136.31MB / 382.98MB 1.8s
+#6 sha256:74701f26999d7854982cfa51dafd83beeaf644031b943c4cbd0a245139a742a4 161.48MB / 265.08MB 1.7s
+#6 sha256:da5be4661c9ac4e389f9e5f939e58bff7d32bc60569fa7c14e849d5246881691 161.48MB / 382.98MB 2.0s
+#6 sha256:74701f26999d7854982cfa51dafd83beeaf644031b943c4cbd0a245139a742a4 192.94MB / 265.08MB 2.0s
+#6 sha256:da5be4661c9ac4e389f9e5f939e58bff7d32bc60569fa7c14e849d5246881691 191.89MB / 382.98MB 2.3s
 #6 sha256:74701f26999d7854982cfa51dafd83beeaf644031b943c4cbd0a245139a742a4 222.30MB / 265.08MB 2.3s
-#6 sha256:da5be4661c9ac4e389f9e5f939e58bff7d32bc60569fa7c14e849d5246881691 233.83MB / 382.98MB 2.6s
-#6 sha256:da5be4661c9ac4e389f9e5f939e58bff7d32bc60569fa7c14e849d5246881691 261.10MB / 382.98MB 2.7s
-#6 sha256:74701f26999d7854982cfa51dafd83beeaf644031b943c4cbd0a245139a742a4 251.66MB / 265.08MB 2.6s
+#6 sha256:da5be4661c9ac4e389f9e5f939e58bff7d32bc60569fa7c14e849d5246881691 228.59MB / 382.98MB 2.7s
+#6 sha256:74701f26999d7854982cfa51dafd83beeaf644031b943c4cbd0a245139a742a4 248.51MB / 265.08MB 2.6s
 #6 sha256:74701f26999d7854982cfa51dafd83beeaf644031b943c4cbd0a245139a742a4 265.08MB / 265.08MB 2.8s done
 #6 extracting sha256:74701f26999d7854982cfa51dafd83beeaf644031b943c4cbd0a245139a742a4
-#6 sha256:da5be4661c9ac4e389f9e5f939e58bff7d32bc60569fa7c14e849d5246881691 300.94MB / 382.98MB 3.2s
-#6 sha256:da5be4661c9ac4e389f9e5f939e58bff7d32bc60569fa7c14e849d5246881691 331.35MB / 382.98MB 3.5s
-#6 sha256:da5be4661c9ac4e389f9e5f939e58bff7d32bc60569fa7c14e849d5246881691 351.27MB / 382.98MB 3.6s
-#6 sha256:da5be4661c9ac4e389f9e5f939e58bff7d32bc60569fa7c14e849d5246881691 382.98MB / 382.98MB 3.9s
-#6 sha256:da5be4661c9ac4e389f9e5f939e58bff7d32bc60569fa7c14e849d5246881691 382.98MB / 382.98MB 4.2s done
-#6 extracting sha256:74701f26999d7854982cfa51dafd83beeaf644031b943c4cbd0a245139a742a4 3.1s done
-#6 DONE 5.9s
+#6 sha256:da5be4661c9ac4e389f9e5f939e58bff7d32bc60569fa7c14e849d5246881691 262.14MB / 382.98MB 3.0s
+#6 sha256:da5be4661c9ac4e389f9e5f939e58bff7d32bc60569fa7c14e849d5246881691 295.70MB / 382.98MB 3.5s
+#6 sha256:da5be4661c9ac4e389f9e5f939e58bff7d32bc60569fa7c14e849d5246881691 327.16MB / 382.98MB 3.8s
+#6 sha256:da5be4661c9ac4e389f9e5f939e58bff7d32bc60569fa7c14e849d5246881691 350.22MB / 382.98MB 4.1s
+#6 sha256:da5be4661c9ac4e389f9e5f939e58bff7d32bc60569fa7c14e849d5246881691 382.98MB / 382.98MB 4.5s
+#6 sha256:da5be4661c9ac4e389f9e5f939e58bff7d32bc60569fa7c14e849d5246881691 382.98MB / 382.98MB 4.9s done
+#6 extracting sha256:74701f26999d7854982cfa51dafd83beeaf644031b943c4cbd0a245139a742a4 3.3s done
+#6 DONE 6.0s
 
 #6 [1/5] FROM docker.io/devkitpro/devkita64:latest@sha256:1fc388c3a0d34bd2045a6dadcb1020e069d5f876a187fd705de14b4440c00282
 #6 extracting sha256:ea5d3216df1fb580c54c016ee13ff58eb965c0a0b0ef08afd8dfd5a1c03e95a8
 #6 extracting sha256:ea5d3216df1fb580c54c016ee13ff58eb965c0a0b0ef08afd8dfd5a1c03e95a8 0.2s done
-#6 DONE 6.1s
+#6 DONE 6.3s
 
 #6 [1/5] FROM docker.io/devkitpro/devkita64:latest@sha256:1fc388c3a0d34bd2045a6dadcb1020e069d5f876a187fd705de14b4440c00282
 #6 extracting sha256:da5be4661c9ac4e389f9e5f939e58bff7d32bc60569fa7c14e849d5246881691
 #6 extracting sha256:da5be4661c9ac4e389f9e5f939e58bff7d32bc60569fa7c14e849d5246881691 4.0s done
-#6 DONE 10.1s
+#6 DONE 10.3s
 
 #7 [2/5] COPY portlibs-fallback.sh /usr/local/bin/portlibs-fallback.sh
-#7 DONE 5.7s
+#7 DONE 6.1s
 
 #8 [3/5] RUN if dkp-pacman -Syu --noconfirm         switch-mesa         switch-sdl2         switch-tools         libnx         devkitA64; then         dkp-pacman -Scc --noconfirm;     else         echo "warning: pkg.devkitpro.org refused the update; using the base image's packages";     fi &&     /usr/local/bin/portlibs-fallback.sh
-#8 0.156 :: Synchronizing package databases...
-#8 1.049  dkp-libs downloading...
-#8 1.049  dkp-linux downloading...
-#8 1.049 error: failed retrieving file 'dkp-linux.db' from pkg.devkitpro.org : The requested URL returned error: 403
-#8 1.049 error: failed retrieving file 'dkp-libs.db' from pkg.devkitpro.org : The requested URL returned error: 403
-#8 1.049 error: failed to synchronize all databases (failed to retrieve some files)
-#8 1.051 warning: pkg.devkitpro.org refused the update; using the base image's packages
-#8 1.054 -rw-r--r-- 1 root root   251018 Jun 16  2024 /opt/devkitpro/portlibs/switch/lib/libexpat.a
-#8 1.054 -rw-r--r-- 1 root root   440412 Jun 16  2024 /opt/devkitpro/portlibs/switch/lib/libz.a
-#8 1.054 -rw-r--r-- 1 root root 13301446 May 12  2025 /opt/devkitpro/portlibs/switch/lib/libzstd.a
-#8 DONE 1.1s
+#8 0.171 :: Synchronizing package databases...
+#8 2.227  dkp-libs downloading...
+#8 2.227  dkp-linux downloading...
+#8 2.245 warning: switch-mesa-20.1.0-5 is up to date -- reinstalling
+#8 2.245 warning: switch-sdl2-2.28.5-4 is up to date -- reinstalling
+#8 2.245 :: Starting full system upgrade...
+#8 2.245 warning: switch-tools-1.13.1-1 is up to date -- reinstalling
+#8 2.245 warning: libnx-4.12.0-1 is up to date -- reinstalling
+#8 2.246 resolving dependencies...
+#8 2.247 looking for conflicting packages...
+#8 2.248 
+#8 2.248 Packages (11) devkitARM-r68-1  devkita64-binutils-2.46.0-1  devkita64-gcc-16.1.0-1  devkitarm-binutils-2.46.0-1  devkitarm-gcc-16.1.0-1  devkitarm-newlib-4.6.0.20260123-5  devkitA64-r30-1  libnx-4.12.0-1  switch-mesa-20.1.0-5  switch-sdl2-2.28.5-4  switch-tools-1.13.1-1
+#8 2.248 
+#8 2.248 Total Download Size:   208.60 MiB
+#8 2.248 Total Installed Size:  845.93 MiB
+#8 2.248 Net Upgrade Size:       24.77 MiB
+#8 2.248 
+#8 2.248 :: Proceed with installation? [Y/n] 
+#8 2.248 :: Retrieving packages...
+#8 6.399  devkita64-gcc-16.1.0-1-x86_64 downloading...
+#8 6.399  devkitarm-gcc-16.1.0-1-x86_64 downloading...
+#8 6.399  libnx-4.12.0-1-any downloading...
+#8 6.399  devkita64-binutils-2.46.0-1-x86_64 downloading...
+#8 6.399  devkitarm-binutils-2.46.0-1-x86_64 downloading...
+#8 6.399  switch-mesa-20.1.0-5-any downloading...
+#8 6.399  switch-sdl2-2.28.5-4-any downloading...
+#8 6.399  devkitarm-newlib-4.6.0.20260123-5-any downloading...
+#8 6.399  switch-tools-1.13.1-1-x86_64 downloading...
+#8 6.399  devkitARM-r68-1-any downloading...
+#8 6.399  devkitA64-r30-1-any downloading...
+#8 6.399 checking keyring...
+#8 6.405 checking package integrity...
+#8 7.296 loading package files...
+#8 7.313 checking for file conflicts...
+#8 7.316 checking available disk space...
+#8 7.331 :: Processing package changes...
+#8 7.331 reinstalling switch-mesa...
+#8 7.359 reinstalling libnx...
+#8 7.433 reinstalling switch-sdl2...
+#8 7.451 reinstalling switch-tools...
+#8 7.453 upgrading devkita64-binutils...
+#8 7.508 upgrading devkita64-gcc...
+#8 7.996 upgrading devkitA64...
+#8 7.996 upgrading devkitarm-binutils...
+#8 8.034 upgrading devkitarm-newlib...
+#8 8.061 upgrading devkitarm-gcc...
+#8 8.544 upgrading devkitARM...
+#8 8.571 
+#8 8.571 Cache directory: /opt/devkitpro/pacman/var/cache/pacman/pkg/
+#8 8.571 :: Do you want to remove ALL files from cache? [y/N] 
+#8 8.571 
+#8 8.571 Database directory: /opt/devkitpro/pacman/var/lib/pacman/
+#8 8.571 :: Do you want to remove unused repositories? [Y/n] 
+#8 8.571 removing unused sync repositories...
+#8 8.574 -rw-r--r-- 1 root root   251018 Jun 16  2024 /opt/devkitpro/portlibs/switch/lib/libexpat.a
+#8 8.574 -rw-r--r-- 1 root root   440412 Jun 16  2024 /opt/devkitpro/portlibs/switch/lib/libz.a
+#8 8.574 -rw-r--r-- 1 root root 13301446 May 12  2025 /opt/devkitpro/portlibs/switch/lib/libzstd.a
+#8 DONE 11.6s
 
 #9 [4/5] RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y         --default-toolchain "nightly-2026-10-04" --component rust-src,llvm-tools-preview &&     if [ "nightly-2026-10-04" != nightly ]; then         mv "/usr/local/rustup/toolchains/nightly-2026-10-04-x86_64-unknown-linux-gnu"            "/usr/local/rustup/toolchains/nightly-x86_64-unknown-linux-gnu" &&         rm -f "/usr/local/rustup/update-hashes/nightly-2026-10-04-x86_64-unknown-linux-gnu" &&         rustup default nightly;     fi &&     rustc -vV
-#9 0.137 info: downloading installer
-#9 0.393 info: profile set to default
-#9 0.393 info: default host tuple is x86_64-unknown-linux-gnu
-#9 0.393 info: syncing channel updates for nightly-2026-10-04-x86_64-unknown-linux-gnu
-#9 0.594 info: latest update on 2026-10-04 for version 1.101.0-nightly (db8f076d2 2026-10-03)
-#9 0.594 info: downloading 8 components
-#9 13.22 
-#9 13.22 info: default toolchain set to nightly-2026-10-04-x86_64-unknown-linux-gnu
-#9 13.22   nightly-2026-10-04-x86_64-unknown-linux-gnu installed - rustc 1.101.0-nightly (db8f076d2 2026-10-03)
-#9 13.22 
-#9 13.22 
-#9 13.22 Rust is installed now. Great!
-#9 13.22 
-#9 13.22 To get started you may need to restart your current shell.
-#9 13.22 This would reload your PATH environment variable to include
-#9 13.22 Cargo's bin directory (/usr/local/cargo/bin).
-#9 13.22 
-#9 13.22 To configure your current shell, you need to source the
-#9 13.22 corresponding env file under /usr/local/cargo.
-#9 13.22 
-#9 13.22 Consider running the right command for your shell (note the leading DOT):
-#9 13.22 . "/usr/local/cargo/env" # For sh/ash/dash/pdksh/bash
-#9 13.22 cargo:rerun-if-env-changed=CC_x86_64-unknown-linux-gnu
-#9 13.22 CC_x86_64-unknown-linux-gnu = None
-#9 13.22 cargo:rerun-if-env-changed=CC_x86_64_unknown_linux_gnu
-#9 13.22 CC_x86_64_unknown_linux_gnu = None
-#9 13.22 cargo:rerun-if-env-changed=HOST_CC
-#9 13.22 HOST_CC = None
-#9 13.22 cargo:rerun-if-env-changed=CC
-#9 13.22 CC = None
-#9 13.22 cargo:rerun-if-env-changed=CC_ENABLE_DEBUG_OUTPUT
-#9 13.23 cargo:rerun-if-env-changed=CPATH
-#9 13.23 cargo:rerun-if-env-changed=C_INCLUDE_PATH
-#9 13.23 cargo:rerun-if-env-changed=CPLUS_INCLUDE_PATH
-#9 13.23 cargo:rerun-if-env-changed=OBJC_INCLUDE_PATH
-#9 13.23 cargo:rerun-if-env-changed=OBJCPLUS_INCLUDE_PATH
-#9 13.23 cargo:rerun-if-env-changed=COMPILER_PATH
-#9 13.23 cargo:rerun-if-env-changed=SOURCE_DATE_EPOCH
-#9 13.23 cargo:rerun-if-env-changed=GCC_EXEC_PREFIX
-#9 13.23 cargo:rerun-if-env-changed=CRATE_CC_NO_DEFAULTS
-#9 13.23 CRATE_CC_NO_DEFAULTS = None
-#9 13.23 cargo:rerun-if-env-changed=CFLAGS
-#9 13.23 CFLAGS = None
-#9 13.23 cargo:rerun-if-env-changed=HOST_CFLAGS
-#9 13.23 HOST_CFLAGS = None
-#9 13.23 cargo:rerun-if-env-changed=CFLAGS_x86_64_unknown_linux_gnu
-#9 13.23 CFLAGS_x86_64_unknown_linux_gnu = None
-#9 13.23 cargo:rerun-if-env-changed=CFLAGS_x86_64-unknown-linux-gnu
-#9 13.23 CFLAGS_x86_64-unknown-linux-gnu = None
-#9 13.24 info: using existing install for nightly-x86_64-unknown-linux-gnu
-#9 13.25 
-#9 13.25 info: default toolchain set to nightly-x86_64-unknown-linux-gnu
-#9 13.26   nightly-x86_64-unknown-linux-gnu unchanged - rustc 1.101.0-nightly (db8f076d2 2026-10-03)
-#9 13.26 
-#9 13.26 rustc 1.101.0-nightly (db8f076d2 2026-10-03)
-#9 13.26 binary: rustc
-#9 13.26 commit-hash: db8f076d2619ce2585b0380dda06e8da25a40da4
-#9 13.26 commit-date: 2026-10-03
-#9 13.26 host: x86_64-unknown-linux-gnu
-#9 13.26 release: 1.101.0-nightly
-#9 13.26 LLVM version: 23.1.1
-#9 DONE 13.3s
+#9 0.147 info: downloading installer
+#9 0.335 info: profile set to default
+#9 0.335 info: default host tuple is x86_64-unknown-linux-gnu
+#9 0.338 info: syncing channel updates for nightly-2026-10-04-x86_64-unknown-linux-gnu
+#9 0.675 info: latest update on 2026-10-04 for version 1.101.0-nightly (db8f076d2 2026-10-03)
+#9 0.675 info: downloading 8 components
+#9 143.9 
+#9 143.9 info: default toolchain set to nightly-2026-10-04-x86_64-unknown-linux-gnu
+#9 143.9   nightly-2026-10-04-x86_64-unknown-linux-gnu installed - rustc 1.101.0-nightly (db8f076d2 2026-10-03)
+#9 143.9 
+#9 143.9 
+#9 143.9 Rust is installed now. Great!
+#9 143.9 
+#9 143.9 To get started you may need to restart your current shell.
+#9 143.9 This would reload your PATH environment variable to include
+#9 143.9 Cargo's bin directory (/usr/local/cargo/bin).
+#9 143.9 
+#9 143.9 To configure your current shell, you need to source the
+#9 143.9 corresponding env file under /usr/local/cargo.
+#9 143.9 
+#9 143.9 Consider running the right command for your shell (note the leading DOT):
+#9 143.9 . "/usr/local/cargo/env" # For sh/ash/dash/pdksh/bash
+#9 143.9 cargo:rerun-if-env-changed=CC_x86_64-unknown-linux-gnu
+#9 143.9 CC_x86_64-unknown-linux-gnu = None
+#9 143.9 cargo:rerun-if-env-changed=CC_x86_64_unknown_linux_gnu
+#9 143.9 CC_x86_64_unknown_linux_gnu = None
+#9 143.9 cargo:rerun-if-env-changed=HOST_CC
+#9 143.9 HOST_CC = None
+#9 143.9 cargo:rerun-if-env-changed=CC
+#9 143.9 CC = None
+#9 143.9 cargo:rerun-if-env-changed=CC_ENABLE_DEBUG_OUTPUT
+#9 143.9 cargo:rerun-if-env-changed=CPATH
+#9 143.9 cargo:rerun-if-env-changed=C_INCLUDE_PATH
+#9 143.9 cargo:rerun-if-env-changed=CPLUS_INCLUDE_PATH
+#9 143.9 cargo:rerun-if-env-changed=OBJC_INCLUDE_PATH
+#9 143.9 cargo:rerun-if-env-changed=OBJCPLUS_INCLUDE_PATH
+#9 143.9 cargo:rerun-if-env-changed=COMPILER_PATH
+#9 143.9 cargo:rerun-if-env-changed=SOURCE_DATE_EPOCH
+#9 143.9 cargo:rerun-if-env-changed=GCC_EXEC_PREFIX
+#9 143.9 cargo:rerun-if-env-changed=CRATE_CC_NO_DEFAULTS
+#9 143.9 CRATE_CC_NO_DEFAULTS = None
+#9 143.9 cargo:rerun-if-env-changed=CFLAGS
+#9 143.9 CFLAGS = None
+#9 143.9 cargo:rerun-if-env-changed=HOST_CFLAGS
+#9 143.9 HOST_CFLAGS = None
+#9 143.9 cargo:rerun-if-env-changed=CFLAGS_x86_64_unknown_linux_gnu
+#9 143.9 CFLAGS_x86_64_unknown_linux_gnu = None
+#9 143.9 cargo:rerun-if-env-changed=CFLAGS_x86_64-unknown-linux-gnu
+#9 143.9 CFLAGS_x86_64-unknown-linux-gnu = None
+#9 143.9 info: using existing install for nightly-x86_64-unknown-linux-gnu
+#9 143.9 info: default toolchain set to nightly-x86_64-unknown-linux-gnu
+#9 143.9 
+#9 143.9   nightly-x86_64-unknown-linux-gnu unchanged - rustc 1.101.0-nightly (db8f076d2 2026-10-03)
+#9 143.9 
+#9 143.9 rustc 1.101.0-nightly (db8f076d2 2026-10-03)
+#9 143.9 binary: rustc
+#9 143.9 commit-hash: db8f076d2619ce2585b0380dda06e8da25a40da4
+#9 143.9 commit-date: 2026-10-03
+#9 143.9 host: x86_64-unknown-linux-gnu
+#9 143.9 release: 1.101.0-nightly
+#9 144.0 LLVM version: 23.1.1
+#9 DONE 147.0s
 
 #10 [5/5] WORKDIR /workspace
-#10 DONE 4.2s
+#10 DONE 0.2s
 
 #11 exporting to image
 #11 exporting layers
-#11 exporting layers 31.6s done
-#11 exporting manifest sha256:d48eb1942d9989b4d79d578d35514d130d7922c1aeb5a7ea8cf2e496d06be5bf done
-#11 exporting config sha256:096428e1117e418699ed0d3790382f07a580afc5920d4f7b950e2a5c47f175fb done
-#11 exporting attestation manifest sha256:a1795fc1954f674b9b44501b69041f38b9b9eb3519b365f91de801224db7813f done
-#11 exporting manifest list sha256:564ffce7fab06c9f755297cbe50ca8db6871db6d1ed42279b17044b3cc5e3ce7 done
+#11 exporting layers 34.5s done
+#11 exporting manifest sha256:7d50b2c1b07f9a956bba756a998400dc08987393b16108c0ac8103aa851eb2c2 done
+#11 exporting config sha256:5e27b331aa1ac0d1f1626f6c7a76f5079e597d985ed3e6a907f71553aeeb7814 done
+#11 exporting attestation manifest sha256:c0937943f48a4bdfc551e77d18f1ab9ab21708dba7fed48dd9169ad9b8f631cf done
+#11 exporting manifest list sha256:a4bdb402087c07593738c2b18ec9ab496ff0308ddd123d852e2bf44a75c3b84a done
 #11 naming to docker.io/library/horizon-switch-toolchain:local done
 #11 unpacking to docker.io/library/horizon-switch-toolchain:local
-#11 unpacking to docker.io/library/horizon-switch-toolchain:local 8.2s done
+#11 unpacking to docker.io/library/horizon-switch-toolchain:local 11.6s done
 #11 naming to docker.io/library/bevy-horizon-toolchain:local done
 #11 unpacking to docker.io/library/bevy-horizon-toolchain:local done
-#11 DONE 39.8s
+#11 DONE 46.2s
 ==> compiling horizon-client for the Switch (Horizon OS)
     Updating crates.io index
 warning: patch `arboard v3.6.1 (/src/horizon-nx/packaging/switch/stubs/arboard)` was not used in the crate graph
@@ -255,39 +300,39 @@ help: Check that the patched package version and available features are compatib
       what is locked in the Cargo.lock file, run `cargo update` to use the new
       version. This may also occur with an optional dependency that is not enabled.
  Downloading crates ...
-  Downloaded rustc-literal-escaper v0.0.8
-  Downloaded getopts v0.2.24
   Downloaded cfg-if v1.0.4
-  Downloaded gimli v0.34.0
-  Downloaded addr2line v0.27.1
-  Downloaded object v0.39.1
   Downloaded rustc-demangle v0.1.28
+  Downloaded getopts v0.2.24
+  Downloaded gimli v0.34.0
+  Downloaded object v0.39.1
+  Downloaded addr2line v0.27.1
+  Downloaded rustc-literal-escaper v0.0.8
    Compiling compiler_builtins v0.1.160 (/usr/local/rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/compiler-builtins/compiler-builtins)
    Compiling core v0.0.0 (/usr/local/rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core)
    Compiling libc v0.2.190 (/src/bevy-horizon/patches/libc)
    Compiling object v0.39.1
    Compiling std v0.0.0 (/usr/local/rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/std)
    Compiling proc-macro2 v1.0.107
-   Compiling unicode-ident v1.0.26
    Compiling quote v1.0.47
+   Compiling unicode-ident v1.0.26
    Compiling serde_core v1.0.229
    Compiling version_check v0.9.5
-   Compiling thiserror v2.0.21
    Compiling libm v0.2.16
+   Compiling thiserror v2.0.21
    Compiling generic-array v0.14.7
    Compiling syn v3.0.6
    Compiling cfg_aliases v0.2.2
    Compiling serde v1.0.229
    Compiling autocfg v1.5.1
-   Compiling zmij v1.0.23
    Compiling crc32fast v1.5.2
+   Compiling zmij v1.0.23
    Compiling num-traits v0.2.19
    Compiling serde_json v1.0.151
    Compiling syn v2.0.119
    Compiling zerocopy v0.8.60
    Compiling naga v30.0.1
-   Compiling shlex v2.0.1
    Compiling find-msvc-tools v0.1.14
+   Compiling shlex v2.0.1
    Compiling cc v1.6.0
    Compiling synstructure v0.14.0
    Compiling thiserror-impl v2.0.21
@@ -302,26 +347,26 @@ help: Check that the patched package version and available features are compatib
    Compiling icu_properties_data v2.3.0
    Compiling icu_normalizer_data v2.3.0
    Compiling ring v0.17.14 (/src/bevy-horizon/patches/ring)
-   Compiling getrandom v0.3.4 (/src/horizon-nx/third_party/getrandom-0.3)
    Compiling ash v0.38.0+1.3.281
-   Compiling pkg-config v0.3.34
    Compiling parking_lot_core v0.9.12
+   Compiling pkg-config v0.3.34
+   Compiling getrandom v0.3.4 (/src/horizon-nx/third_party/getrandom-0.3)
    Compiling encoding_rs v0.8.42
    Compiling khronos-egl v6.0.0
-   Compiling wgpu-hal v30.0.1 (/src/horizon-nx/third_party/wgpu-hal)
    Compiling wayland-sys v0.31.11
+   Compiling wgpu-hal v30.0.1 (/src/horizon-nx/third_party/wgpu-hal)
    Compiling rustls v0.23.46
    Compiling multiversion_no_op v1.0.0
-   Compiling zip v2.4.2
    Compiling semver v1.0.28
+   Compiling zip v2.4.2
    Compiling wgpu-core v30.0.1 (/src/horizon-nx/third_party/wgpu-core)
    Compiling rustc_version v0.4.1
    Compiling litrs v1.0.0
    Compiling horizon-nx v0.1.0 (/src/horizon-nx/crates/horizon-nx)
    Compiling curve25519-dalek v4.1.3
-   Compiling winit v0.30.13 (/src/horizon-nx/third_party/winit)
-   Compiling document-features v0.2.12
    Compiling wgpu v30.0.1 (/src/horizon-nx/third_party/wgpu)
+   Compiling document-features v0.2.12
+   Compiling winit v0.30.13 (/src/horizon-nx/third_party/winit)
    Compiling cpal v0.17.3 (/src/bevy-horizon/patches/cpal)
    Compiling rustix v1.1.5 (/src/bevy-horizon/patches/rustix)
    Compiling gilrs v0.11.2
@@ -329,14 +374,14 @@ help: Check that the patched package version and available features are compatib
    Compiling rustc-std-workspace-core v1.99.0 (/usr/local/rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/rustc-std-workspace-core)
    Compiling alloc v0.0.0 (/usr/local/rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/alloc)
    Compiling unwind v0.0.0 (/usr/local/rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/unwind)
-   Compiling memchr v2.8.3
    Compiling adler2 v2.0.1
-   Compiling rustc-demangle v0.1.28
+   Compiling memchr v2.8.3
    Compiling cfg-if v1.0.4
+   Compiling rustc-demangle v0.1.28
    Compiling rustc-literal-escaper v0.0.8
    Compiling rustc-std-workspace-alloc v1.99.0 (/usr/local/rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/rustc-std-workspace-alloc)
-   Compiling panic_unwind v0.0.0 (/usr/local/rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/panic_unwind)
    Compiling panic_abort v0.0.0 (/usr/local/rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/panic_abort)
+   Compiling panic_unwind v0.0.0 (/usr/local/rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/panic_unwind)
    Compiling gimli v0.34.0
    Compiling std_detect v0.1.5 (/usr/local/rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/std_detect)
    Compiling miniz_oxide v0.9.1
@@ -361,35 +406,35 @@ warning: `libc` (lib) generated 1 warning
    Compiling subtle v2.6.1
    Compiling crypto-common v0.1.7
    Compiling foldhash v0.2.0
-   Compiling bitflags v2.13.2
+   Compiling simd-adler32 v0.3.10
+   Compiling equivalent v1.0.2
    Compiling zerofrom v0.1.8
    Compiling stable_deref_trait v1.2.1
-   Compiling equivalent v1.0.2
-   Compiling simd-adler32 v0.3.10
+   Compiling bitflags v2.13.2
    Compiling yoke v0.8.3
    Compiling block-buffer v0.10.4
-   Compiling arrayvec v0.7.8
    Compiling once_cell v1.21.4
+   Compiling arrayvec v0.7.8
    Compiling digest v0.10.7
    Compiling smallvec v1.16.2
    Compiling bytemuck v1.25.2
    Compiling zerovec v0.11.8
    Compiling itoa v1.0.18
    Compiling indexmap v2.14.2
-   Compiling scopeguard v1.2.0
-   Compiling zeroize v1.9.1
-   Compiling zlib-rs v0.6.8
    Compiling cpufeatures v0.2.17
+   Compiling zlib-rs v0.6.8
+   Compiling zeroize v1.9.1
+   Compiling scopeguard v1.2.0
    Compiling rustc-hash v1.1.0
-   Compiling naga-types v30.0.1
    Compiling sha2 v0.10.9
+   Compiling naga-types v30.0.1
    Compiling tinystr v0.8.4
-   Compiling unicode-width v0.2.2
+   Compiling litemap v0.8.3
    Compiling unicode-xid v0.2.6
    Compiling termcolor v1.4.1
-   Compiling writeable v0.6.4
+   Compiling unicode-width v0.2.2
    Compiling bit-vec v0.9.1
-   Compiling litemap v0.8.3
+   Compiling writeable v0.6.4
    Compiling bit-set v0.10.0
    Compiling codespan-reporting v0.13.1
    Compiling icu_locale_core v2.3.0
@@ -410,13 +455,18 @@ warning: `libc` (lib) generated 1 warning
    Compiling icu_properties v2.3.0
    Compiling half v2.7.1
    Compiling postcard v1.1.3
-   Compiling static_assertions v1.1.0
    Compiling untrusted v0.9.0
    Compiling allocator-api2 v0.2.21
+   Compiling static_assertions v1.1.0
    Compiling xxhash-rust v0.8.19
    Compiling lz4_flex v0.14.0
    Compiling hashbrown v0.16.1
    Compiling horizon-world v0.1.0 (/src/horizon-nx/crates/horizon-world)
+   Compiling wgpu-types v30.0.1
+   Compiling idna_adapter v1.2.2
+   Compiling dlib v0.5.3
+   Compiling lock_api v0.4.14
+   Compiling simdutf8 v0.1.5
 warning: hiding a lifetime that's elided elsewhere is confusing
   --> /src/bevy-horizon/patches/ring/src/polyfill/slice/as_chunks.rs:19:44
    |
@@ -543,51 +593,46 @@ help: use `'_` for type paths
 91 |     pub(super) fn value(&self, cpu_features: cpu::Features) -> bigint::Modulus<'_, N> {
    |                                                                                +++
 
-   Compiling idna_adapter v1.2.2
-   Compiling wgpu-types v30.0.1
 warning: `ring` (lib) generated 9 warnings (run `cargo fix --lib -p ring` to apply 9 suggestions)
-   Compiling dlib v0.5.3
-   Compiling lock_api v0.4.14
-   Compiling presser v0.3.1
-   Compiling simdutf8 v0.1.5
    Compiling bitflags v1.3.2
    Compiling lazy_static v1.5.1
+   Compiling presser v0.3.1
    Compiling percent-encoding v2.3.2
    Compiling form_urlencoded v1.2.2
    Compiling symphonia-core v0.5.5
+   Compiling rustls-webpki v0.103.16
    Compiling parking_lot v0.12.5
    Compiling idna v1.1.0
-   Compiling rustls-webpki v0.103.16
    Compiling wgpu-naga-bridge v30.0.1
    Compiling webpki-roots v1.0.10
    Compiling ordered-float v5.5.0
+   Compiling profiling v1.0.18
    Compiling winnow v1.0.4
    Compiling renderdoc-sys v1.1.0
+   Compiling bumpalo v3.20.3
    Compiling glow v0.17.0
    Compiling gpu-allocator v0.28.0
-   Compiling bumpalo v3.20.3
-   Compiling profiling v1.0.18
    Compiling zopfli v0.8.4
    Compiling toml_parser v1.1.3+spec-1.1.0
    Compiling webpki-roots v0.26.11
    Compiling url v2.5.8
    Compiling symphonia-metadata v0.5.5
-   Compiling toml_datetime v1.1.1+spec-1.1.0
    Compiling serde_spanned v1.1.2
-   Compiling base64 v0.22.1
+   Compiling toml_datetime v1.1.1+spec-1.1.0
    Compiling toml_writer v1.1.3+spec-1.1.0
-   Compiling toml v1.1.6+spec-1.1.0
+   Compiling base64 v0.22.1
    Compiling ureq v2.12.1
-   Compiling symphonia-utils-xiph v0.5.5
+   Compiling toml v1.1.6+spec-1.1.0
    Compiling horizon-client-core v0.1.0 (/src/horizon-nx/crates/horizon-client-core)
    Compiling wgpu-core-deps-windows-linux-android v30.0.1 (/src/horizon-nx/third_party/wgpu-core-deps-windows-linux-android)
+   Compiling symphonia-utils-xiph v0.5.5
    Compiling sha1 v0.10.7
    Compiling inout v0.1.4
-   Compiling tracing-core v0.1.36
-   Compiling pin-project-lite v0.2.17
    Compiling twox-hash v2.1.5
-   Compiling ruzstd v0.9.1
+   Compiling pin-project-lite v0.2.17
+   Compiling tracing-core v0.1.36
    Compiling tracing v0.1.44
+   Compiling ruzstd v0.9.1
    Compiling cipher v0.4.4
    Compiling horizon-protocol v0.1.0 (/src/horizon-nx/crates/horizon-protocol)
 warning: unnecessary qualification
@@ -623,33 +668,31 @@ help: remove the unnecessary path segments
    Compiling hmac v0.12.1
    Compiling fdeflate v0.3.7
    Compiling universal-hash v0.5.1
-   Compiling cursor-icon v1.2.0
-   Compiling dpi v0.1.2
-   Compiling opaque-debug v0.3.1
    Compiling smol_str v0.2.2
    Compiling horizon-switch v0.1.0 (/src/horizon-nx/crates/horizon-switch)
    Compiling ttf-parser v0.25.1
-   Compiling owned_ttf_parser v0.25.1
+   Compiling cursor-icon v1.2.0
+   Compiling dpi v0.1.2
+   Compiling opaque-debug v0.3.1
    Compiling poly1305 v0.8.0
+   Compiling owned_ttf_parser v0.25.1
    Compiling png v0.18.1
    Compiling hkdf v0.12.4
    Compiling chacha20 v0.9.1
    Compiling horizon-telemetry v0.1.0 (/src/horizon-nx/crates/horizon-telemetry)
    Compiling horizon-shader-api v0.1.0 (/src/horizon-nx/crates/horizon-shader-api)
+   Compiling symphonia-format-ogg v0.5.5
    Compiling symphonia-codec-vorbis v0.5.5
 warning: `wgpu-core` (lib) generated 2 warnings (run `cargo fix --lib -p wgpu-core` to apply 2 suggestions)
-   Compiling symphonia-format-ogg v0.5.5
    Compiling aead v0.5.2
    Compiling horizon-dualsense v0.1.0 (/src/horizon-nx/crates/horizon-dualsense)
    Compiling errno v0.3.14
-   Compiling horizon-theme v0.1.0 (/src/horizon-nx/crates/horizon-theme)
-   Compiling dasp_sample v0.11.0
-   Compiling arboard v3.6.1 (/src/horizon-nx/packaging/switch/stubs/arboard)
-   Compiling uuid v1.28.0
    Compiling ab_glyph_rasterizer v0.1.10
+   Compiling arboard v3.6.1 (/src/horizon-nx/packaging/switch/stubs/arboard)
+   Compiling dasp_sample v0.11.0
+   Compiling uuid v1.28.0
+   Compiling horizon-theme v0.1.0 (/src/horizon-nx/crates/horizon-theme)
    Compiling iana-time-zone v0.1.65
-   Compiling ab_glyph v0.2.32
-   Compiling chrono v0.4.45
    Compiling gilrs-core v0.6.8 (/src/horizon-nx/third_party/gilrs-core)
 warning: unused `#[macro_use]` import
  --> third_party/gilrs-core/src/lib.rs:1:1
@@ -659,30 +702,33 @@ warning: unused `#[macro_use]` import
   |
   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
 
+   Compiling chrono v0.4.45
 warning: `gilrs-core` (lib) generated 1 warning
-   Compiling wasmparser v0.254.2
    Compiling horizon-client-input v0.1.0 (/src/horizon-nx/crates/horizon-client-input)
+   Compiling wasmparser v0.254.2
+   Compiling ab_glyph v0.2.32
    Compiling spake2 v0.4.0
-   Compiling chacha20poly1305 v0.10.1
    Compiling symphonia v0.5.5
+   Compiling chacha20poly1305 v0.10.1
    Compiling horizon-bench v0.1.0 (/src/horizon-nx/crates/horizon-bench)
    Compiling horizon-hdr v0.1.0 (/src/horizon-nx/crates/horizon-hdr)
    Compiling horizon-command v0.1.0 (/src/horizon-nx/crates/horizon-command)
-   Compiling horizon-items v0.1.0 (/src/horizon-nx/crates/horizon-items)
    Compiling horizon-shaders v0.1.0 (/src/horizon-nx/crates/horizon-shaders)
+   Compiling horizon-items v0.1.0 (/src/horizon-nx/crates/horizon-items)
    Compiling horizon-assets v0.1.0 (/src/horizon-nx/crates/horizon-assets)
    Compiling socket2 v0.5.10 (/src/horizon-nx/third_party/socket2)
-   Compiling vec_map v0.8.2
-   Compiling unicode-bidi v0.3.18
-   Compiling horizon-threads v0.1.0 (/src/horizon-nx/crates/horizon-threads)
-   Compiling if-addrs v0.13.4 (/src/horizon-nx/packaging/switch/stubs/if-addrs)
    Compiling fnv v1.0.7
    Compiling minisign-verify v0.3.0
-   Compiling glam v0.30.10
+   Compiling vec_map v0.8.2
    Compiling pollster v0.4.0
-   Compiling horizon-mods v0.1.0 (/src/horizon-nx/crates/horizon-mods)
-   Compiling horizon-client-render v0.1.0 (/src/horizon-nx/crates/horizon-client-render)
+   Compiling glam v0.30.10
+   Compiling unicode-bidi v0.3.18
+   Compiling if-addrs v0.13.4 (/src/horizon-nx/packaging/switch/stubs/if-addrs)
+   Compiling horizon-threads v0.1.0 (/src/horizon-nx/crates/horizon-threads)
    Compiling horizon-friends v0.1.0 (/src/horizon-nx/crates/horizon-friends)
+   Compiling horizon-mods v0.1.0 (/src/horizon-nx/crates/horizon-mods)
+   Compiling horizon-server-files v0.1.0 (/src/horizon-nx/crates/horizon-server-files)
+   Compiling horizon-client-render v0.1.0 (/src/horizon-nx/crates/horizon-client-render)
 warning: use of deprecated method `cpal::traits::DeviceTrait::name`: Use `description()` for comprehensive device information including name, manufacturer, and device type. Use `id()` for a unique, stable device identifier that persists across reboots and reconnections.
    --> crates/horizon-client-render/src/audio.rs:559:38
     |
@@ -703,14 +749,11 @@ warning: use of deprecated method `cpal::traits::DeviceTrait::name`: Use `descri
 711 |             let name = device.name().unwrap_or_else(|_| "unnamed device".into());
     |                               ^^^^
 
-   Compiling horizon-server-files v0.1.0 (/src/horizon-nx/crates/horizon-server-files)
    Compiling horizon-anticheat v0.1.0 (/src/horizon-nx/crates/horizon-anticheat)
 warning: `horizon-client-render` (lib) generated 3 warnings
-error: linking with `rust-lld` failed: exit status: 1
-  |
-  = note:  "rust-lld" "-flavor" "gnu" "--wrap=threadCreate" "--wrap=fchmod" "--wrap=rename" "--wrap=rmdir" "<220 object files omitted>" "--as-needed" "-Bstatic" "/src/horizon-nx/target/aarch64-nintendo-horizon/release/build/horizon-client/1ebafd73bb95f8b7/out/rustcUAYSVr/libring-dee12755a3ffe576.rlib" "/src/horizon-nx/target/aarch64-nintendo-horizon/release/build/compiler_builtins/6e382291c633cba4/out/libcompiler_builtins-6e382291c633cba4.rlib" "-Bdynamic" "-lnx" "-lsysbase" "-lc" "-lm" "-lgcc" "-lvulkan_bh" "-lexpat" "-lzstd" "-lz" "-lstdc++" "-lnx" "-lc" "-lm" "-L" "/src/horizon-nx/target/aarch64-nintendo-horizon/release/build/horizon-client/1ebafd73bb95f8b7/out/rustcUAYSVr/raw-dylibs" "--eh-frame-hdr" "-z" "noexecstack" "-L" "/src/horizon-nx/target/aarch64-nintendo-horizon/release/build/ring/71c27cb155c89d49/out" "-L" "/opt/devkitpro/libnx/lib" "-L" "/opt/devkitpro/portlibs/switch/lib" "-L" "/opt/devkitpro/devkitA64/aarch64-none-elf/lib/pic" "-L" "/opt/devkitpro/devkitA64/lib/gcc/aarch64-none-elf/16.1.0/pic" "-L" "/src/bevy-horizon/nvk/lib" "-o" "/src/horizon-nx/target/aarch64-nintendo-horizon/release/build/horizon-client/1ebafd73bb95f8b7/out/horizon_client" "--gc-sections" "-pie" "-z" "norelro" "-O1" "--strip-debug" "-z" "notext" "--script" "/src/horizon-nx/target/aarch64-nintendo-horizon/release/build/horizon-client/1ebafd73bb95f8b7/out/rustcUAYSVr/rustc-aarch64-unknown-none-linkfile.ld"
-  = note: some arguments are omitted. use `--verbose` to show all linker arguments
-  = note: rust-lld: error: unable to find library -lgcc
-          
-
-error: could not compile `horizon-client` (bin "horizon-client") due to 1 previous error
+    Finished `release` profile [optimized] target(s) in 6m 49s
+==> packaging horizon.nro
+==> checking the NRO's asset section (sphaira refuses an NRO without one)
+    ok: image 0x30f0000 + ASET section, file 49.0 MiB
+==> done: /home/runner/work/horizon-nx/horizon-nx/horizon-nx/target/aarch64-nintendo-horizon/release/horizon.nro (copy it to switch/horizon/ on the SD card; docs/switch.md)
+02d3d31e7e18157817404e97e65f505398063df1c4d3b53e53322b497ad7da78  out/switch/horizon/horizon.nro
