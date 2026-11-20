@@ -37,7 +37,8 @@ Tested on a Switch with Atmosphère, November 2026. Current release: **v1.3.0**.
 | In-game updates | ✅ From this repository's releases (1.0.0 and later) |
 | Docked mode | ❔ Not tested yet |
 | Frame rate | ✅ Up to 60 fps in handheld mode |
-| Loading | ✅ About 15 s to the title screen. The very first start is slower: it compiles shaders and packs the resources into one file in the background (about 20 minutes, once) |
+| Loading | ✅ About 15 s to the title screen. The very first start is slower: it compiles shaders and packs the resources into one file in the background (about 20 minutes, once; [Horizon NX Companion](https://github.com/KoHaku743/horizon-nx-companion) packs them on your computer instead) |
+| Computer app | ✅ [Horizon NX Companion](https://github.com/KoHaku743/horizon-nx-companion): SD card setup, builds, mods, worlds, logs (macOS tested; Windows and Linux new) |
 
 ## What you need
 
@@ -47,6 +48,24 @@ Tested on a Switch with Atmosphère, November 2026. Current release: **v1.3.0**.
 - To play on online servers: the Microsoft account that owns Minecraft: Java Edition.
 
 ## Install
+
+### The easy way: Horizon NX Companion
+
+**[Horizon NX Companion](https://github.com/KoHaku743/horizon-nx-companion)** is an app for your computer (macOS,
+Windows, Linux) that does steps 1 to 3 for you and the slow part of the first start:
+
+- copies the prepared game files to the SD card and **packs `resources.hzpak` on the computer**, so the Switch
+  doesn't spend about 20 minutes on it;
+- installs `horizon.nro` from this repository's releases;
+- installs mods and resource packs from Horizon's registry, checked on the computer in seconds;
+- backs up worlds and copies them between the Switch and Minecraft on your computer, reads the logs, frees up space,
+  and cleans macOS's `._` files before ejecting.
+
+Download it from its [releases](https://github.com/KoHaku743/horizon-nx-companion/releases/latest), put the SD
+card in the computer (or use hekate's **Tools > USB Tools > SD Card**), and you still need the Horizon launcher from
+step 2 once, to prepare the files from your own Minecraft. Then go to [step 4](#4-start-it).
+
+The steps below do the same by hand.
 
 ### 1. Get the Switch build
 
@@ -104,7 +123,8 @@ any game to open the homebrew menu as an application, then choose Horizon. (A ti
 
 The first start is slow: the graphics driver compiles all of the game's shaders and keeps them on the SD card, and
 once the game has loaded, it packs `resources/` into one file, `resources.hzpak` (about 520 MB), in the background
-(about 20 minutes; keep playing or leave it at the title screen). From the next start it loads in about 15 seconds.
+(about 20 minutes; keep playing or leave it at the title screen; with the companion app the pack is already
+there). From the next start it loads in about 15 seconds.
 Keep the `resources` folder: the game still checks it and reads its largest files from it.
 
 ## Microsoft account
