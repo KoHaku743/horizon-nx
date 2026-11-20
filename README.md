@@ -58,8 +58,8 @@ Windows, Linux) that does steps 1 to 3 for you and the slow part of the first st
   doesn't spend about 20 minutes on it;
 - installs `horizon.nro` from this repository's releases;
 - installs mods and resource packs from Horizon's registry, checked on the computer in seconds;
-- backs up worlds and copies them between the Switch and Minecraft on your computer, reads the logs, frees up space,
-  and cleans macOS's `._` files before ejecting.
+- copies worlds, mods, resource packs and servers between the Switch and Horizon on your computer, backs up worlds,
+  reads the logs, frees up space, and cleans macOS's `._` files before ejecting.
 
 Download it from its [releases](https://github.com/KoHaku743/horizon-nx-companion/releases/latest), put the SD
 card in the computer (or use hekate's **Tools > USB Tools > SD Card**), and you still need the Horizon launcher from
