@@ -383,7 +383,8 @@ fn session_of(saved: &Saved) -> Result<crate::auth::AuthSession, String> {
 }
 
 /// From fresh Microsoft tokens: the Minecraft token, ownership, profile; saved and returned.
-fn finish(path: &Path, ms: MsTokens) -> Result<Saved, String> {
+/// The Xbox, XSTS and Minecraft steps after Microsoft's: the account to keep, not saved yet.
+fn account(ms: MsTokens) -> Result<Saved, String> {
     let mc = minecraft_login(&ms.access)?;
     if !owns_game(&mc.token)? {
         return Err("This account doesn't own Minecraft: Java Edition.".into());
@@ -399,7 +400,6 @@ fn finish(path: &Path, ms: MsTokens) -> Result<Saved, String> {
         minecraft_token: mc.token,
         expires_at: mc.expires_at,
     };
-    save(path, &saved)?;
     Ok(saved)
 }
 
@@ -412,23 +412,43 @@ pub fn saved_name(dir: &Path) -> Option<String> {
 /// Sign the saved account in again: its Minecraft token while it has an hour left, else a new
 /// one from the refresh token. Blocking (network): run it off the main thread.
 pub fn resume(dir: &Path) -> Result<Option<String>, String> {
+    let signed_out = *sign_outs();
     let path = dir.join(FILE_NAME);
     let Ok(text) = std::fs::read_to_string(&path) else {
         return Ok(None);
     };
     let saved: Saved = serde_json::from_str(&text).map_err(|_| "The saved account is damaged.")?;
-    let saved = if saved.expires_at > now() + RENEW_BEFORE {
-        saved
-    } else {
+    let renewed = saved.expires_at <= now() + RENEW_BEFORE;
+    let saved = if renewed {
         let client_id = client_id().ok_or(NOT_CONFIGURED)?;
-        finish(&path, refresh_ms(&client_id, &saved.refresh_token)?)?
+        account(refresh_ms(&client_id, &saved.refresh_token)?)?
+    } else {
+        saved
     };
-    crate::auth::set_current(session_of(&saved)?);
+    let session = session_of(&saved)?;
+    // A sign-out while this ran (the player was quicker than the network) wins.
+    let sign_outs = sign_outs();
+    if *sign_outs != signed_out {
+        return Ok(None);
+    }
+    if renewed {
+        save(&path, &saved)?;
+    }
+    crate::auth::set_current(session);
     Ok(Some(saved.name))
+}
+
+/// How many times the player signed out; a renewal that started before one doesn't sign in.
+static SIGN_OUTS: Mutex<u64> = Mutex::new(0);
+
+fn sign_outs() -> std::sync::MutexGuard<'static, u64> {
+    SIGN_OUTS.lock().unwrap_or_else(|e| e.into_inner())
 }
 
 /// Forget the account: the file goes, and the game plays under the offline name again.
 pub fn sign_out(dir: &Path) {
+    let mut sign_outs = sign_outs();
+    *sign_outs += 1;
     let _ = std::fs::remove_file(dir.join(FILE_NAME));
     crate::auth::clear_current();
 }
@@ -456,17 +476,36 @@ pub enum State {
 }
 
 /// A sign-in on its own thread; the title screen reads [`SignIn::state`] each frame.
+///
+/// Cancelling is final: the account is saved and signed in under the same lock that [`cancel`]
+/// takes, so after a cancel the sign-in neither saves the account nor signs it in, and a cancel
+/// that comes just after it did undoes both ([`SignIn::cancel`]).
+///
+/// [`cancel`]: SignIn::cancel
 pub struct SignIn {
     state: Arc<Mutex<State>>,
-    cancel: Arc<std::sync::atomic::AtomicBool>,
+    commit: Arc<Mutex<Commit>>,
+    dir: PathBuf,
+}
+
+/// Whether the sign-in was cancelled, and whether it saved and signed in the account.
+#[derive(Default)]
+struct Commit {
+    cancelled: bool,
+    done: bool,
+}
+
+fn lock(commit: &Mutex<Commit>) -> std::sync::MutexGuard<'_, Commit> {
+    commit.lock().unwrap_or_else(|e| e.into_inner())
 }
 
 impl SignIn {
     /// A new sign-in with a code, saving the account in `dir`.
     pub fn start(dir: PathBuf) -> Self {
         let state = Arc::new(Mutex::new(State::Contacting));
-        let cancel = Arc::new(std::sync::atomic::AtomicBool::new(false));
-        let (shared, stop) = (state.clone(), cancel.clone());
+        let commit = Arc::new(Mutex::new(Commit::default()));
+        let (shared, stop) = (state.clone(), commit.clone());
+        let home = dir.clone();
         let set = move |s: State| *shared.lock().unwrap_or_else(|e| e.into_inner()) = s;
         let spawned = std::thread::Builder::new()
             .name("Microsoft sign-in".into())
@@ -478,18 +517,29 @@ impl SignIn {
                         url: code.verification_uri.clone(),
                         code: code.user_code.clone(),
                     });
-                    let cancelled = || stop.load(std::sync::atomic::Ordering::Relaxed);
+                    let cancelled = || lock(&stop).cancelled;
                     let ms = wait_for_sign_in(&client_id, &code, &cancelled)?;
                     set(State::Finishing);
-                    let saved = finish(&dir.join(FILE_NAME), ms)?;
-                    crate::auth::set_current(session_of(&saved)?);
+                    let saved = account(ms)?;
+                    let session = session_of(&saved)?;
+                    // Saved and signed in only if not cancelled, and never after a cancel.
+                    let mut commit = lock(&stop);
+                    if commit.cancelled {
+                        return Err(CANCELLED.into());
+                    }
+                    save(&home.join(FILE_NAME), &saved)?;
+                    crate::auth::set_current(session);
+                    commit.done = true;
+                    // The title shows it signed in under the same lock: a Cancel pressed until
+                    // then still finds it busy, and undoes it.
+                    set(State::SignedIn {
+                        name: saved.name.clone(),
+                    });
+                    drop(commit);
                     Ok(saved.name)
                 };
                 match run() {
-                    Ok(name) => {
-                        log::info!("Horizon: signed in to Microsoft as {name}");
-                        set(State::SignedIn { name });
-                    }
+                    Ok(name) => log::info!("Horizon: signed in to Microsoft as {name}"),
                     Err(e) => {
                         log::warn!("Horizon: Microsoft sign-in: {e}");
                         set(State::Failed(e));
@@ -500,23 +550,34 @@ impl SignIn {
             *state.lock().unwrap_or_else(|e| e.into_inner()) =
                 State::Failed("Could not start the sign-in.".into());
         }
-        Self { state, cancel }
+        Self { state, commit, dir }
     }
 
     pub fn state(&self) -> State {
         self.state.lock().unwrap_or_else(|e| e.into_inner()).clone()
     }
 
-    /// Stop waiting for the code (the thread ends within a tenth of a second).
+    /// The player cancelled: the sign-in stops (waiting for the code, within a tenth of a
+    /// second) and never saves or signs in the account. If it did just before (the screen still
+    /// showed it busy), that is undone: the account file goes and the game is signed out.
     pub fn cancel(&self) {
-        self.cancel
-            .store(true, std::sync::atomic::Ordering::Relaxed);
+        let mut commit = lock(&self.commit);
+        if commit.cancelled {
+            return;
+        }
+        commit.cancelled = true;
+        if commit.done {
+            sign_out(&self.dir);
+            *self.state.lock().unwrap_or_else(|e| e.into_inner()) = State::Failed(CANCELLED.into());
+            log::info!("Horizon: Microsoft sign-in cancelled: signed out again");
+        }
     }
 }
 
 impl Drop for SignIn {
+    /// Leaving the screen stops a sign-in still under way; one that finished stays signed in.
     fn drop(&mut self) {
-        self.cancel();
+        lock(&self.commit).cancelled = true;
     }
 }
 
@@ -575,6 +636,41 @@ mod tests {
         assert!(crate::auth::current().is_none());
         assert!(!d.join(FILE_NAME).exists());
         assert_eq!(resume(&d).unwrap(), None);
+
+        // A Cancel that comes just after a sign-in saved and signed in the account (the screen
+        // still showed it busy) undoes both; leaving the screen after it finished doesn't.
+        let finished = |d: &Path| {
+            save(&d.join(FILE_NAME), &saved(now() + 2 * RENEW_BEFORE)).unwrap();
+            crate::auth::set_current(session_of(&saved(now() + 2 * RENEW_BEFORE)).unwrap());
+            SignIn {
+                state: Arc::new(Mutex::new(State::SignedIn {
+                    name: "Steve".into(),
+                })),
+                commit: Arc::new(Mutex::new(Commit {
+                    cancelled: false,
+                    done: true,
+                })),
+                dir: d.to_path_buf(),
+            }
+        };
+        let sign_in = finished(&d);
+        sign_in.cancel();
+        assert!(crate::auth::current().is_none());
+        assert!(!d.join(FILE_NAME).exists());
+        assert!(matches!(sign_in.state(), State::Failed(_)));
+        drop(finished(&d));
+        assert!(crate::auth::current().is_some());
+        assert!(d.join(FILE_NAME).exists());
+        // A cancelled sign-in can't commit any more.
+        let sign_in = SignIn {
+            state: Arc::new(Mutex::new(State::Finishing)),
+            commit: Arc::new(Mutex::new(Commit::default())),
+            dir: d.clone(),
+        };
+        let commit = sign_in.commit.clone();
+        drop(sign_in);
+        assert!(lock(&commit).cancelled);
+        sign_out(&d);
         let _ = std::fs::remove_dir_all(&d);
     }
 

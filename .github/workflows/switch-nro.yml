@@ -7,8 +7,22 @@ name: Switch NRO
 
 on:
   workflow_dispatch:
+    inputs:
+      release:
+        description: "Publish a GitHub release with the zip under this version tag (v0.1.0-nx.1); empty: build only"
+        required: false
+        default: ""
+      driver:
+        description: "Graphics driver: public (danfromtico/mesa-switch 606441c with bevy-horizon's patches) or johnuzoka (JohnUzoka/mesa-switch bevy-horizon 7789c1d, release 0.1.0's)"
+        required: false
+        default: johnuzoka
+        type: choice
+        options: [public, johnuzoka]
   push:
     branches: [switch-build, switch-v010]
+    # A version tag (v0.1.0-nx.1) also publishes a GitHub release with the zip; so does Run
+    # workflow with a version in `release`.
+    tags: ['v*']
 
 permissions:
   contents: write
@@ -20,7 +34,14 @@ concurrency:
 env:
   # The revisions packaging/switch/build.sh was written against.
   BEVY_HORIZON_REV: 3eac779b232ee47cd0eb957676c64386ac7b0f1d
-  MESA_SWITCH_REV: 606441c90e459028a50fca352daebfc20211f890
+  # The graphics driver (NVK): JohnUzoka's mesa-switch at the revision release 0.1.0 linked
+  # (bevy-horizon's patches and more already in it), the default since it runs at 60 fps where the
+  # other ran at 30 (console, 2026-11-20); or, with driver=public, danfromtico's public mesa-switch
+  # with bevy-horizon's patches applied by its build script.
+  MESA_SWITCH_URL: ${{ inputs.driver != 'public' && 'https://github.com/JohnUzoka/mesa-switch.git' || 'https://github.com/danfromtico/mesa-switch.git' }}
+  MESA_SWITCH_REV: ${{ inputs.driver != 'public' && '7789c1de1d42120b3032696ad71d5b9a736a8d4f' || '606441c90e459028a50fca352daebfc20211f890' }}
+  # The public driver hangs the GPU with NAK's plat and ofold passes (horizon-nx lib.rs); 0.1.0's doesn't.
+  HORIZON_NX_NAK_SAFE: ${{ inputs.driver != 'public' && '0' || '' }}
   # The Azure app for the title screen's Microsoft sign-in (crates/horizon-client-render/src/msa.rs).
   # A client ID is public: Microsoft's sign-in page shows it. Mojang has to approve it before
   # the Minecraft step accepts it.
@@ -45,10 +66,24 @@ jobs:
           git clone https://github.com/JohnUzoka/bevy-horizon.git bevy-horizon
           git -C bevy-horizon checkout --quiet "$BEVY_HORIZON_REV"
 
+      # The toolchain image is kept between runs: pkg.devkitpro.org refuses some CI machines,
+      # so it is only built when its recipe changes.
+      - name: Toolchain image cache
+        id: toolchain
+        uses: actions/cache@v4
+        with:
+          path: toolchain-image.tar
+          key: toolchain-${{ hashFiles('horizon-nx/packaging/switch/Containerfile', 'horizon-nx/packaging/switch/portlibs-fallback.sh') }}-v1
+
       - name: Toolchain image
         run: |
           set -o pipefail
-          horizon-nx/packaging/switch/build.sh image 2>&1 | tee -a build.log
+          if [ -f toolchain-image.tar ]; then
+            docker load -i toolchain-image.tar 2>&1 | tee -a build.log
+          else
+            horizon-nx/packaging/switch/build.sh image 2>&1 | tee -a build.log
+            docker save -o toolchain-image.tar horizon-switch-toolchain:local bevy-horizon-toolchain:local
+          fi
 
       - name: NVK cache
         id: nvk
@@ -61,14 +96,29 @@ jobs:
         if: steps.nvk.outputs.cache-hit != 'true'
         run: |
           set -o pipefail
-          git clone https://github.com/danfromtico/mesa-switch.git mesa-switch
+          git clone "$MESA_SWITCH_URL" mesa-switch
           git -C mesa-switch checkout --quiet "$MESA_SWITCH_REV"
+          if [ "${{ inputs.driver }}" != public ]; then
+            # Its history already holds bevy-horizon's mesa-switch patches (and later changes to
+            # the same lines), so the build script must not apply them again.
+            rm -f bevy-horizon/patches/mesa-switch/*.patch
+          fi
           JOBS=4 horizon-nx/packaging/switch/build.sh nvk 2>&1 | tee -a build.log
 
       - name: Build horizon.nro
         run: |
           set -o pipefail
-          JOBS=4 VERSION="dev ${GITHUB_SHA::7}" horizon-nx/packaging/switch/build.sh nro 2>&1 | tee -a build.log
+          # A release shows and compares its version (v1.0.0 -> 1.0.0); other builds are
+          # development builds, which any release updates.
+          release="${{ inputs.release }}"
+          if [ -z "$release" ] && [[ "$GITHUB_REF" == refs/tags/v* ]]; then release="$GITHUB_REF_NAME"; fi
+          if [ -n "$release" ]; then
+            export VERSION="${release#v}" HORIZON_VERSION="${release#v}"
+            if [[ "${release#v}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then export HORIZON_SWITCH_VERSION="${release#v}"; fi
+          else
+            export VERSION="dev ${GITHUB_SHA::7}"
+          fi
+          JOBS=4 horizon-nx/packaging/switch/build.sh nro 2>&1 | tee -a build.log
 
       - name: Package
         run: |
@@ -76,6 +126,39 @@ jobs:
           cp horizon-nx/target/aarch64-nintendo-horizon/release/horizon.nro out/switch/horizon/
           printf 'This file makes horizon.nro start the game. Without it, it runs a dedicated server.\n' > out/switch/horizon/client.txt
           sha256sum out/switch/horizon/horizon.nro | tee -a build.log
+          # The game's function symbols by address, to name the offsets in a cpu-profile.txt
+          # (crates/horizon-nx/src/profiler.rs) from this build: the NRO has none.
+          elf=horizon-nx/target/aarch64-nintendo-horizon/release/horizon-client
+          nm_tool="$(command -v llvm-nm || ls /usr/bin/llvm-nm-* 2>/dev/null | sort -V | tail -1 || true)"
+          if [ -n "$nm_tool" ] && [ -f "$elf" ]; then
+            { echo "# horizon-client ${GITHUB_SHA}: address size type name"
+              "$nm_tool" --defined-only --numeric-sort --print-size --demangle "$elf" | grep -i ' t '
+            } | gzip -9 > symbols.txt.gz && ls -l symbols.txt.gz | tee -a build.log
+          else
+            echo "no symbols: llvm-nm (${nm_tool:-missing}) or $elf (missing)" | tee -a build.log
+          fi
+
+      - name: Publish the release
+        if: startsWith(github.ref, 'refs/tags/v') || inputs.release != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.release || github.ref_name }}
+        run: |
+          set -e
+          zip_name="horizon-switch-${TAG}.zip"
+          (cd out && zip -qr "../$zip_name" switch)
+          # What the in-game updater reads (crates/horizon-client/src/switch_update.rs): the NRO,
+          # its sha256sum line and release.json naming this release.
+          cp out/switch/horizon/horizon.nro horizon.nro
+          sha256sum horizon.nro > horizon.nro.sha256
+          printf '{"schema":2,"target":"switch","repository":"%s","tag":"%s","version":"%s","revision":"%s"}\n' \
+            "$GITHUB_REPOSITORY" "$TAG" "${TAG#v}" "$GITHUB_SHA" > release.json
+          # Creates the tag on this commit when it doesn't exist yet.
+          gh release create "$TAG" "$zip_name" horizon.nro horizon.nro.sha256 release.json \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "Horizon NX ${TAG}" \
+            --notes-file horizon-nx/packaging/switch/release-notes.md
 
       - uses: actions/upload-artifact@v4
         with:
@@ -98,6 +181,11 @@ jobs:
           mkdir -p switch-nro
           cp "$GITHUB_WORKSPACE/tail.log" "switch-nro/${GITHUB_RUN_NUMBER}-${GITHUB_SHA::7}-${{ job.status }}.log"
           cp "$GITHUB_WORKSPACE/tail.log" switch-nro/latest.log
+          # The latest build's symbols only (a few MB each): profiles come from the build on the SD card.
+          if [ -f "$GITHUB_WORKSPACE/symbols.txt.gz" ]; then
+            git rm -q --ignore-unmatch 'switch-nro/symbols-*.txt.gz'
+            cp "$GITHUB_WORKSPACE/symbols.txt.gz" "switch-nro/symbols-${GITHUB_SHA::7}.txt.gz"
+          fi
           echo "${GITHUB_RUN_NUMBER} ${GITHUB_SHA} ${{ job.status }} ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" > switch-nro/latest.txt
           git add switch-nro
           git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \

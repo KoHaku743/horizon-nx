@@ -671,6 +671,20 @@ impl Title {
             sign_in: None,
         }
     }
+    /// The account screen's Cancel: a sign-in under way stops, and it neither keeps nor saves
+    /// the account, even one it signed in just now (`msa::SignIn::cancel`). A finished one
+    /// stays.
+    fn cancel_sign_in(&mut self) {
+        if let Some(sign_in) = self.sign_in.take() {
+            let busy = !matches!(
+                sign_in.state(),
+                crate::msa::State::SignedIn { .. } | crate::msa::State::Failed(_)
+            );
+            if busy {
+                sign_in.cancel();
+            }
+        }
+    }
     /// Vanilla bypasses the selector when there are no saves.
     pub fn enter_singleplayer(&mut self) {
         self.search.clear();
@@ -2202,10 +2216,9 @@ impl Title {
             }
             Mode::ConfirmUpdate { version } => {
                 crate::ui::menu_background(batch, atlas, 0.0, 0.0, w, h, false);
-                let size = crate::switch_update::download_size()
-                    .map_or_else(String::new, |bytes| {
-                        format!(" ({:.0} MB)", bytes as f64 / 1_048_576.0)
-                    });
+                let size = crate::switch_update::download_size().map_or_else(String::new, |bytes| {
+                    format!(" ({:.0} MB)", bytes as f64 / 1_048_576.0)
+                });
                 let message = translate(
                     "horizon.update.confirm.message",
                     "Horizon %s%s downloads now, then replaces this version when you quit Horizon. Your worlds and settings stay as they are.",
@@ -2532,8 +2545,7 @@ impl Title {
                 Action::None
             }
             (Mode::Account, Some(ACCOUNT_CANCEL)) => {
-                // Dropping the sign-in cancels it.
-                self.sign_in = None;
+                self.cancel_sign_in();
                 Action::None
             }
             (Mode::Account, Some(ACCOUNT_BACK)) => {
@@ -3111,8 +3123,8 @@ impl Title {
             // Screen.keyPressed: Escape closes the screen, which fades out.
             Mode::Onboarding(_) => self.onboarding_close(),
             Mode::Account => {
-                // Dropping the sign-in cancels it.
-                self.sign_in = None;
+                // Escape while signing in is Cancel; after it, Back.
+                self.cancel_sign_in();
                 self.mode = Mode::Main;
             }
             _ => self.mode = Mode::Main,
