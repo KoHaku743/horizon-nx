@@ -129,7 +129,9 @@ fn table(preset: Preset) -> Option<Table> {
 pub fn apply_preset(preset: Preset, s: &mut Settings) {
     let Some(t) = table(preset) else { return };
     // Capped where the game caps the option (`MAX_RENDER_DISTANCE`: 12 on the Switch).
-    s.render_distance = t.render_distance.min(crate::options_file::MAX_RENDER_DISTANCE);
+    s.render_distance = t
+        .render_distance
+        .min(crate::options_file::MAX_RENDER_DISTANCE);
     s.simulation_distance = t.simulation_distance;
     s.clouds = t.clouds.into();
     s.particles = t.particles;

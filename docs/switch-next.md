@@ -114,3 +114,9 @@ separate process. On the Switch it has to run in the game's own process; whether
   session. Single player's connection is an in-memory pipe, so its mio poll had no socket to sleep
   on and came straight back: the 2 ms inbox wait never waited. The Switch's `Waker` is now a
   condvar the loop sleeps on for the rest of the wait, and posting to the inbox wakes it.
+
+## Eighth pass
+
+- RUN 50, with the network thread asleep: 45-60 fps, often 56-60. Short drops (17-30 fps over
+  10 s) came with bursts of meshed sections uploaded in one frame (up to ~1 MiB). The Switch's
+  defaults cap uploads at 8 sections and 512 KiB a frame (`chunkUpdates`, `uploadBudgetKiB`).
