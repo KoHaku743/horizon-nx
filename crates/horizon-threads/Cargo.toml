@@ -8,16 +8,8 @@ description = "Scheduling hints for the game's threads and its allocator, and th
 
 [dependencies]
 horizon-guest-stack = { path = "../horizon-guest-stack" }
-
-[target.'cfg(not(target_os = "horizon"))'.dependencies]
 mimalloc = { version = "0.1.52", default-features = false }
 libmimalloc-sys = { version = "0.1.49", default-features = false, features = ["extended"] }
-
-# The Switch: libnx has no mmap for mimalloc's arenas. Stand-ins with the same names put the game's
-# allocations on the system heap, which horizon-nx backs with its TLSF heap.
-[target.'cfg(target_os = "horizon")'.dependencies]
-mimalloc = { path = "../../packaging/switch/stubs/mimalloc", package = "mimalloc-horizon-stub" }
-libmimalloc-sys = { path = "../../packaging/switch/stubs/libmimalloc-sys", package = "libmimalloc-sys-horizon-stub" }
 
 [target.'cfg(any(target_vendor = "apple", target_os = "linux", target_os = "android"))'.dependencies]
 libc = "0.2"
