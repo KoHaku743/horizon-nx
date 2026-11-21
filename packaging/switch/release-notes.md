@@ -10,6 +10,16 @@ On a Mac, run `dot_clean -m` on the SD card before ejecting it, or copy over FTP
 
 Already on 1.0.0 or later? The title screen offers new releases itself (the button left of Sign In, in Realms' place).
 
+### New in 2.0.1
+
+- **Mods switch on and off without a restart.** A content mod like Salvage turned on in Options →
+  Mods now works in the next world you open; before, its recipes stayed missing until you
+  restarted the game. The Mods screen's Turn On/Turn Off button shows the right state.
+- **Mods that run code** (WebAssembly or native, like Zoom) say plainly in Get Mods that the Switch
+  can't run them, and aren't listed again after that.
+- Microsoft sign-in is unchanged; its app ID now comes from the build's settings instead of the
+  source code.
+
 ### New in 2.0.0
 
 Rebuilt on today's Horizon (November 2026), so mods made for current Horizon work, along with
@@ -22,7 +32,7 @@ everything Horizon added since 1.3.0.
   Entity and particle culling are on by default, the menu background blur is off, and glowing
   outlines draw at half resolution.
 - **Get Mods installs on the Switch again**, with a **Resource Packs** tab beside Mods. Turn a mod
-  off or on from the Mods screen (the button bottom left); it applies after a restart.
+  off or on from the Mods screen (the button bottom left).
 - **HD rumble.** Vibration plays on the Joy-Cons' HD rumble: short ticks for blocks, a thud for
   hits, a roll for explosions. **Vibration Strength** is in Options → Controls → Controller.
 - **Tapping the screen to attack** no longer stops your movement.
