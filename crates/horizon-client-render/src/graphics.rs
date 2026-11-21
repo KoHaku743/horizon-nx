@@ -999,11 +999,8 @@ impl Default for Graphics {
             cache_chests: false,
             cache_banners: false,
             cache_copper_golem_statues: false,
-            // On the Switch a burst of meshed sections (flying into new terrain) was uploaded in one
-            // frame, up to ~1 MiB, and that frame stalled (RUN 50): at most 8 sections and 512 KiB a
-            // frame spreads it, still 400 sections a second at 50 fps.
-            chunk_updates: if cfg!(target_os = "horizon") { 8 } else { 0 },
-            upload_budget_kib: if cfg!(target_os = "horizon") { 512 } else { 0 },
+            chunk_updates: 0,
+            upload_budget_kib: 0,
             texture_budget_mib: 0,
             sky: true,
             fog: true,

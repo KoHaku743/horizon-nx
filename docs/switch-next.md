@@ -118,8 +118,9 @@ separate process. On the Switch it has to run in the game's own process; whether
 ## Eighth pass
 
 - RUN 50, with the network thread asleep: 45-60 fps, often 56-60. Short drops (17-30 fps over
-  10 s) came with bursts of meshed sections uploaded in one frame (up to ~1 MiB). The Switch's
-  defaults cap uploads at 8 sections and 512 KiB a frame (`chunkUpdates`, `uploadBudgetKiB`).
+  10 s) came with bursts of meshed sections uploaded in one frame (up to ~1 MiB). Capping them at
+  8 sections and 512 KiB a frame was tried and taken back: 0 already paces uploads by time
+  (`UploadPace`, at most ~2 ms a frame), and the big copies weren't the section meshes.
 
 ## Ninth pass
 
