@@ -1364,5 +1364,7 @@
   "horizon.update.confirm.title": "Update Horizon?",
   "horizon.update.confirm.message": "Horizon %s%s downloads now, then replaces this version when you quit Horizon. Your worlds and settings stay as they are.",
   "horizon.update.dev_build": "Switch dev build",
-  "horizon.update.version": "Switch %s"
+  "horizon.update.version": "Switch %s",
+  "horizon.mods.browse.pack_done": "%s %s installed: turn it on in Options > Resource Packs.",
+  "horizon.options.vibration_strength": "Vibration Strength"
 }

@@ -25,6 +25,8 @@ pub struct Listing {
     pub page: String,
     /// The version installed in this game folder, if any.
     pub installed: Option<String>,
+    /// A resource pack rather than a mod: listed under the Resource Packs tab.
+    pub pack: bool,
 }
 
 impl Listing {
@@ -80,6 +82,13 @@ impl ModBrowser {
         (0..self.listings.len())
             .filter(|&i| self.listings[i].matches(&query))
             .collect()
+    }
+
+    /// [`Self::found`] under one tab: the resource packs (`packs`) or the mods.
+    pub fn found_in(&self, query: &str, packs: bool) -> Vec<usize> {
+        let mut found = self.found(query);
+        found.retain(|&i| self.listings[i].pack == packs);
+        found
     }
 
     pub fn listing(&self, id: &str) -> Option<&Listing> {

@@ -70,3 +70,14 @@ separate process. On the Switch it has to run in the game's own process; whether
 - Horizon extras on in the Switch build: Horizon Settings and its mod and resource pack browser.
 - Performance defaults: Menu Background Blur 0 (5-6 passes, up to 18 ms of a frame), the glowing
   entities' outline at half resolution (~10 ms at full).
+
+## Third pass
+
+- Get Mods installs on the Switch: the install lock is in-process only there (no file locks in
+  libnx, no launcher beside the game). Its page has Mods and Resource Packs tabs again, as the
+  1.3.0 page did; a registry resource pack is checked like a mod and goes to `resourcepacks/`.
+- HD rumble: the Switch plays each vibration as shaped HD rumble (`Rumble::hd`, `horizon_nx::rumble`)
+  instead of gilrs' flat full-strength pulse, and Controller Settings has a Vibration Strength slider
+  for every controller.
+- Still to look at: in a normal world 1.3.0 held 60 fps with 2-3 render passes a frame; this build
+  runs about 40, with the server thread and the newer passes on the same three cores.

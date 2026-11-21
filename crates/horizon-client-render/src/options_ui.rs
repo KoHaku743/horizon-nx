@@ -333,6 +333,7 @@ impl Opt {
             Opt::PadLookSensitivity => "horizon.options.look_sensitivity",
             Opt::PadGyro => "horizon.options.gyro",
             Opt::PadGyroSensitivity => "horizon.options.gyro_sensitivity",
+            Opt::PadVibrationStrength => "horizon.options.vibration_strength",
             Opt::PadPointerSpeed => "horizon.options.pointer_speed",
             Opt::PadScrollSpeed => "horizon.options.scroll_speed",
             Opt::PadRepeatDelay => "horizon.options.repeat_delay",
@@ -428,6 +429,7 @@ impl Opt {
             Opt::ChatLineSpacing => Kind::Slider(s.chat_line_spacing),
             Opt::PadLookSensitivity => Kind::Slider(s.controller.look_sensitivity),
             Opt::PadGyroSensitivity => Kind::Slider(s.controller.gyro_sensitivity),
+            Opt::PadVibrationStrength => Kind::Slider(s.controller.vibration_strength),
             Opt::PadPointerSpeed => unit(s.controller.pointer_speed, 0.25, 3.0),
             Opt::PadScrollSpeed => unit(s.controller.scroll_speed, 1.0, 36.0),
             Opt::PadRepeatDelay => unit(s.controller.repeat_delay, 0.1, 1.0),
@@ -713,6 +715,7 @@ impl Opt {
             ),
             Opt::PadLookSensitivity => percent(c, 2.0 * s.controller.look_sensitivity),
             Opt::PadGyroSensitivity => percent(c, 2.0 * s.controller.gyro_sensitivity),
+            Opt::PadVibrationStrength => percent(c, s.controller.vibration_strength),
             Opt::PadPointerSpeed => percent(c, s.controller.pointer_speed),
             Opt::PadScrollSpeed => percent(c, s.controller.scroll_speed / 12.0),
             Opt::PadRepeatDelay | Opt::PadRepeatInterval => generic(
@@ -1022,6 +1025,7 @@ impl Opt {
             Opt::ChatLineSpacing => s.chat_line_spacing = v,
             Opt::PadLookSensitivity => s.controller.look_sensitivity = v,
             Opt::PadGyroSensitivity => s.controller.gyro_sensitivity = v,
+            Opt::PadVibrationStrength => s.controller.vibration_strength = v,
             Opt::PadPointerSpeed => s.controller.pointer_speed = step(25.0, 300.0) / 100.0,
             Opt::PadScrollSpeed => s.controller.scroll_speed = step(1.0, 36.0),
             Opt::PadRepeatDelay => s.controller.repeat_delay = step(100.0, 1000.0) / 1000.0,
@@ -1587,6 +1591,8 @@ pub(crate) enum Act {
     PageRow(usize, usize),
     /// Browse mods: the page of listing `.0` of `mod_browser`.
     ModProject(usize),
+    /// Browse mods' tabs: the resource packs (`true`) or the mods.
+    ModBrowserTab(bool),
     /// The open project page's Install or Update.
     InstallMod,
     /// The open project page's page on the website.
@@ -1825,6 +1831,8 @@ pub struct OptionsUi {
     pub mod_browser: crate::mod_browser::ModBrowser,
     /// The project whose page is open (`Page::ModProject`).
     pub mod_project: String,
+    /// Browse mods shows the registry's resource packs rather than its mods.
+    pub mod_browser_packs: bool,
     /// The line about mods that wait for a restart to switch, for Browse mods' message.
     pub mods_note: Option<String>,
     /// The Mods screen (`Page::Mods`), made when the page opens.
@@ -1949,6 +1957,7 @@ impl Default for OptionsUi {
             settings_search,
             mod_browser: Default::default(),
             mod_project: String::new(),
+            mod_browser_packs: false,
             mods_note: None,
             mods_screen: None,
             pack_browser: false,
@@ -2593,11 +2602,24 @@ impl OptionsUi {
             }
             Status::Ready => {}
         }
-        let found = b.found(&self.settings_search.value);
+        // The tabs: the one shown can't be pressed.
+        let tab = |packs: bool, key: &str| {
+            let b = button(0.0, 0.0, 150.0, tr(key), Act::ModBrowserTab(packs));
+            if self.mod_browser_packs == packs {
+                inactive(b)
+            } else {
+                b
+            }
+        };
+        let mut rows = vec![Row::Buttons(
+            tab(false, "horizon.mod_browser.mods"),
+            Some(tab(true, "horizon.mod_browser.resource_packs")),
+        )];
+        let found = b.found_in(&self.settings_search.value, self.mod_browser_packs);
         if found.is_empty() {
-            return vec![Row::Note(lang::get("horizon.mods.browse.none"))];
+            rows.push(Row::Note(lang::get("horizon.mods.browse.none")));
+            return rows;
         }
-        let mut rows = Vec::new();
         for i in found {
             let l = &b.listings[i];
             let mut label = Text::literal(format!("{} {}", l.name, l.version));
@@ -3516,6 +3538,10 @@ impl OptionsUi {
                                 setting.value.click();
                                 events.push(Event::NativeSetting(*i, *j));
                             }
+                        }
+                        Act::ModBrowserTab(packs) => {
+                            self.mod_browser_packs = *packs;
+                            self.relayout();
                         }
                         Act::ModProject(i) => {
                             if let Some(listing) = self.mod_browser.listings.get(*i) {
@@ -4567,6 +4593,10 @@ impl OptionsUi {
                                 setting.value.click();
                                 events.push(Event::NativeSetting(i, j));
                             }
+                        }
+                        Act::ModBrowserTab(packs) => {
+                            self.mod_browser_packs = packs;
+                            self.relayout();
                         }
                         Act::ModProject(i) => {
                             if let Some(listing) = self.mod_browser.listings.get(i) {

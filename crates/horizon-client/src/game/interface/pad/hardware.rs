@@ -236,15 +236,19 @@ fn play_pulse(
 /// the player turned Impulse Triggers off. A hit holds one flat step at the pulse's level: its
 /// shape's fade dropped the handles to levels the grip motors do not answer, so a hit played in
 /// the triggers alone. A flat step gives the handles the whole pulse to spin up.
-fn xbox_steps(rumble: Rumble, impulse: bool) -> Vec<(xbox::Motors, Duration)> {
+fn xbox_steps(rumble: Rumble, impulse: bool, strength: f32) -> Vec<(xbox::Motors, Duration)> {
     let triggers = |pulse: gamepad::Pulse| {
-        if impulse { pulse.triggers } else { [0.0; 2] }
+        if impulse {
+            pulse.triggers.map(|t| t * strength)
+        } else {
+            [0.0; 2]
+        }
     };
     if let Rumble::Hurt(_) = rumble
         && let Some(p) = rumble.pulse()
     {
         return vec![(
-            xbox::Motors::levels(p.strong, p.weak, triggers(p)),
+            xbox::Motors::levels(p.strong * strength, p.weak * strength, triggers(p)),
             Duration::from_millis(u64::from(p.millis)),
         )];
     }
@@ -253,7 +257,7 @@ fn xbox_steps(rumble: Rumble, impulse: bool) -> Vec<(xbox::Motors, Duration)> {
         .into_iter()
         .map(|step| {
             (
-                xbox::Motors::levels(step.strong, step.weak, triggers(step)),
+                xbox::Motors::levels(step.strong * strength, step.weak * strength, triggers(step)),
                 Duration::from_millis(u64::from(step.millis)),
             )
         })
@@ -931,6 +935,36 @@ impl Game<'_> {
     /// through its handles and impulse triggers, else gilrs' force feedback, which platforms
     /// without it (gilrs on macOS) skip.
     pub(super) fn pad_vibrate(&mut self, rumble: Rumble, pulse: gamepad::Pulse) {
+        // Vibration Strength scales every motor's level.
+        let strength = self.settings.controller.vibration_strength.clamp(0.0, 1.0);
+        // The Switch's controllers: HD rumble, each band at its own frequency, shaped.
+        #[cfg(target_os = "horizon")]
+        {
+            let _ = pulse;
+            let steps = rumble
+                .hd()
+                .into_iter()
+                .map(|step| horizon_nx::rumble::Step {
+                    amp_low: step.low.0 * strength,
+                    freq_low: step.low.1,
+                    amp_high: step.high.0 * strength,
+                    freq_high: step.high.1,
+                    millis: step.millis,
+                });
+            horizon_nx::rumble::play(steps.collect());
+        }
+        #[cfg(not(target_os = "horizon"))]
+        self.pad_vibrate_motors(rumble, pulse, strength);
+    }
+
+    #[cfg(not(target_os = "horizon"))]
+    fn pad_vibrate_motors(&mut self, rumble: Rumble, pulse: gamepad::Pulse, strength: f32) {
+        let pulse = gamepad::Pulse {
+            strong: pulse.strong * strength,
+            weak: pulse.weak * strength,
+            triggers: pulse.triggers.map(|t| t * strength),
+            millis: pulse.millis,
+        };
         let level = |v: f32| (v.clamp(0.0, 1.0) * 255.0).round() as u8;
         if let Some(haptics) = self
             .pad
@@ -941,8 +975,8 @@ impl Game<'_> {
         {
             let steps = rumble.shape().into_iter().map(|step| {
                 (
-                    step.strong,
-                    step.weak,
+                    step.strong * strength,
+                    step.weak * strength,
                     Duration::from_millis(u64::from(step.millis)),
                 )
             });
@@ -952,7 +986,10 @@ impl Game<'_> {
         if let Some(output) = self.pad_output() {
             let steps = rumble.shape().into_iter().map(|step| {
                 let length = Duration::from_millis(u64::from(step.millis));
-                ([level(step.strong), level(step.weak)], length)
+                (
+                    [level(step.strong * strength), level(step.weak * strength)],
+                    length,
+                )
             });
             output.rumble(steps.collect());
             return;
@@ -965,6 +1002,7 @@ impl Game<'_> {
             output.rumble(xbox_steps(
                 rumble,
                 self.settings.controller.impulse_triggers,
+                strength,
             ));
             return;
         }
@@ -1112,7 +1150,7 @@ mod xbox_output_tests {
     fn a_handles_only_pulse_rides_the_pads_own_output_too() {
         // A radial tick moves no trigger. If it stayed on gilrs, its force feedback (triggers
         // always zero) could stop a trigger motor mid-vibration.
-        let steps = xbox_steps(Rumble::RadialSlot, true);
+        let steps = xbox_steps(Rumble::RadialSlot, true, 1.0);
         assert!(!steps.is_empty());
         let motors = steps[0].0;
         assert!(motors.strong > 0 || motors.weak > 0);
@@ -1121,13 +1159,13 @@ mod xbox_output_tests {
 
     #[test]
     fn the_trigger_motors_follow_the_pulse_unless_turned_off() {
-        let on = xbox_steps(Rumble::BlockBroken, true);
+        let on = xbox_steps(Rumble::BlockBroken, true, 1.0);
         // One fixed level: the grips at the level a hit is felt at, the triggers at 35%.
         assert_eq!(on[0].0.left_trigger, 89);
         assert_eq!(on[0].0.right_trigger, 89);
         assert_eq!(on[0].0.strong, 153);
         assert_eq!(on[0].0.weak, 153);
-        let off = xbox_steps(Rumble::BlockBroken, false);
+        let off = xbox_steps(Rumble::BlockBroken, false, 1.0);
         assert_eq!([off[0].0.left_trigger, off[0].0.right_trigger], [0, 0]);
         assert_eq!([off[0].0.strong, off[0].0.weak], [153, 153]);
     }
@@ -1136,7 +1174,7 @@ mod xbox_output_tests {
     fn a_hit_drives_all_four_motors_hard() {
         // One flat step for the whole pulse: the shaped fade dropped the handles below what
         // the grip motors answer, so a hit played in the triggers alone.
-        let steps = xbox_steps(Rumble::Hurt(4.0), true);
+        let steps = xbox_steps(Rumble::Hurt(4.0), true, 1.0);
         assert_eq!(steps.len(), 1);
         let (motors, length) = steps[0];
         assert_eq!(length, Duration::from_millis(280));

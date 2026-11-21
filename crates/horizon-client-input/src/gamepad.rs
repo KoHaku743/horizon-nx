@@ -733,6 +733,8 @@ pub struct PadSettings {
     /// Gyro aiming's speed, 0..1: [`gyro_delta`] turns the view `4 *` this times the
     /// controller's own turn (0.25 turns the view as much as the controller).
     pub gyro_sensitivity: f32,
+    /// How strongly the pad vibrates, 0..1 of each pulse's own level.
+    pub vibration_strength: f32,
     /// The gameplay guide: what the buttons do now, in the HUD's corners while the pad plays.
     pub guide_detail: GuideDetail,
     /// Menu pointer multiplier, scroll lines/second, and repeat times in seconds.
@@ -782,6 +784,7 @@ impl Default for PadSettings {
             keyboard: TextKeyboard::Auto,
             gyro: GyroMode::Off,
             gyro_sensitivity: 0.5,
+            vibration_strength: 1.0,
             guide_detail: GuideDetail::Full,
             pointer_speed: 1.0,
             scroll_speed: 12.0,
@@ -856,6 +859,7 @@ impl PadSettings {
                 "keyboard" => s.keyboard = TextKeyboard::parse(value),
                 "gyro" => s.gyro = GyroMode::parse(value),
                 "gyroSensitivity" => s.gyro_sensitivity = unit(s.gyro_sensitivity),
+                "vibrationStrength" => s.vibration_strength = unit(s.vibration_strength),
                 "gameplayGuide" => s.guide_detail = GuideDetail::parse(value),
                 "pointerSpeed" => s.pointer_speed = bounded(s.pointer_speed, 0.25, 3.0),
                 "scrollSpeed" => s.scroll_speed = bounded(s.scroll_speed, 1.0, 36.0),
@@ -997,6 +1001,7 @@ impl PadSettings {
             self.gyro.name(),
             self.gyro_sensitivity
         ));
+        text.push_str(&format!("vibrationStrength:{}\n", self.vibration_strength));
         text.push_str(&format!(
             "radialMode:{}\nradialStick:{}\n",
             self.radial_mode.name(),
@@ -1192,7 +1197,6 @@ pub fn gyro_delta(
     let y = tilt * if settings.invert_y { -1.0 } else { 1.0 };
     (x * speed, -y * speed)
 }
-
 
 /// The view turn from the right stick over `seconds`: `(yaw, pitch)` in
 /// degrees, pitch positive looking down as in `Entity.turn`. A squared
@@ -1857,6 +1861,60 @@ impl Rumble {
                 step(0.7, 100),
                 step(1.0, 200),
                 step(0.5, 100),
+            ],
+        }
+    }
+}
+
+/// One step of HD rumble, for the Switch's Joy-Cons and Pro Controller: each band's amplitude
+/// (0..1, as felt on their linear actuators, which shake far harder than a grip motor at the same
+/// level) and frequency in Hz, and how long it holds.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct HdStep {
+    pub low: (f32, f32),
+    pub high: (f32, f32),
+    pub millis: u32,
+}
+
+impl Rumble {
+    /// The vibration as HD rumble: ticks are short and crisp in the high band, a hit is a low
+    /// thud that dies away, an explosion a deep roll, a totem a rising swell. Gentler than
+    /// [`Rumble::pulse`], whose levels are what grip motors need before they answer at all.
+    pub fn hd(self) -> Vec<HdStep> {
+        let Some(p) = self.pulse() else {
+            return Vec::new();
+        };
+        let step = |low: (f32, f32), high: (f32, f32), millis: u32| HdStep { low, high, millis };
+        match self {
+            Rumble::Hurt(_) => {
+                let k = p.strong;
+                let tail = p.millis.saturating_sub(60) / 2;
+                vec![
+                    step((0.45 * k, 90.0), (0.25 * k, 180.0), 60),
+                    step((0.28 * k, 80.0), (0.12 * k, 160.0), tail),
+                    step((0.12 * k, 70.0), (0.05 * k, 150.0), tail),
+                ]
+            }
+            Rumble::BlockBroken => vec![step((0.08, 140.0), (0.32, 300.0), 35)],
+            Rumble::ItemStackSplit => vec![step((0.05, 160.0), (0.22, 320.0), 25)],
+            Rumble::RadialSlot => vec![step((0.0, 160.0), (0.18, 320.0), 20)],
+            Rumble::RadialPage | Rumble::RadialWrap => vec![step((0.0, 160.0), (0.12, 320.0), 15)],
+            Rumble::RadialNothing => vec![step((0.15, 100.0), (0.05, 200.0), 80)],
+            Rumble::Explosion { .. } => {
+                // `pulse` carries how near the blast was in its levels.
+                let n = p.strong / 0.9;
+                vec![
+                    step((0.5 * n, 60.0), (0.3 * n, 200.0), 80),
+                    step((0.35 * n, 55.0), (0.15 * n, 180.0), 150),
+                    step((0.2 * n, 50.0), (0.08 * n, 160.0), 150),
+                    step((0.08 * n, 45.0), (0.03 * n, 150.0), 150),
+                ]
+            }
+            Rumble::Totem => vec![
+                step((0.15, 120.0), (0.15, 240.0), 100),
+                step((0.25, 140.0), (0.25, 260.0), 100),
+                step((0.35, 160.0), (0.35, 300.0), 200),
+                step((0.15, 140.0), (0.1, 260.0), 100),
             ],
         }
     }
@@ -2857,6 +2915,42 @@ bind_key.hotbar.2:north
             Rumble::BlockBroken.pulse().unwrap().millis
         );
         assert!(Rumble::Hurt(0.0).shape().is_empty());
+    }
+
+    #[test]
+    fn hd_rumble_is_gentler_than_the_grip_motors_and_shaped() {
+        let hit = Rumble::Hurt(10.0);
+        let (pulse, hd) = (hit.pulse().unwrap(), hit.hd());
+        assert!(
+            hd.iter()
+                .all(|s| s.low.0 < pulse.strong && s.high.0 < pulse.weak)
+        );
+        // A hit and a blast die away, a deep thud first.
+        for rumble in [
+            hit,
+            Rumble::Explosion {
+                distance: 2.0,
+                radius: 4.0,
+            },
+        ] {
+            let hd = rumble.hd();
+            assert!(hd.windows(2).all(|w| w[1].low.0 < w[0].low.0), "{rumble:?}");
+            assert!(hd[0].low.1 < 100.0, "{rumble:?}");
+        }
+        // A broken block is a crisp tick: short, mostly the high band.
+        let [tick] = Rumble::BlockBroken.hd()[..] else {
+            panic!("one step");
+        };
+        assert!(tick.millis <= 50 && tick.high.0 > tick.low.0 && tick.high.1 >= 250.0);
+        assert!(Rumble::Hurt(0.0).hd().is_empty());
+        assert!(
+            Rumble::Explosion {
+                distance: 20.0,
+                radius: 4.0
+            }
+            .hd()
+            .is_empty()
+        );
     }
 
     #[test]

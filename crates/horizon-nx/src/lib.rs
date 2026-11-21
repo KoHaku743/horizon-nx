@@ -35,6 +35,9 @@ mod clocks;
 mod keyboard;
 #[cfg(target_os = "horizon")]
 mod motion;
+/// HD rumble on the Joy-Cons, step by step.
+#[cfg(target_os = "horizon")]
+pub mod rumble;
 
 pub use compat::{
     ThreadCorePolicy, set_thread_core_policy, set_thread_logging, thread_core_policy,

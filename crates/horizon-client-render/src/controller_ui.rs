@@ -369,6 +369,10 @@ pub fn rows() -> Vec<(Page, Vec<(&'static str, Vec<Setting>)>)> {
                     "Feedback",
                     vec![
                         option(Opt::PadVibration, "Rumble when something happens to you."),
+                        option(
+                            Opt::PadVibrationStrength,
+                            "How strongly the controller vibrates.",
+                        ),
                         switch(
                             Switch::BlockVibration,
                             "A tick when you break a block, as in Bedrock.",

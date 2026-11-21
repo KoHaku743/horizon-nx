@@ -133,14 +133,23 @@ impl Jobs {
                             done.version,
                             if done.verified { "signed" } else { "unsigned" }
                         );
-                        mods.enabled.insert(done.id.clone());
-                        mods.disabled.remove(&done.id);
                         let name = ui
                             .listing(&done.id)
                             .map_or(done.id.clone(), |l| l.name.clone());
-                        let text = lang::tr("horizon.mods.browse.done", &[&name, &done.version]);
-                        ui.message = Some((text, true));
-                        true
+                        if done.pack {
+                            // A resource pack: the player turns it on in Resource Packs.
+                            let text =
+                                lang::tr("horizon.mods.browse.pack_done", &[&name, &done.version]);
+                            ui.message = Some((text, true));
+                            false
+                        } else {
+                            mods.enabled.insert(done.id.clone());
+                            mods.disabled.remove(&done.id);
+                            let text =
+                                lang::tr("horizon.mods.browse.done", &[&name, &done.version]);
+                            ui.message = Some((text, true));
+                            true
+                        }
                     }
                     Err(why) => {
                         log::warn!("Horizon: a registry mod wasn't installed: {why}");
@@ -262,6 +271,7 @@ mod tests {
                 id: "ruby".into(),
                 version: "1.0".into(),
                 verified: false,
+                pack: false,
             }),
             Vec::new(),
         ))

@@ -32,6 +32,10 @@ fn registry() -> &'static Registry {
 /// Normalize existing homes, including aliases of the same directory.
 fn normalize_home(home: &Path) -> io::Result<PathBuf> {
     fs::create_dir_all(home)?;
+    // The Switch's file system has no `realpath` to lean on; one game is the only process there.
+    #[cfg(target_os = "horizon")]
+    let path = home.canonicalize().unwrap_or_else(|_| home.to_path_buf());
+    #[cfg(not(target_os = "horizon"))]
     let path = home.canonicalize()?;
     #[cfg(windows)]
     {
@@ -109,27 +113,34 @@ fn acquire(home: &Path, blocking: bool) -> io::Result<Option<HomeLockGuard>> {
         path,
         _not_send: std::marker::PhantomData,
     };
-    let file = File::options()
-        .read(true)
-        .write(true)
-        .create(true)
-        .truncate(false)
-        .open(guard.path.join(".mod-browser.lock"))?;
-    if blocking {
-        file.lock()?;
-    } else {
-        match file.try_lock() {
-            Ok(()) => {}
-            Err(fs::TryLockError::WouldBlock) => return Ok(None),
-            Err(fs::TryLockError::Error(e)) => return Err(e),
+    // The Switch has no file locks (`File::lock` is unsupported there), and no launcher runs
+    // beside the game: the registry above already keeps the game's own threads apart.
+    #[cfg(not(target_os = "horizon"))]
+    {
+        let file = File::options()
+            .read(true)
+            .write(true)
+            .create(true)
+            .truncate(false)
+            .open(guard.path.join(".mod-browser.lock"))?;
+        if blocking {
+            file.lock()?;
+        } else {
+            match file.try_lock() {
+                Ok(()) => {}
+                Err(fs::TryLockError::WouldBlock) => return Ok(None),
+                Err(fs::TryLockError::Error(e)) => return Err(e),
+            }
         }
+        reg.locks
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .get_mut(&guard.path)
+            .expect("the guard reserves this home")
+            .file = Some(file);
     }
-    reg.locks
-        .lock()
-        .unwrap_or_else(|e| e.into_inner())
-        .get_mut(&guard.path)
-        .expect("the guard reserves this home")
-        .file = Some(file);
+    #[cfg(target_os = "horizon")]
+    let _ = blocking;
     Ok(Some(guard))
 }
 

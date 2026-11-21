@@ -359,3 +359,34 @@ fn code_packages_never_reach_the_content_browser_install_path() {
     );
     fs::remove_dir_all(home).unwrap();
 }
+
+#[test]
+fn a_resource_pack_installs_into_resourcepacks_and_is_recorded_as_one() {
+    let bytes = b"PK\x05\x06not much of a pack".to_vec();
+    let text = serde_json::json!({ "schema": 1, "projects": [{
+        "id": "crisp", "kind": "resourcepack", "name": "Crisp", "summary": "Sharp textures",
+        "license": "MIT", "source": "https://github.com/someone/crisp",
+        "versions": [{ "version": "2", "game": crate::mod_registry::GAME,
+            "file": { "name": "crisp-2.zip", "url": "file:///crisp.zip", "size": bytes.len(),
+                "sha256": index::sha256(&bytes) } }]
+    }] })
+    .to_string();
+    let index = Index::parse_local(&text).unwrap();
+    let home = scratch("pack");
+    let listed = listings(&index, &home);
+    assert_eq!(listed.len(), 1);
+    assert!(listed[0].pack);
+    let done = install(&index, &home, "crisp", &serve(bytes.clone())).unwrap();
+    assert!(done.pack);
+    assert_eq!(
+        fs::read(home.join("resourcepacks/crisp-2.zip")).unwrap(),
+        bytes
+    );
+    assert!(!home.join(crate::mod_list::DIR).join("crisp.hmod").exists());
+    let manifest: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(home.join(MANIFEST)).unwrap()).unwrap();
+    assert_eq!(manifest["entries"][0]["kind"], "resource-pack");
+    assert_eq!(manifest["entries"][0]["file"], "resourcepacks/crisp-2.zip");
+    assert_eq!(listings(&index, &home)[0].installed.as_deref(), Some("2"));
+    fs::remove_dir_all(&home).unwrap();
+}

@@ -26,6 +26,8 @@ pub const SITE: &str = "https://playhorizon.dev/mods";
 pub const CACHE: &str = "mod-browser/horizon-index.json";
 /// What the launcher's browser installed (`installed::MANIFEST`).
 pub const MANIFEST: &str = "mod-browser.json";
+/// Where the game reads resource packs, in the game folder.
+const PACKS: &str = "resourcepacks";
 /// Where a download waits for its checks.
 const DOWNLOADS: &str = "mod-browser/downloads";
 /// Larger than any index should be.
@@ -99,12 +101,21 @@ fn fetch_text(at: &str) -> Result<String, String> {
 /// The version of content mod `p` this game installs: the newest for this
 /// Minecraft version that wasn't taken down and has no code.
 pub fn installable<'a>(index: &Index, p: &'a Project) -> Option<&'a Version> {
-    if p.kind != Kind::Mod {
-        return None;
+    let v = index.installable(p, GAME)?;
+    match p.kind {
+        Kind::Mod => Some(v)
+            .filter(|v| v.capabilities.known() == [horizon_mod_package::Capability::Registries]),
+        // A resource pack for this version: a `.zip` the game reads from `resourcepacks/`.
+        Kind::ResourcePack => {
+            Some(v).filter(|v| plain_file(&v.file.name) && v.file.name.ends_with(".zip"))
+        }
+        _ => None,
     }
-    index
-        .installable(p, GAME)
-        .filter(|v| v.capabilities.known() == [horizon_mod_package::Capability::Registries])
+}
+
+/// A file name with no folder in it, safe to put in `resourcepacks/`.
+fn plain_file(name: &str) -> bool {
+    !name.is_empty() && !name.starts_with('.') && !name.contains(['/', '\\', ':'])
 }
 
 /// The registry's projects the browser offers, most downloaded first: content
@@ -132,6 +143,7 @@ pub fn listings(index: &Index, home: &Path) -> Vec<Listing> {
                 downloads: p.downloads,
                 page: format!("{SITE}/{}", p.id),
                 installed: installed.version_of(home, &p.id),
+                pack: p.kind == Kind::ResourcePack,
             })
         })
         .collect();
@@ -147,6 +159,8 @@ pub struct Done {
     /// Checked against the author's key, or unsigned (the SHA-256 still pins
     /// the reviewed file).
     pub verified: bool,
+    /// A resource pack (in `resourcepacks/`), not a mod: nothing to turn on in the mod list.
+    pub pack: bool,
 }
 
 /// Installs the newest installable version of the registry's content mod `id`
@@ -171,6 +185,9 @@ pub fn install(
     let _lock = horizon_mod_package::install_lock::lock_home(home)
         .map_err(|e| format!("cannot lock mod browser in {}: {e}", home.display()))?;
     let mut list = Installed::load(home)?;
+    if p.kind == Kind::ResourcePack {
+        return install_pack(index, home, p, v, get, &mut list);
+    }
     let ours = list.position(id);
     let old_file = ours.and_then(|i| list.entries[i]["file"].as_str().map(str::to_owned));
     // A missing file does not relinquish the launcher's native pin or change its kind.
@@ -196,6 +213,7 @@ pub fn install(
             id: id.to_owned(),
             version: v.version.clone(),
             verified: list.entries[i]["verdict"].as_str() == Some("Verified"),
+            pack: false,
         });
     }
     // Never over a mod the player put there themselves.
@@ -249,7 +267,81 @@ pub fn install(
         id: id.to_owned(),
         version: v.version.clone(),
         verified,
+        pack: false,
     })
+}
+
+/// [`install`] for a resource pack: checked the same way (size, SHA-256, the author's
+/// signature), then moved to `resourcepacks/<file>` and recorded as the launcher records one.
+/// The player turns it on in Options > Resource Packs.
+fn install_pack(
+    index: &Index,
+    home: &Path,
+    p: &Project,
+    v: &Version,
+    get: &dyn Fn(&str, u64) -> Result<Vec<u8>, String>,
+    list: &mut Installed,
+) -> Result<Done, String> {
+    let relative = format!("{PACKS}/{}", v.file.name);
+    let target = home.join(&relative);
+    let ours = list.position(&p.id);
+    let old_file = ours.and_then(|i| list.entries[i]["file"].as_str().map(str::to_owned));
+    let done = |verified| Done {
+        id: p.id.clone(),
+        version: v.version.clone(),
+        verified,
+        pack: true,
+    };
+    if let Some(i) = ours
+        && list.entries[i]["version"].as_str() == Some(v.version.as_str())
+        && target.exists()
+    {
+        return Ok(done(
+            list.entries[i]["verdict"].as_str() == Some("Verified"),
+        ));
+    }
+    // Never over a pack the player put there themselves.
+    if target.exists() && old_file.as_deref() != Some(relative.as_str()) {
+        return Err(format!(
+            "{} is already in {PACKS}: move it away first",
+            v.file.name
+        ));
+    }
+    if let Some(other) = list.taken_by(&relative, &p.id) {
+        return Err(format!("{relative} belongs to {other}: remove it first"));
+    }
+    let bytes = get(&v.file.url, v.file.size)?;
+    let staging = home.join(DOWNLOADS);
+    fs::create_dir_all(&staging).map_err(|e| format!("{}: {e}", staging.display()))?;
+    let download = staging.join(format!("{}.zip.part", p.id));
+    fs::write(&download, &bytes).map_err(|e| format!("{}: {e}", download.display()))?;
+    let trust = index::check_file(index, p, v, &download).inspect_err(|_| {
+        let _ = fs::remove_file(&download);
+    })?;
+    let dir = home.join(PACKS);
+    fs::create_dir_all(&dir).map_err(|e| format!("{}: {e}", dir.display()))?;
+    fs::rename(&download, &target).map_err(|e| format!("{}: {e}", target.display()))?;
+    // An update under a new file name leaves no old copy behind.
+    if let Some(old) = old_file.filter(|old| *old != relative && old.starts_with(PACKS)) {
+        let _ = fs::remove_file(home.join(old));
+    }
+    let verified = trust == Trust::Verified;
+    list.record(serde_json::json!({
+        "source": "horizon",
+        "project": p.id,
+        "slug": p.id,
+        "title": p.name,
+        "kind": "resource-pack",
+        "version": v.version,
+        "number": v.version,
+        "file": relative,
+        "checksum": format!("SHA-256:{}", v.file.sha256),
+        "page": format!("{SITE}/{}", p.id),
+        "dependency": false,
+        "verdict": if verified { "Verified" } else { "Unsigned" },
+    }));
+    list.save(home)?;
+    Ok(done(verified))
 }
 
 /// Downloads `url` (at most `max` bytes): `https://` only, or a `file://` path
