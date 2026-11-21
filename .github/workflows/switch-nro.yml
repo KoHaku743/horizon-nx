@@ -42,10 +42,11 @@ env:
   MESA_SWITCH_REV: ${{ inputs.driver != 'public' && '7789c1de1d42120b3032696ad71d5b9a736a8d4f' || '606441c90e459028a50fca352daebfc20211f890' }}
   # The public driver hangs the GPU with NAK's plat and ofold passes (horizon-nx lib.rs); 0.1.0's doesn't.
   HORIZON_NX_NAK_SAFE: ${{ inputs.driver != 'public' && '0' || '' }}
-  # The Azure app for the title screen's Microsoft sign-in (crates/horizon-client-render/src/msa.rs).
-  # A client ID is public: Microsoft's sign-in page shows it. Mojang has to approve it before
-  # the Minecraft step accepts it.
-  HORIZON_MSA_CLIENT_ID: 31d69d62-d04a-4d5b-aa89-7fe8caa286d8
+  # The Azure app for the title screen's Microsoft sign-in (crates/horizon-client-render/src/msa.rs),
+  # from the repository's secret so that the source doesn't carry it and a fork brings its own.
+  # A device-code client has no secret of its own: the ID still ends up in the built program, and
+  # Mojang has to approve it before the Minecraft step accepts it. Without it, sign-in is off.
+  HORIZON_MSA_CLIENT_ID: ${{ secrets.HORIZON_MSA_CLIENT_ID }}
 
 jobs:
   nro:
@@ -117,6 +118,13 @@ jobs:
             if [[ "${release#v}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then export HORIZON_SWITCH_VERSION="${release#v}"; fi
           else
             export VERSION="dev ${GITHUB_SHA::7}"
+          fi
+          if [ -z "$HORIZON_MSA_CLIENT_ID" ]; then
+            if [ -n "$release" ]; then
+              echo "::error::The HORIZON_MSA_CLIENT_ID secret is missing (Settings > Secrets and variables > Actions): a release without it would have no Microsoft sign-in."
+              exit 1
+            fi
+            echo "::warning::No HORIZON_MSA_CLIENT_ID secret: this test build has no Microsoft sign-in." | tee -a build.log
           fi
           JOBS=4 horizon-nx/packaging/switch/build.sh nro 2>&1 | tee -a build.log
 
