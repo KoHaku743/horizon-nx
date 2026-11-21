@@ -1,2 +1,95 @@
 Loaded image: horizon-switch-toolchain:local
 Loaded image: bevy-horizon-toolchain:local
+::warning::No HORIZON_MSA_CLIENT_ID secret: this test build has no Microsoft sign-in.
+==> compiling horizon-client for the Switch (Horizon OS)
+patch-std: current_exe on horizon is argv[0]
+    Updating crates.io index
+warning: patch `arboard v3.7.0 (/src/horizon-nx/packaging/switch/stubs/arboard)` was not used in the crate graph
+warning: patch `cpal v0.17.3 (/src/bevy-horizon/patches/cpal)` was not used in the crate graph
+warning: patch `fs4 v1.1.0 (/src/horizon-nx/packaging/switch/stubs/fs4)` was not used in the crate graph
+warning: patch `getrandom v0.4.3 (/src/bevy-horizon/patches/getrandom)` was not used in the crate graph
+warning: patch `getrandom v0.2.17 (/src/bevy-horizon/patches/getrandom-0.2)` was not used in the crate graph
+warning: patch `getrandom v0.3.4 (/src/horizon-nx/third_party/getrandom-0.3)` was not used in the crate graph
+warning: patch `if-addrs v0.15.0 (/src/horizon-nx/packaging/switch/stubs/if-addrs)` was not used in the crate graph
+warning: patch `libmimalloc-sys v0.1.49 (/src/horizon-nx/packaging/switch/stubs/libmimalloc-sys)` was not used in the crate graph
+warning: patch `memmap2 v0.9.11 (/src/bevy-horizon/patches/memmap2)` was not used in the crate graph
+warning: patch `mimalloc v0.1.52 (/src/horizon-nx/packaging/switch/stubs/mimalloc)` was not used in the crate graph
+warning: patch `mio v1.2.4 (/src/horizon-nx/third_party/mio)` was not used in the crate graph
+warning: patch `raw-window-handle v0.6.2 (/src/bevy-horizon/patches/raw-window-handle)` was not used in the crate graph
+warning: patch `ring v0.17.14 (/src/bevy-horizon/patches/ring)` was not used in the crate graph
+warning: patch `rustix v1.1.5 (/src/bevy-horizon/patches/rustix)` was not used in the crate graph
+warning: patch `socket2 v0.5.10 (/src/horizon-nx/third_party/socket2)` was not used in the crate graph
+warning: patch `wgpu v30.0.1 (/src/horizon-nx/third_party/wgpu)` was not used in the crate graph
+warning: patch `wgpu-core v30.0.1 (/src/horizon-nx/third_party/wgpu-core)` was not used in the crate graph
+warning: patch `wgpu-core-deps-windows-linux-android v30.0.1 (/src/horizon-nx/third_party/wgpu-core-deps-windows-linux-android)` was not used in the crate graph
+warning: patch `winit v0.30.13 (/src/horizon-nx/third_party/winit)` was not used in the crate graph
+help: Check that the patched package version and available features are compatible
+      with the dependency requirements. If the patch has a different version from
+      what is locked in the Cargo.lock file, run `cargo update` to use the new
+      version. This may also occur with an optional dependency that is not enabled.
+     Locking 1 package to highest compatible version
+      Adding libc v0.2.190 (/src/bevy-horizon/patches/libc)
+    Removing libc v0.2.189
+note: pass `--verbose` to see 12 unchanged dependencies behind latest
+ Downloading crates ...
+  Downloaded const-default v1.0.0
+warning: patch `arboard v3.7.0 (/src/horizon-nx/packaging/switch/stubs/arboard)` was not used in the crate graph
+warning: patch `cpal v0.17.3 (/src/bevy-horizon/patches/cpal)` was not used in the crate graph
+warning: patch `fs4 v1.1.0 (/src/horizon-nx/packaging/switch/stubs/fs4)` was not used in the crate graph
+warning: patch `getrandom v0.4.3 (/src/bevy-horizon/patches/getrandom)` was not used in the crate graph
+warning: patch `getrandom v0.2.17 (/src/bevy-horizon/patches/getrandom-0.2)` was not used in the crate graph
+warning: patch `getrandom v0.3.4 (/src/horizon-nx/third_party/getrandom-0.3)` was not used in the crate graph
+warning: patch `if-addrs v0.15.0 (/src/horizon-nx/packaging/switch/stubs/if-addrs)` was not used in the crate graph
+warning: patch `libmimalloc-sys v0.1.49 (/src/horizon-nx/packaging/switch/stubs/libmimalloc-sys)` was not used in the crate graph
+warning: patch `memmap2 v0.9.11 (/src/bevy-horizon/patches/memmap2)` was not used in the crate graph
+warning: patch `mimalloc v0.1.52 (/src/horizon-nx/packaging/switch/stubs/mimalloc)` was not used in the crate graph
+warning: patch `mio v1.2.4 (/src/horizon-nx/third_party/mio)` was not used in the crate graph
+warning: patch `raw-window-handle v0.6.2 (/src/bevy-horizon/patches/raw-window-handle)` was not used in the crate graph
+warning: patch `ring v0.17.14 (/src/bevy-horizon/patches/ring)` was not used in the crate graph
+warning: patch `rustix v1.1.5 (/src/bevy-horizon/patches/rustix)` was not used in the crate graph
+warning: patch `socket2 v0.5.10 (/src/horizon-nx/third_party/socket2)` was not used in the crate graph
+warning: patch `wgpu v30.0.1 (/src/horizon-nx/third_party/wgpu)` was not used in the crate graph
+warning: patch `wgpu-core v30.0.1 (/src/horizon-nx/third_party/wgpu-core)` was not used in the crate graph
+warning: patch `wgpu-core-deps-windows-linux-android v30.0.1 (/src/horizon-nx/third_party/wgpu-core-deps-windows-linux-android)` was not used in the crate graph
+warning: patch `winit v0.30.13 (/src/horizon-nx/third_party/winit)` was not used in the crate graph
+help: Check that the patched package version and available features are compatible
+      with the dependency requirements. If the patch has a different version from
+      what is locked in the Cargo.lock file, run `cargo update` to use the new
+      version. This may also occur with an optional dependency that is not enabled.
+ Downloading crates ...
+  Downloaded addr2line v0.27.1
+  Downloaded cfg-if v1.0.4
+  Downloaded rustc-literal-escaper v0.0.8
+  Downloaded gimli v0.34.0
+  Downloaded getopts v0.2.24
+   Compiling compiler_builtins v0.1.160 (/usr/local/rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/compiler-builtins/compiler-builtins)
+   Compiling core v0.0.0 (/usr/local/rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core)
+   Compiling libc v0.2.190 (/src/bevy-horizon/patches/libc)
+   Compiling object v0.39.1
+   Compiling std v0.0.0 (/usr/local/rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/std)
+   Compiling proc-macro2 v1.0.107
+   Compiling quote v1.0.47
+   Compiling unicode-ident v1.0.26
+   Compiling serde_core v1.0.229
+   Compiling version_check v0.9.5
+   Compiling cfg-if v1.0.5
+   Compiling zmij v1.0.23
+   Compiling generic-array v0.14.7
+   Compiling serde v1.0.229
+   Compiling syn v3.0.6
+   Compiling syn v2.0.119
+   Compiling memchr v2.8.3
+   Compiling semver v1.0.28
+   Compiling anyhow v1.0.104
+   Compiling libm v0.2.16
+   Compiling zerocopy v0.8.60
+   Compiling serde_json v1.0.151
+   Compiling typenum v1.20.1
+   Compiling bitflags v2.13.2
+   Compiling foldhash v0.2.0
+   Compiling hashbrown v0.17.1
+   Compiling itoa v1.0.18
+   Compiling equivalent v1.0.2
+   Compiling winnow v1.0.4
+   Compiling toml_parser v1.1.3+spec-1.1.0
+   Compiling indexmap v2.14.2
