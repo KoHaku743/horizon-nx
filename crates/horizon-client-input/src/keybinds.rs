@@ -361,6 +361,8 @@ pub fn layout_key_name(
 /// doesn't identify; 0 when there is neither. Stable within a platform only.
 pub fn raw_key_code(physical: winit::keyboard::PhysicalKey) -> u32 {
     use winit::keyboard::{NativeKeyCode, PhysicalKey};
+    // The Switch's winit has no scan codes (its keys come from the on-screen keyboard).
+    #[cfg(not(target_os = "horizon"))]
     use winit::platform::scancode::PhysicalKeyExtScancode;
     match physical {
         PhysicalKey::Unidentified(native) => match native {
@@ -368,7 +370,10 @@ pub fn raw_key_code(physical: winit::keyboard::PhysicalKey) -> u32 {
             NativeKeyCode::MacOS(c) | NativeKeyCode::Windows(c) => c.into(),
             NativeKeyCode::Unidentified => 0,
         },
+        #[cfg(not(target_os = "horizon"))]
         PhysicalKey::Code(_) => physical.to_scancode().unwrap_or(0),
+        #[cfg(target_os = "horizon")]
+        PhysicalKey::Code(_) => 0,
     }
 }
 

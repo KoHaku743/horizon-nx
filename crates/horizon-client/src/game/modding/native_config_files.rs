@@ -1,6 +1,9 @@
 //! One checked implementation for config, game bulk data and world bulk data.
 use super::Game;
+// The Switch has no cap-std (its rustix lacks the descriptor-relative calls): mods get no files there.
+#[cfg(not(target_os = "horizon"))]
 use cap_fs_ext::{DirExt, FollowSymlinks, OpenOptionsFollowExt};
+#[cfg(not(target_os = "horizon"))]
 use cap_std::fs::{Dir, Metadata, OpenOptions};
 use mod_api::{
     CONFIG_FILE_MAX, CONFIG_LIST_MAX, ConfigEntry, ConfigEntryKind, ConfigFileError, ConfigFiles,
@@ -75,6 +78,7 @@ fn io(error: std::io::Error) -> ConfigFileError {
 /// Open every directory without following links. Keeping the parent handle
 /// makes subsequent opens and atomic replacement safe even if a directory is
 /// renamed or replaced between operations.
+#[cfg(not(target_os = "horizon"))]
 fn resolve(
     root: &FileRoot,
     path: &ConfigPath,
@@ -116,6 +120,7 @@ fn resolve(
     Err(ConfigFileError::NotOwned)
 }
 
+#[cfg(not(target_os = "horizon"))]
 fn stat_of(meta: &Metadata) -> ConfigStat {
     let modified_millis = meta
         .modified()
@@ -137,6 +142,7 @@ fn stat_of(meta: &Metadata) -> ConfigStat {
     })
 }
 
+#[cfg(not(target_os = "horizon"))]
 fn read(root: &FileRoot, file: &ConfigPath) -> Result<Vec<u8>, ConfigFileError> {
     let (directory, name) = resolve(root, file, false)?;
     let meta = directory.symlink_metadata(&name).map_err(io)?;
@@ -176,6 +182,7 @@ fn is_write_temp(name: &str) -> bool {
 /// Written beside the file, then renamed over it. The temporary name starts
 /// with the file's own, so it stays the mod's own; `list` leaves it out, so a
 /// scan never meets a half-written file, nor one a crash left behind.
+#[cfg(not(target_os = "horizon"))]
 fn write(root: &FileRoot, file: &ConfigPath, bytes: &[u8]) -> Result<(), ConfigFileError> {
     static WRITES: AtomicU64 = AtomicU64::new(0);
     if bytes.len() as u64 > root.cap() {
@@ -215,6 +222,7 @@ fn write(root: &FileRoot, file: &ConfigPath, bytes: &[u8]) -> Result<(), ConfigF
     written.map_err(io)
 }
 
+#[cfg(not(target_os = "horizon"))]
 fn list(
     root: &FileRoot,
     folder: &ConfigPath,
@@ -266,6 +274,7 @@ fn list(
         .collect())
 }
 
+#[cfg(not(target_os = "horizon"))]
 fn stat(root: &FileRoot, path: &ConfigPath) -> Result<Option<ConfigStat>, ConfigFileError> {
     match resolve(root, path, false).and_then(|(dir, name)| dir.symlink_metadata(name).map_err(io))
     {
@@ -274,6 +283,32 @@ fn stat(root: &FileRoot, path: &ConfigPath) -> Result<Option<ConfigStat>, Config
         Err(ConfigFileError::NotFound) => Ok(None),
         Err(e) => Err(e),
     }
+}
+
+#[cfg(target_os = "horizon")]
+fn unsupported() -> ConfigFileError {
+    ConfigFileError::Io("mods keep no files on the Switch".into())
+}
+#[cfg(target_os = "horizon")]
+fn read(_: &FileRoot, _: &ConfigPath) -> Result<Vec<u8>, ConfigFileError> {
+    Err(unsupported())
+}
+#[cfg(target_os = "horizon")]
+fn write(_: &FileRoot, _: &ConfigPath, _: &[u8]) -> Result<(), ConfigFileError> {
+    Err(unsupported())
+}
+#[cfg(target_os = "horizon")]
+fn list(
+    _: &FileRoot,
+    _: &ConfigPath,
+    _: Option<&str>,
+    _: u32,
+) -> Result<Vec<ConfigEntry>, ConfigFileError> {
+    Err(unsupported())
+}
+#[cfg(target_os = "horizon")]
+fn stat(_: &FileRoot, _: &ConfigPath) -> Result<Option<ConfigStat>, ConfigFileError> {
+    Err(unsupported())
 }
 
 impl GameConfigFiles {

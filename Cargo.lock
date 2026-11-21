@@ -1969,6 +1969,7 @@ dependencies = [
  "horizon-mod-vocab",
  "horizon-mod-wasm",
  "horizon-narrator",
+ "horizon-nx",
  "horizon-optifine",
  "horizon-perf",
  "horizon-perf-format",

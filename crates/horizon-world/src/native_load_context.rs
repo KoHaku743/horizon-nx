@@ -526,7 +526,8 @@ fn sorted_names(
     Ok(result)
 }
 
-#[cfg(unix)]
+// Not on the Switch: its rustix has no directory reads or O_NOFOLLOW (std below).
+#[cfg(all(unix, not(target_os = "horizon")))]
 fn snapshot_files(
     root: &Path,
     mod_id: &str,
@@ -534,7 +535,8 @@ fn snapshot_files(
     snapshot_files_with_hook(root, mod_id, |_| {})
 }
 
-#[cfg(unix)]
+// Not on the Switch: its rustix has no directory reads or O_NOFOLLOW (std below).
+#[cfg(all(unix, not(target_os = "horizon")))]
 fn snapshot_files_with_hook(
     root: &Path,
     mod_id: &str,
@@ -624,7 +626,7 @@ fn snapshot_files(
     }))
 }
 
-#[cfg(not(any(unix, windows)))]
+#[cfg(not(any(all(unix, not(target_os = "horizon")), windows)))]
 fn snapshot_files(
     root: &Path,
     mod_id: &str,

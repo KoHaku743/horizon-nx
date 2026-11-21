@@ -99,12 +99,14 @@ ureq = { version = "2", default-features = false, features = ["tls"] }
 # `LevelStorageAccess.estimateDiskSpace`: usable disk space, without unsafe code on Windows.
 fs4 = { version = "1.1.0", default-features = false, features = ["sync"] }
 # Mod file roots are descriptor-bound: no symlink race can leave a mod's area.
-cap-std = "3"
-cap-fs-ext = "3"
 
 # Mods in their own processes (holders, leases, captured output): not on the Switch, which runs one
 # process (libnx has no fork or exec).
 [target.'cfg(not(target_os = "horizon"))'.dependencies]
+# Mod file roots bound to descriptors; not on the Switch, whose rustix has none of the
+# descriptor-relative calls cap-std is built on.
+cap-std = "3"
+cap-fs-ext = "3"
 horizon-mod-package = { path = "../horizon-mod-package", default-features = false, features = ["index", "runtime-process"] }
 
 [target.'cfg(target_os = "horizon")'.dependencies]

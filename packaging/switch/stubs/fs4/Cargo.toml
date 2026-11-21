@@ -1,0 +1,13 @@
+[package]
+# Same name and version as the crate it stands in for: packaging/switch/cargo-patch.toml patches it
+# in for the Switch build only.
+name = "fs4"
+version = "1.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+description = "The Switch build's stand-in for fs4: the space queries the game makes, which newlib can't answer."
+publish = false
+
+[features]
+default = []
+sync = []

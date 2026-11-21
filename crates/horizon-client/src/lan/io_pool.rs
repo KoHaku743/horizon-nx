@@ -9,7 +9,25 @@
 //! way: the pipe tells the thread when bytes arrive.
 use super::Body;
 use horizon_protocol::connection::{ConnReader, ConnWriter, Pipe, Socket};
-use mio::{Events, Interest, Poll, Registry, Token, Waker};
+use mio::{Events, Interest, Poll, Registry, Token};
+#[cfg(not(target_os = "horizon"))]
+use mio::Waker;
+
+/// The Switch's mio has no waker (libnx has no pipe or eventfd): its network threads look at their
+/// inbox at least every [`NX_INBOX_WAIT`] instead of being woken.
+#[cfg(target_os = "horizon")]
+struct Waker;
+#[cfg(target_os = "horizon")]
+impl Waker {
+    fn new(_: &Registry, _: Token) -> std::io::Result<Self> {
+        Ok(Waker)
+    }
+    fn wake(&self) -> std::io::Result<()> {
+        Ok(())
+    }
+}
+#[cfg(target_os = "horizon")]
+const NX_INBOX_WAIT: Duration = Duration::from_millis(2);
 use std::{
     io::{ErrorKind, Read, Write},
     sync::{
@@ -383,6 +401,8 @@ fn run(mut poll: Poll, worker: &Arc<Worker>) {
     let mut release_seen = horizon_threads::release_seen();
     loop {
         let wait = sweep_at.saturating_duration_since(Instant::now());
+        #[cfg(target_os = "horizon")]
+        let wait = wait.min(NX_INBOX_WAIT);
         if let Err(e) = poll.poll(&mut events, Some(wait))
             && e.kind() != ErrorKind::Interrupted
         {

@@ -272,3 +272,7 @@ path = "../horizon-client/tests/wide_states.rs"
 [[example]]
 name = "chunk_encoding_bench"
 path = "../horizon-client/examples/chunk_encoding_bench.rs"
+
+[target.'cfg(target_os = "horizon")'.dependencies]
+# The Switch runtime (vanillagen.rs's SD card reports, horizon-ctl's init).
+horizon-nx = { path = "../horizon-nx" }

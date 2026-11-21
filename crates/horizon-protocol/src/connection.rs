@@ -38,6 +38,20 @@ fn clone_tcp(s: &Tcp) -> std::io::Result<Tcp> {
     s.try_clone()
 }
 
+/// The socket alone, for [`Connection::detach`]. On the Switch the writer gave its share up
+/// first, so the reader's is the last one (a duplicate there wouldn't be a socket).
+#[cfg(target_os = "horizon")]
+fn into_tcp_stream(s: Tcp) -> TcpStream {
+    Arc::try_unwrap(s).unwrap_or_else(|shared| {
+        log::warn!("a detached connection's socket is still shared: duplicating it");
+        shared.try_clone().expect("duplicate a shared socket")
+    })
+}
+#[cfg(not(target_os = "horizon"))]
+fn into_tcp_stream(s: Tcp) -> TcpStream {
+    s
+}
+
 /// What a connection runs over.
 enum Stream {
     Tcp(Tcp),
@@ -179,16 +193,20 @@ pub struct Connection {
 }
 fn configure_stream(stream: &TcpStream) -> Result<()> {
     stream.set_nodelay(true)?;
-    let sock = socket2::SockRef::from(stream);
-    let keepalive = socket2::TcpKeepalive::new()
-        .with_time(Duration::from_secs(10))
-        .with_interval(Duration::from_secs(3));
-    #[cfg(not(any(target_os = "windows", target_os = "openbsd")))]
-    let keepalive = keepalive.with_retries(3);
-    let _ = sock.set_tcp_keepalive(&keepalive);
+    // The Switch's socket2 has no keepalive timing (libnx's sockets take no TCP_KEEP* options).
+    #[cfg(not(target_os = "horizon"))]
+    {
+        let sock = socket2::SockRef::from(stream);
+        let keepalive = socket2::TcpKeepalive::new()
+            .with_time(Duration::from_secs(10))
+            .with_interval(Duration::from_secs(3));
+        #[cfg(not(any(target_os = "windows", target_os = "openbsd")))]
+        let keepalive = keepalive.with_retries(3);
+        let _ = sock.set_tcp_keepalive(&keepalive);
+    }
     #[cfg(target_os = "linux")]
     {
-        let _ = sock.set_quickack(true);
+        let _ = socket2::SockRef::from(stream).set_quickack(true);
     }
     Ok(())
 }
@@ -373,7 +391,7 @@ impl Connection {
     pub fn detach(mut self) -> (Socket, ConnReader, ConnWriter) {
         self.writer.stream = Stream::Detached;
         let socket = match std::mem::replace(&mut self.reader.stream, Stream::Detached) {
-            Stream::Tcp(s) => Socket::Tcp(s),
+            Stream::Tcp(s) => Socket::Tcp(into_tcp_stream(s)),
             Stream::Memory(p) => Socket::Memory(p),
             Stream::Detached => unreachable!("a connection is detached once, by value"),
         };

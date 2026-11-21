@@ -46,9 +46,15 @@ pub fn main_with(
     horizon_client::entry::start(
         native,
         |native, launch| {
+            #[cfg(not(target_os = "horizon"))]
             let mut wasm =
                 horizon_mod_wasm::load_installed(launch, &horizon_client::logging::player_dir());
+            // The Switch loads no wasm code (docs/switch-next.md): nothing to add.
+            #[cfg(target_os = "horizon")]
+            let wasm = NoWasm::default();
+            #[cfg_attr(target_os = "horizon", allow(unused_mut))]
             let mut mods = mods;
+            #[cfg(not(target_os = "horizon"))]
             mods.extend(std::mem::take(&mut wasm.mods));
             // One installed dispatch order for both targets; ties retain bundle order.
             let code_manifests: Vec<_> = native
@@ -160,6 +166,29 @@ pub fn main_with(
             }
             (ids, wasm)
         },
+        code_runtime(),
+        startup,
+    );
+}
+
+/// The Switch's stand-in for the wasm runtime's load result: no manifests.
+#[cfg(target_os = "horizon")]
+#[derive(Default)]
+struct NoWasm {
+    manifests: Vec<horizon_mod_package::Manifest>,
+}
+
+#[cfg(target_os = "horizon")]
+fn code_runtime() -> horizon_client::entry::CodeRuntime {
+    horizon_client::entry::CodeRuntime {
+        initialize: |_| {},
+        refusal: |_| None,
+        startup_refused: |_| false,
+    }
+}
+
+#[cfg(not(target_os = "horizon"))]
+fn code_runtime() -> horizon_client::entry::CodeRuntime {
         horizon_client::entry::CodeRuntime {
             initialize: horizon_mod_wasm::initialize,
             refusal: |id| {
@@ -209,7 +238,5 @@ pub fn main_with(
                     .iter()
                     .any(|(owner, _)| owner == id)
             },
-        },
-        startup,
-    );
+        }
 }

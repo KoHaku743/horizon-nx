@@ -19,6 +19,10 @@ if-addrs = { path = "switch/stubs/if-addrs" }
 # its TLSF heap. This file's patch wins over the root Cargo.toml's libmimalloc-sys one.
 mimalloc = { path = "switch/stubs/mimalloc" }
 libmimalloc-sys = { path = "switch/stubs/libmimalloc-sys" }
+# fs4's flock and statvfs aren't in newlib: the space queries answer "unknown".
+fs4 = { path = "switch/stubs/fs4" }
+# mio with the Switch's poll flag type (its Horizon code is the 3DS's): third_party/mio/HORIZON.md.
+mio = { path = "../third_party/mio" }
 
 # `-z notext`, as bevy-horizon's examples pass from their build.rs (text relocations are kept).
 [target.aarch64-nintendo-horizon]
