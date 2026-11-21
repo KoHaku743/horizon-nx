@@ -107,3 +107,10 @@ separate process. On the Switch it has to run in the game's own process; whether
   `horizon_threads::behind_server` now drops a helper to 0x3d on the Switch (the job pool and save
   compression call it). CPU skinning and static textures gave no gain once the terrain was in
   (~37 fps either way); the player's settings went back to battery mode on and VSync on.
+
+## Seventh pass
+
+- RUN 49's CPU profile: a network thread (`lan/io_pool.rs`) took 71% of a core for the whole
+  session. Single player's connection is an in-memory pipe, so its mio poll had no socket to sleep
+  on and came straight back: the 2 ms inbox wait never waited. The Switch's `Waker` is now a
+  condvar the loop sleeps on for the rest of the wait, and posting to the inbox wakes it.

@@ -9,21 +9,44 @@
 //! way: the pipe tells the thread when bytes arrive.
 use super::Body;
 use horizon_protocol::connection::{ConnReader, ConnWriter, Pipe, Socket};
-use mio::{Events, Interest, Poll, Registry, Token};
 #[cfg(not(target_os = "horizon"))]
 use mio::Waker;
+use mio::{Events, Interest, Poll, Registry, Token};
 
-/// The Switch's mio has no waker (libnx has no pipe or eventfd): its network threads look at their
-/// inbox at least every [`NX_INBOX_WAIT`] instead of being woken.
+/// The Switch's mio has no waker (libnx has no pipe or eventfd), and its poll doesn't sleep with no
+/// socket to watch: single player's connection is a pipe in memory, so a network thread asked to
+/// wait [`NX_INBOX_WAIT`] came straight back and spun, most of a core all session (RUN 49's
+/// profile). It sleeps on this instead, for what's left of the wait once its poll came back with
+/// nothing, and whoever posts to its inbox wakes it at once.
 #[cfg(target_os = "horizon")]
-struct Waker;
+struct Waker {
+    woken: Mutex<bool>,
+    ring: std::sync::Condvar,
+}
 #[cfg(target_os = "horizon")]
 impl Waker {
     fn new(_: &Registry, _: Token) -> std::io::Result<Self> {
-        Ok(Waker)
+        Ok(Waker {
+            woken: Mutex::new(false),
+            ring: std::sync::Condvar::new(),
+        })
     }
     fn wake(&self) -> std::io::Result<()> {
+        *self.woken.lock().unwrap_or_else(PoisonError::into_inner) = true;
+        self.ring.notify_one();
         Ok(())
+    }
+    /// Until woken (or woken since the last wait) or `timeout` passes.
+    fn wait(&self, timeout: Duration) {
+        let mut woken = self.woken.lock().unwrap_or_else(PoisonError::into_inner);
+        if !*woken && !timeout.is_zero() {
+            woken = self
+                .ring
+                .wait_timeout(woken, timeout)
+                .unwrap_or_else(PoisonError::into_inner)
+                .0;
+        }
+        *woken = false;
     }
 }
 #[cfg(target_os = "horizon")]
@@ -403,11 +426,18 @@ fn run(mut poll: Poll, worker: &Arc<Worker>) {
         let wait = sweep_at.saturating_duration_since(Instant::now());
         #[cfg(target_os = "horizon")]
         let wait = wait.min(NX_INBOX_WAIT);
+        #[cfg(target_os = "horizon")]
+        let polled = Instant::now();
         if let Err(e) = poll.poll(&mut events, Some(wait))
             && e.kind() != ErrorKind::Interrupted
         {
             log::warn!("[lan] network poll: {e}");
             std::thread::sleep(SWEEP);
+        }
+        // The rest of the wait the poll didn't sleep (see `Waker`).
+        #[cfg(target_os = "horizon")]
+        if events.is_empty() {
+            worker.waker.wait(wait.saturating_sub(polled.elapsed()));
         }
         let now = Instant::now();
         for event in &events {
