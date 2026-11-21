@@ -453,13 +453,14 @@ impl ModsScreen {
     fn current(&self) -> Option<&Entry> {
         self.entries.get(self.selected?)
     }
-    /// After [`Action::Toggle`]: installed mod `index` is now `on`; its status says that the
-    /// change waits for a restart.
+    /// After [`Action::Toggle`]: installed mod `index` is now `on`. Content mods switch live
+    /// (`content mods switched live` once the screen closes), so its status is just whether it's
+    /// on, as [`Self::new`] shows it.
     pub fn set_on(&mut self, index: usize, on: bool) {
         for e in self.entries.iter_mut().filter(|e| e.index == Some(index)) {
             e.on = Some(on);
             if !e.problem {
-                e.status = Some(tr("horizon.mods.screen.restart").with_color(GOLD));
+                e.status = (!on).then(|| tr("horizon.mods.screen.off").with_color(d::GRAY));
             }
         }
     }
