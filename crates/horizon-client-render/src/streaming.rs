@@ -289,6 +289,7 @@ struct MeshSettings {
     opaque_ice: bool,
     translucent_layers: Arc<[bool]>,
     leaf_culling: LeafCullingMode,
+    merge_water: bool,
 }
 enum Job {
     Generate(i32, i32),
@@ -643,6 +644,9 @@ pub struct Streaming {
     pub cutout_leaves: bool,
     /// Draw regular ice opaque in the solid pass (`Mesher::opaque_ice`).
     pub opaque_ice: bool,
+    /// Sections draw an open water surface as strips (`SectionMesh::merge_water`): the game
+    /// sets it on the Switch.
+    pub merge_water: bool,
     /// Sprite layers a shader pack draws in the translucent pass (`[[materials]]
     /// translucent`), by layer; empty without one.
     pub translucent_layers: Arc<[bool]>,
@@ -1245,6 +1249,7 @@ impl Streaming {
             smooth_lighting: true,
             cutout_leaves: true,
             opaque_ice: false,
+            merge_water: false,
             translucent_layers: Arc::from([]),
             leaf_culling: LeafCullingMode::Off,
             light_tables,

@@ -371,6 +371,22 @@ impl Game<'_> {
                 .free(std::mem::take(&mut self.pending_uploads));
             self.streaming.reload_sections(&mut self.world);
         }
+        // The Switch: an open water surface draws as strips (`SectionMesh::merge_water`, where
+        // triangles are the GPU's cost), unless something reads the quads one by one: a pack
+        // (a `shaders/` one or Horizon's own, whose atlas or decode can't repeat a sprite), the
+        // dynamic lights extra (lit per vertex, so at a strip's ends only), Improved
+        // Transparency (fog from the corners) or the quads' looks.
+        let merge_water = cfg!(target_os = "horizon")
+            && !shader_pack
+            && self.native_shaders.picked.is_empty()
+            && !self.settings.extras.dynamic_lights
+            && !self.settings.improved_transparency
+            && !looks
+            && !ray_looks;
+        if self.streaming.merge_water != merge_water {
+            self.streaming.merge_water = merge_water;
+            self.all_sections_changed();
+        }
         let selected = picked_pack(&self.settings).to_owned();
         let path = self.native_shaders.resolve_path(
             &Self::shader_packs_dir(),

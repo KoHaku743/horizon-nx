@@ -142,6 +142,10 @@ gate.
 - Opaque leaves: the vertex layer carries a flag (`OPAQUE_LAYER`) that makes
   the terrain shader ignore the texture's alpha; the shader side is not
   compared (GPU pixels).
+- Merged water (the Switch only, `SectionMesh::merge_water`): a section whose
+  see-through quads are all an open water surface draws it as strips a block
+  deep, flagged `TILED_LAYER`, after the mesher; the gate compares
+  `Mesher::mesh`'s output before it.
 - Leaf culling: the fixture builds its `Mesher` with `LeafCullingMode::Off`,
   so the gate compares vanilla's leaves. The Solid, Solid Aggressive and
   Hollow modes deliberately change the opaque layer or drop quads; they are

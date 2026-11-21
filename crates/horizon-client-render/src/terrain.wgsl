@@ -366,6 +366,15 @@ fn sample_lightmap(sky: f32, block: f32) -> vec4<f32> {
 fn terrain_uv(packed: vec2<u32>, w: f32) -> vec2<f32> {
     return vec2<f32>(packed) * instance_step(w);
 }
+// A vertex of `layer`'s UV: in its instance's step, or 1/32 per block when bit 14 marks a
+// section's merged face (mesher.rs's TILED_LAYER, mesher/merge.rs), whose sprite repeats once a
+// block as a distant tile's does.
+fn layer_uv(packed: vec2<u32>, layer: u32, w: f32) -> vec2<f32> {
+    if (layer & 0x4000u) != 0u {
+        return vec2<f32>(packed) / 32.0;
+    }
+    return terrain_uv(packed, w);
+}
 // A whole section's step (a power of two) carries its fade-in in the mantissa's 23 bits, as
 // `1 - visibility` (gfx.rs's `section_instance`): masked off, the step; the rest is
 // `RenderSection.getVisibility`. A fading one (negative) is fully visible.
@@ -389,7 +398,7 @@ fn fade_code(w: f32) -> u32 {
     @location(0) position: vec3<f32>, @location(1) uv: vec2<u32>,
     @location(2) layer: u32, @location(3) color: vec4<f32>, @location(4) light: vec2<u32>,
     @location(5) origin: vec4<f32>) -> TerrainWire {
-    return to_wire(terrain_vertex(position, terrain_uv(uv, origin.w), layer, color, light, origin.xyz,
+    return to_wire(terrain_vertex(position, layer_uv(uv, layer, origin.w), layer, color, light, origin.xyz,
         origin.w));
 }
 // Flat section draws (gfx/flat.rs): one draw per arena page over the frame's
@@ -403,7 +412,7 @@ fn fade_code(w: f32) -> u32 {
     @location(2) layer: u32, @location(3) color: vec4<f32>, @location(4) light: vec2<u32>
 ) -> TerrainWire {
     let origin = slot_origins[block_slots[vertex >> 8u]];
-    return to_wire(terrain_vertex(position, terrain_uv(uv, origin.w), layer, color, light, origin.xyz,
+    return to_wire(terrain_vertex(position, layer_uv(uv, layer, origin.w), layer, color, light, origin.xyz,
         origin.w));
 }
 // Solid terrain draws in two passes, each over its own part of every mesh's quads
@@ -427,7 +436,7 @@ fn left_out() -> TerrainOut {
     @location(2) layer: u32, @location(3) color: vec4<f32>, @location(4) light: vec2<u32>,
     @location(5) origin: vec4<f32>) -> TerrainWire {
     if !opaque_quad(layer, origin.w) { return to_wire(left_out()); }
-    return to_wire(terrain_vertex(position, terrain_uv(uv, origin.w), layer, color, light, origin.xyz,
+    return to_wire(terrain_vertex(position, layer_uv(uv, layer, origin.w), layer, color, light, origin.xyz,
         origin.w));
 }
 @vertex fn vs_terrain_cutout(
@@ -435,7 +444,7 @@ fn left_out() -> TerrainOut {
     @location(2) layer: u32, @location(3) color: vec4<f32>, @location(4) light: vec2<u32>,
     @location(5) origin: vec4<f32>) -> TerrainWire {
     if opaque_quad(layer, origin.w) { return to_wire(left_out()); }
-    return to_wire(terrain_vertex(position, terrain_uv(uv, origin.w), layer, color, light, origin.xyz,
+    return to_wire(terrain_vertex(position, layer_uv(uv, layer, origin.w), layer, color, light, origin.xyz,
         origin.w));
 }
 @vertex fn vs_terrain_flat_opaque(
@@ -445,7 +454,7 @@ fn left_out() -> TerrainOut {
 ) -> TerrainWire {
     let origin = slot_origins[block_slots[vertex >> 8u]];
     if !opaque_quad(layer, origin.w) { return to_wire(left_out()); }
-    return to_wire(terrain_vertex(position, terrain_uv(uv, origin.w), layer, color, light, origin.xyz,
+    return to_wire(terrain_vertex(position, layer_uv(uv, layer, origin.w), layer, color, light, origin.xyz,
         origin.w));
 }
 @vertex fn vs_terrain_flat_cutout(
@@ -455,7 +464,7 @@ fn left_out() -> TerrainOut {
 ) -> TerrainWire {
     let origin = slot_origins[block_slots[vertex >> 8u]];
     if opaque_quad(layer, origin.w) { return to_wire(left_out()); }
-    return to_wire(terrain_vertex(position, terrain_uv(uv, origin.w), layer, color, light, origin.xyz,
+    return to_wire(terrain_vertex(position, layer_uv(uv, layer, origin.w), layer, color, light, origin.xyz,
         origin.w));
 }
 // Solid section draws that read their vertices from the arena page (gfx.rs's `pulled`
@@ -676,12 +685,14 @@ fn terrain_vertex(position: vec3<f32>, uv: vec2<f32>, layer: u32, color: vec4<f3
     let pos = position + origin;
     var out: TerrainOut;
     out.clip = fade_depth(globals.view_proj * vec4(pos, 1.0), w);
-    out.local = position;
+    // A merged face (bit 14) is see-through, never faded: `local` carries its position from
+    // the eye instead, for fs_translucent's fog.
+    out.local = select(position, pos - globals.view_origin.xyz, (layer & 0x4000u) != 0u);
     out.uv = uv;
     out.layer = layer;
     out.emissive_layer = 0xffffffffu;
     // The pairs are sorted by base layer: stop at the first past this one.
-    let sprite_layer = layer & 0x7fffu;
+    let sprite_layer = layer & 0x3fffu;
     for (var i = 0u; i < min(globals.emissive_count.x, 128u); i++) {
         let pair = globals.emissive_layers[i];
         if pair.x == sprite_layer {
@@ -747,7 +758,7 @@ struct TerrainMsaa {
 // `fs_solid` for the opaque pass (`opaque_quad`): no fade, no cutout, no discard.
 @fragment fn fs_opaque(wire: TerrainWire) -> @location(0) vec4<f32> {
     let in = from_wire(wire);
-    let texel = sprite(in.uv, in.layer & 0x7fffu);
+    let texel = sprite(in.uv, in.layer & 0x3fffu);
     var color = texel * in.color;
     color = mix(globals.fog_color * vec4(1.0, 1.0, 1.0, color.a), color, in.visibility);
     return solid_finish(in, texel, color);
@@ -775,7 +786,7 @@ fn solid_uncut(in: TerrainOut) -> SolidUncut {
     let dx = dpdx(in.local);
     let dy = dpdy(in.local);
     if faded(in.fade, in.local, dx, dy) { discard; }
-    let texel = sprite(in.uv, in.layer & 0x7fffu);
+    let texel = sprite(in.uv, in.layer & 0x3fffu);
     var color = texel * in.color;
     // terrain.fsh: the fade-in mixes toward the fog colour.
     color = mix(globals.fog_color * vec4(1.0, 1.0, 1.0, color.a), color, in.visibility);
@@ -810,7 +821,7 @@ fn solid_finish_at(in: TerrainOut, texel: vec4<f32>, color: vec4<f32>, du: vec2<
     if HDR_LIGHTING && HDR_WRITE_LIGHT && globals.hdr_light.w != 0.0 && in.emission > 0u {
         let whole = in.emission > 4u;
         let tier = select(in.emission, in.emission - 4u, whole);
-        let l = in.layer & 0x7fffu;
+        let l = in.layer & 0x3fffu;
         let t = textureLoad(emission_thresholds, vec2(i32(l % SPRITE_SPLIT), i32(l / SPRITE_SPLIT)), 0);
         let y = brightness(texel.rgb);
         // All over means all over: the sprite's range is one frame's, and an animated sprite's
@@ -845,11 +856,17 @@ fn solid_finish_at(in: TerrainOut, texel: vec4<f32>, color: vec4<f32>, du: vec2<
 // pixels showed the layer behind through the one in front, twice the water.
 @fragment fn fs_translucent(wire: TerrainWire) -> @location(0) vec4<f32> {
     let in = from_wire(wire);
-    let texel = sprite(in.uv, in.layer & 0x7fffu);
+    let texel = sprite(in.uv, in.layer & 0x3fffu);
     var color = texel * in.color;
     color = mix(globals.fog_color * vec4(1.0, 1.0, 1.0, color.a), color, in.visibility);
     if color.a < 0.01 { discard; }
-    let finished = apply_fog(color, in.spherical, in.cylindrical);
+    // A merged face spans blocks: the distances its corners give would overshoot inside it
+    // (water's fog ends a few dozen blocks out), so its pixels take theirs from where they are.
+    var finished = apply_fog(color, in.spherical, in.cylindrical);
+    if (in.layer & 0x4000u) != 0u {
+        let eye = in.local;
+        finished = apply_fog(color, length(eye), max(length(eye.xz), abs(eye.y)));
+    }
     if HDR_WRITE_LIGHT && globals.hdr_light.w != 0.0 {
         // The surface's own light, whatever its texel's alpha: what is behind it is light already.
         return vec4(hdr_written(finished.rgb, 1.0, globals.hdr_settings), finished.a);

@@ -46,6 +46,9 @@ pub(super) fn mesh_section(
         visibility,
     };
     let mut mesh = mesher.mesh_reusing(&borrow(region), sy, recycled, scratch);
+    if settings.merge_water {
+        mesh.merge_water();
+    }
     mesh.sort_solid();
     *faces = Some((context.tables.clone(), mesher.visibility));
     mesh
@@ -67,6 +70,7 @@ impl Streaming {
             opaque_ice: self.opaque_ice,
             translucent_layers: self.translucent_layers.clone(),
             leaf_culling: self.leaf_culling,
+            merge_water: self.merge_water,
         }
     }
 }
