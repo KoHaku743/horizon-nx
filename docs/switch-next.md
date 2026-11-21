@@ -129,3 +129,10 @@ separate process. On the Switch it has to run in the game's own process; whether
   drawing 49%, command encoding 18%, the GUI atlas's animated sprites 13% (resized and blended on
   the CPU every frame while interpolating). On the Switch those show whole frames. Copies still
   reached 1.4 MiB a frame with the 512 KiB section budget: something else is copied too.
+
+## After 2.0.0
+
+- Get Mods on the Switch: a mod that turns out to run code (a WebAssembly mod is a `mod` in the
+  index like a content mod, and every mod declares `registries`) is refused with "it runs code,
+  which the Switch can't run" instead of the launcher's message, and its file is remembered in
+  `mod-browser/code-mods.txt` and left out of the list from then on.

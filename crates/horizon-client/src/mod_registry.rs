@@ -30,6 +30,45 @@ pub const MANIFEST: &str = "mod-browser.json";
 const PACKS: &str = "resourcepacks";
 /// Where a download waits for its checks.
 const DOWNLOADS: &str = "mod-browser/downloads";
+/// The registry files this game found to run code, by SHA-256: the Switch build lists them no
+/// more. The index doesn't say which mods run code (a WebAssembly mod is a `mod` like a content
+/// mod); only the downloaded package does.
+const CODE_MODS: &str = "mod-browser/code-mods.txt";
+
+/// Why a mod with code isn't installed: the launcher builds and updates those on a computer; the
+/// Switch build has no runtime for them at all.
+fn code_mod_refusal() -> String {
+    if cfg!(target_os = "horizon") {
+        "it runs code (a WebAssembly or native mod), which the Switch can't run".into()
+    } else {
+        "code mods are installed and updated in the launcher".into()
+    }
+}
+
+/// The SHA-256s in `home`'s [`CODE_MODS`].
+fn code_mods(home: &Path) -> std::collections::HashSet<String> {
+    fs::read_to_string(home.join(CODE_MODS))
+        .unwrap_or_default()
+        .lines()
+        .map(|l| l.trim().to_owned())
+        .filter(|l| !l.is_empty())
+        .collect()
+}
+
+/// Remembers that the file `sha256` runs code, so the Switch's list leaves it out.
+fn remember_code_mod(home: &Path, sha256: &str) {
+    if !cfg!(target_os = "horizon") || code_mods(home).contains(sha256) {
+        return;
+    }
+    let path = home.join(CODE_MODS);
+    if let Some(dir) = path.parent() {
+        let _ = fs::create_dir_all(dir);
+    }
+    let mut text = fs::read_to_string(&path).unwrap_or_default();
+    text.push_str(sha256);
+    text.push('\n');
+    let _ = fs::write(&path, text);
+}
 /// Larger than any index should be.
 const MAX_INDEX: u64 = 16 << 20;
 /// The game asks the registry by this name.
@@ -123,11 +162,16 @@ fn plain_file(name: &str) -> bool {
 /// one.
 pub fn listings(index: &Index, home: &Path) -> Vec<Listing> {
     let installed = Installed::load(home).unwrap_or_default();
+    // On the Switch, files found to run code are left out (none elsewhere: `remember_code_mod`).
+    let code = code_mods(home);
     let mut out: Vec<Listing> = index
         .projects
         .iter()
         .filter_map(|p| {
             let v = installable(index, p)?;
+            if code.contains(&v.file.sha256) {
+                return None;
+            }
             Some(Listing {
                 id: p.id.clone(),
                 name: p.name.clone(),
@@ -197,12 +241,12 @@ pub fn install(
             .join(format!("{id}.hmod"))
             .exists()
     {
-        return Err("code mods are installed and updated in the launcher".into());
+        return Err(code_mod_refusal());
     }
     if target.exists() && old_file.as_deref() == Some(relative.as_str()) {
         let package = horizon_mod_package::Package::read(&target)?;
         if package.manifest.native.is_some() || package.manifest.wasm.is_some() {
-            return Err("code mods are installed and updated in the launcher".into());
+            return Err(code_mod_refusal());
         }
     }
     if let Some(i) = ours
@@ -236,7 +280,8 @@ pub fn install(
         let trust = index::check_file(index, p, v, &download)?;
         let package = horizon_mod_package::Package::read(&download)?;
         if package.manifest.native.is_some() || package.manifest.wasm.is_some() {
-            return Err("code mods are installed and updated in the launcher".into());
+            remember_code_mod(home, &v.file.sha256);
+            return Err(code_mod_refusal());
         }
         Ok(trust)
     };
