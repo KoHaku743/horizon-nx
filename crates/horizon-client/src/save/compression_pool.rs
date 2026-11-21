@@ -71,6 +71,8 @@ impl CompressionPool {
             // `Record::tag()` can enter a wasm mod, which needs the guest stack.
             let _ =
                 horizon_guest_stack::spawn(format!("horizon-save-compression-{i}"), move || {
+                    // Saving is work no tick or frame waits for.
+                    horizon_threads::behind_server();
                     worker_loop(worker_weak)
                 });
         }

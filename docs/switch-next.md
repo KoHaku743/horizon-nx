@@ -98,3 +98,12 @@ separate process. On the Switch it has to run in the game's own process; whether
   batch's old sectors only after that header is on disk. Still seen: about one short-lived 2 MiB
   thread a second (not yet traced).
 - A tap on the touch screen in play no longer takes the sticks from the controller.
+
+## Sixth pass
+
+- RUN 48 (an A/B: entity skinning on the CPU, battery mode off, animated textures off midway):
+  while chunks loaded the game fell to 5-8 fps. Every thread ran at priority 0x3b, render and
+  server threads included, so generation and meshing shared the three cores evenly with the frame.
+  `horizon_threads::behind_server` now drops a helper to 0x3d on the Switch (the job pool and save
+  compression call it). CPU skinning and static textures gave no gain once the terrain was in
+  (~37 fps either way); the player's settings went back to battery mode on and VSync on.

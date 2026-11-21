@@ -426,7 +426,25 @@ fn behind() -> bool {
     }
 }
 
-#[cfg(not(any(target_os = "linux", target_os = "android")))]
+/// On the Switch every thread starts at the same priority (0x3b, the render and server threads
+/// included), and its kernel runs a core's highest-priority ready thread first, so meshing and
+/// generation shared the three cores evenly with the frame: flying into new terrain fell to 5-8
+/// fps (RUN 48). A helper drops two steps (a larger number is a lower priority); it still runs
+/// whenever the render and server threads wait, on the GPU or for the next tick.
+#[cfg(target_os = "horizon")]
+fn behind() -> bool {
+    unsafe extern "C" {
+        fn svcSetThreadPriority(handle: u32, priority: u32) -> u32;
+    }
+    /// libnx `CUR_THREAD_HANDLE`: the calling thread.
+    const CURRENT_THREAD: u32 = 0xFFFF_8000;
+    /// Two steps behind the threads' 0x3b, inside an application's 0x18..=0x3f.
+    const HELPER_PRIORITY: u32 = 0x3d;
+    // SAFETY: sets the calling thread's own priority; no pointers.
+    unsafe { svcSetThreadPriority(CURRENT_THREAD, HELPER_PRIORITY) == 0 }
+}
+
+#[cfg(not(any(target_os = "linux", target_os = "android", target_os = "horizon")))]
 fn behind() -> bool {
     false
 }
