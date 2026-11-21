@@ -8,7 +8,31 @@ Minecraft: Java Edition 26.3 (Horizon, rewritten in Rust) as Nintendo Switch hom
 
 On a Mac, run `dot_clean -m` on the SD card before ejecting it, or copy over FTP/MTP.
 
-Already on 1.0.0 or later? The title screen offers new releases itself (the button left of Sign In).
+Already on 1.0.0 or later? The title screen offers new releases itself (the button left of Sign In, in Realms' place).
+
+### New in 2.0.0
+
+Rebuilt on today's Horizon (November 2026), so mods made for current Horizon work, along with
+everything Horizon added since 1.3.0.
+
+- **Faster and smoother.** About 50-60 fps in a world in handheld mode at stock clocks, a steady
+  60 on lighter servers (Hypixel Party Games), and far smaller drops while new chunks load.
+  Chunk loading and saving now run behind the game instead of competing with it, and a network
+  thread that used most of a processor core in single player now sleeps when it has nothing to do.
+  Entity and particle culling are on by default, the menu background blur is off, and glowing
+  outlines draw at half resolution.
+- **Get Mods installs on the Switch again**, with a **Resource Packs** tab beside Mods. Turn a mod
+  off or on from the Mods screen (the button bottom left); it applies after a restart.
+- **HD rumble.** Vibration plays on the Joy-Cons' HD rumble: short ticks for blocks, a thud for
+  hits, a roll for explosions. **Vibration Strength** is in Options → Controls → Controller.
+- **Tapping the screen to attack** no longer stops your movement.
+- **The in-game updater** offers full releases only (never pre-releases), in Realms' place on the
+  title screen.
+- Switch credits in the game's credits.
+
+The first start of 2.0.0 compiles its shaders again, so it's slow once. In big worlds a GPU
+overclock (sys-clk, 614 MHz) helps; on an OLED or other 2019+ Switch that's within the clocks the
+console uses docked.
 
 ### New in 1.3.0
 
