@@ -190,6 +190,34 @@ pub mod horizon_stubs {
     /// newlib's `ENOSYS`.
     const ENOSYS: c_int = 88;
 
+    unsafe extern "C" {
+        fn lseek(fd: c_int, offset: i64, whence: c_int) -> i64;
+        fn read(fd: c_int, buf: *mut c_void, count: usize) -> isize;
+    }
+
+    /// One positional read at a time: [`pread`] moves the descriptor's cursor and puts it back.
+    static PREAD: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+    /// newlib on Horizon has no `pread`, which std's `FileExt::read_at` calls (horizon-assets reads
+    /// zip entries that way, from several threads). This one seeks, reads and seeks back under a
+    /// lock, so readers sharing a descriptor through `read_at` don't see each other's cursor.
+    #[unsafe(no_mangle)]
+    pub unsafe extern "C" fn pread(fd: c_int, buf: *mut c_void, count: usize, offset: i64) -> isize {
+        const SEEK_SET: c_int = 0;
+        const SEEK_CUR: c_int = 1;
+        let _one = PREAD.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        // SAFETY: plain descriptor calls; `buf` holds `count` bytes, as the caller promises.
+        unsafe {
+            let at = lseek(fd, 0, SEEK_CUR);
+            if at < 0 || lseek(fd, offset, SEEK_SET) < 0 {
+                return -1;
+            }
+            let n = read(fd, buf, count);
+            lseek(fd, at, SEEK_SET);
+            n
+        }
+    }
+
     /// libnx's SD card driver (`fsdev`) has no `fchmod` and fails it with `ENOSYS`: Horizon's file
     /// systems have no permission bits. std's `fs::copy` opens the destination with
     /// create + truncate and then calls `fchmod` on it, so every copy left an empty file and
