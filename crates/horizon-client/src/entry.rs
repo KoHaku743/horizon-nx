@@ -10,7 +10,11 @@ pub(crate) mod runtime_environment;
 pub struct Startup {
     launch: LaunchArguments,
     options: game::Options,
+    #[cfg(not(target_os = "horizon"))]
     _capture: Option<horizon_mod_package::output::Capture>,
+    /// The Switch runs one process: no holder, no captured output.
+    #[cfg(target_os = "horizon")]
+    _capture: Option<()>,
 }
 
 impl Startup {
@@ -28,6 +32,7 @@ pub fn prepare() -> Startup {
     // before anything else. Also what pulls the libnx lifecycle hooks into the link.
     #[cfg(target_os = "horizon")]
     horizon_nx::init();
+    #[cfg(not(target_os = "horizon"))]
     horizon_mod_package::holder::enter();
     let result: crate::Result<_> = (|| {
         let mut command = std::process::Command::new(std::env::current_exe()?);
@@ -43,7 +48,10 @@ pub fn prepare() -> Startup {
     let Some(options) = options else {
         std::process::exit(0);
     };
+    #[cfg(not(target_os = "horizon"))]
     let capture = horizon_mod_package::holder::acquire(&launch);
+    #[cfg(target_os = "horizon")]
+    let capture = None;
     Startup {
         launch,
         options,
