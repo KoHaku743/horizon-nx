@@ -6,8 +6,15 @@ pub use constants::{GUEST_STACK_BYTES, HOST_HEADROOM};
 
 /// Spawn guarantees the reservation even on platforms without a stack-size query.
 pub fn builder() -> std::thread::Builder {
-    std::thread::Builder::new().stack_size(GUEST_STACK_BYTES + HOST_HEADROOM)
+    std::thread::Builder::new().stack_size(THREAD_STACK)
 }
+
+/// Guest-capable threads' stack. The Switch runs no guest code (no wasm there) and backs a
+/// thread's whole stack with memory when it starts, so its threads get the host's headroom only.
+#[cfg(not(target_os = "horizon"))]
+const THREAD_STACK: usize = GUEST_STACK_BYTES + HOST_HEADROOM;
+#[cfg(target_os = "horizon")]
+const THREAD_STACK: usize = HOST_HEADROOM;
 
 /// Starts a thread that may enter a guest: guest-sized and named `name`, and in debug builds it
 /// asserts at its start that the reservation took, so a test that starts it fails loudly if not.
@@ -46,7 +53,13 @@ pub fn prepare_main() {
     }
 }
 
-#[cfg(not(target_os = "linux"))]
+/// The Switch: no guest code runs there, so the main thread needs no guest stack.
+#[cfg(target_os = "horizon")]
+fn prepare() -> std::io::Result<()> {
+    Ok(())
+}
+
+#[cfg(not(any(target_os = "linux", target_os = "horizon")))]
 fn prepare() -> std::io::Result<()> {
     // Executable link settings reserve the same stack on Windows and macOS.
     inspect_current().map_err(std::io::Error::other)
