@@ -17,7 +17,9 @@
 # HORIZON_SWITCH_BUILD (the build number the in-game updater compares: docs/switch-updates.md),
 # HORIZON_MSA_CLIENT_ID (the Azure app the title screen's Microsoft sign-in uses: msa.rs),
 # HORIZON_VERSION (the version the game shows) and HORIZON_SWITCH_VERSION (the one the in-game
-# updater compares; set both only for a release). ICON defaults to packaging/switch/icon.jpg.
+# updater compares; set both only for a release), HORIZON_GAME_BUILD_ID (the build identity
+# horizon-mod-host records; by default this checkout's commit: git can't read the mounted
+# checkout inside the container). ICON defaults to packaging/switch/icon.jpg.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -82,6 +84,7 @@ nro() {
         -e CONFIG="$config" -e JOBS="${JOBS:-}" -e CARGO_ARGS="${CARGO_ARGS:-}" -e FEATURES="${FEATURES-audio,controllers,nx-allocator}" \
         -e HORIZON_NX_NVK_LIB=/src/bevy-horizon/nvk/lib \
         -e HORIZON_SWITCH_BUILD="${HORIZON_SWITCH_BUILD:-}" \
+        -e HORIZON_GAME_BUILD_ID="${HORIZON_GAME_BUILD_ID:-$(git -C "$ROOT" rev-parse HEAD 2>/dev/null || echo switch-build)}" \
         -e HORIZON_NX_NAK_SAFE="${HORIZON_NX_NAK_SAFE:-}" \
         -e HORIZON_MSA_CLIENT_ID="${HORIZON_MSA_CLIENT_ID:-}" \
         -e HORIZON_VERSION="${HORIZON_VERSION:-}" \
