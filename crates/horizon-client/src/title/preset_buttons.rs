@@ -41,7 +41,8 @@ impl Title {
                     b(
                         cx - 100.0,
                         y + 48.0,
-                        200.0,
+                        // On the Switch the Microsoft account button (msa) takes the row's right half.
+                        if account_button_shown() { 98.0 } else { 200.0 },
                         &lang::get_or("menu.online", "Minecraft Realms"),
                         // TitleScreen.createNormalMenuOptions: Realms is off when
                         // multiplayer is.
@@ -67,6 +68,13 @@ impl Title {
                     )
                     .does(crate::widgets::Action::Exit),
                 ];
+                if account_button_shown() {
+                    let label = match crate::auth::current() {
+                        Some(session) => session.name.clone(),
+                        None => lang::get_or("horizon.account.button", "Sign In"),
+                    };
+                    buttons.push(b(cx + 2.0, y + 48.0, 98.0, &label, true, ACCOUNT));
+                }
                 // CommonButtons' icon buttons; Horizon's Join a Friend (an
                 // invite code) sits behind vanilla's Friends button.
                 for (i, (key, plain, id, icon)) in [
@@ -95,6 +103,47 @@ impl Title {
                     buttons.push(button);
                 }
                 buttons
+            }
+            Mode::Account => {
+                let y = confirm_top(h, self.message_lines.get())
+                    + 41.0
+                    + self.message_lines.get() as f32 * 9.0;
+                let state = self.sign_in.as_ref().map(horizon_client_render::msa::SignIn::state);
+                let (_, busy) = account_lines(state.as_ref());
+                let (cx, left, right) = ((w / 2.0).floor(), (w / 2.0).floor() - 155.0, (w / 2.0).floor() + 5.0);
+                if busy {
+                    vec![b(
+                        cx - 75.0,
+                        y,
+                        150.0,
+                        &lang::get_or("gui.cancel", "Cancel"),
+                        true,
+                        ACCOUNT_CANCEL,
+                    )]
+                } else if crate::auth::current().is_some() {
+                    vec![
+                        b(
+                            left,
+                            y,
+                            150.0,
+                            &lang::get_or("horizon.account.sign_out", "Sign Out"),
+                            true,
+                            ACCOUNT_SIGN_OUT,
+                        ),
+                        b(right, y, 150.0, &lang::get_or("gui.done", "Done"), true, ACCOUNT_BACK),
+                    ]
+                } else {
+                    let again = matches!(state, Some(horizon_client_render::msa::State::Failed(_)));
+                    let label = if again {
+                        lang::get_or("horizon.account.retry", "Try Again")
+                    } else {
+                        lang::get_or("horizon.account.sign_in", "Sign In")
+                    };
+                    vec![
+                        b(left, y, 150.0, &label, true, ACCOUNT_SIGN_IN),
+                        b(right, y, 150.0, &lang::get_or("gui.back", "Back"), true, ACCOUNT_BACK),
+                    ]
+                }
             }
             Mode::Select { worlds, selected } => {
                 let world = selected.and_then(|i| worlds.get(i));

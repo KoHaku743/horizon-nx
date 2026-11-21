@@ -155,6 +155,103 @@ fn warning_top(h: f32, lines: usize) -> f32 {
     ((h.ceil() - 102.0 - lines as f32 * 9.0) / 2.0).floor()
 }
 
+/// The Main screen's Microsoft account button (`msa`), beside Realms on the Switch.
+pub(super) const ACCOUNT: u8 = 150;
+/// The account screen's buttons.
+pub(super) const ACCOUNT_SIGN_IN: u8 = 151;
+pub(super) const ACCOUNT_SIGN_OUT: u8 = 152;
+pub(super) const ACCOUNT_CANCEL: u8 = 153;
+pub(super) const ACCOUNT_BACK: u8 = 154;
+
+/// Whether the title offers the Microsoft account button: on the Switch, where no launcher signs
+/// in (`HORIZON_ACCOUNT_BUTTON=1` shows it elsewhere, to try it).
+pub(super) fn account_button_shown() -> bool {
+    cfg!(target_os = "horizon") || std::env::var_os("HORIZON_ACCOUNT_BUTTON").is_some()
+}
+
+/// What the account screen shows: its lines, and whether a sign-in is under way.
+pub(super) fn account_lines(sign_in: Option<&horizon_client_render::msa::State>) -> (Vec<(String, u32)>, bool) {
+    use horizon_client_render::msa::State;
+    let white = u32::MAX;
+    let grey = rgba(170, 170, 170, 255);
+    let yellow = rgba(255, 255, 85, 255);
+    match sign_in {
+        Some(State::Contacting) => (
+            vec![(
+                lang::get_or("horizon.account.contacting", "Contacting Microsoft..."),
+                white,
+            )],
+            true,
+        ),
+        Some(State::Code { url, code }) => (
+            vec![
+                (
+                    lang::get_or(
+                        "horizon.account.code.step",
+                        "On your phone or computer, open this page:",
+                    ),
+                    white,
+                ),
+                (url.clone(), yellow),
+                (
+                    lang::get_or("horizon.account.code.enter", "and enter this code:"),
+                    white,
+                ),
+                (code.clone(), yellow),
+                (String::new(), white),
+                (
+                    lang::get_or(
+                        "horizon.account.code.waiting",
+                        "Waiting for you to sign in...",
+                    ),
+                    grey,
+                ),
+            ],
+            true,
+        ),
+        Some(State::Finishing) => (
+            vec![(
+                lang::get_or("horizon.account.finishing", "Signing in to Minecraft..."),
+                white,
+            )],
+            true,
+        ),
+        Some(State::Failed(reason)) => (
+            vec![
+                (
+                    lang::get_or("horizon.account.failed", "Sign-in failed"),
+                    rgba(255, 85, 85, 255),
+                ),
+                (reason.clone(), white),
+            ],
+            false,
+        ),
+        Some(State::SignedIn { .. }) | None => match crate::auth::current() {
+            Some(session) => (
+                vec![(
+                    translate(
+                        "horizon.account.signed_in",
+                        "Signed in as %s",
+                        &[&session.name],
+                    ),
+                    white,
+                )],
+                false,
+            ),
+            None => (
+                vec![(
+                    lang::get_or(
+                        "horizon.account.signed_out",
+                        "Sign in with the Microsoft account that owns Minecraft: Java Edition to play on online servers as yourself. Your sign-in is kept on the SD card until you sign out.",
+                    ),
+                    white,
+                )],
+                false,
+            ),
+        },
+    }
+}
+
 fn translate(key: &str, fallback: &str, args: &[&dyn std::fmt::Display]) -> String {
     let args: Vec<Text> = args
         .iter()
@@ -264,6 +361,9 @@ pub enum Alert {
 #[derive(Clone, Debug)]
 pub enum Mode {
     Main,
+    /// Horizon's Microsoft account screen (`msa`): sign in with a code, or sign out. The Switch
+    /// has no launcher to sign in for it.
+    Account,
     Select {
         worlds: Vec<WorldEntry>,
         selected: Option<usize>,
@@ -462,6 +562,8 @@ pub struct Title {
     /// (`RealmsCreateWorldFlow.createWorld`): its settings upload into the Realm's slot.
     realms_create: Option<crate::realms::CreateWorldRequest>,
     message_lines: Cell<usize>,
+    /// The account screen's sign-in under way (`msa`); dropping it cancels it.
+    sign_in: Option<horizon_client_render::msa::SignIn>,
     /// The SafetyScreen's checkbox as last drawn: x, y, width, height.
     warning_check: Cell<[f32; 4]>,
     /// The bottom notice's `PlainTextButton` as last drawn: x, y, width, height.
@@ -796,6 +898,7 @@ impl Mode {
     pub fn id(&self) -> &'static str {
         match self {
             Self::Main => "title",
+            Self::Account => "horizon_account",
             Self::Realms(_) => "realms",
             Self::Select { .. } => "world_select",
             Self::Create { .. } => "world_create",
@@ -910,6 +1013,7 @@ impl Title {
             create_return_to_main: false,
             realms_create: None,
             message_lines: Cell::new(1),
+            sign_in: None,
             warning_check: Cell::new([0.0; 4]),
             credits_button: Cell::new([0.0; 4]),
             allows_multiplayer: true,
@@ -1981,6 +2085,10 @@ impl Title {
         let info = match &self.mode {
             // TitleScreen: `narrator.screen.title`, not its (empty) title.
             Mode::Main => ScreenInfo::new("title", get("narrator.screen.title", "Title Screen")),
+            Mode::Account => ScreenInfo::new(
+                "account",
+                get("horizon.account.title", "Microsoft Account"),
+            ),
             Mode::Select { .. } => {
                 ScreenInfo::new("select_world", get("selectWorld.title", "Select World"))
             }
@@ -2475,6 +2583,34 @@ Would you like to enable the Narrator or visit the Accessibility Settings?",
                 Action::None
             }
             (Mode::Main, Some(2)) => Action::Quit,
+            (Mode::Main, Some(ACCOUNT)) => {
+                self.sign_in = None;
+                self.mode = Mode::Account;
+                Action::None
+            }
+            (Mode::Account, Some(ACCOUNT_SIGN_IN)) => {
+                if let Some(dir) = self.saves.parent() {
+                    self.sign_in = Some(horizon_client_render::msa::SignIn::start(dir.to_path_buf()));
+                }
+                Action::None
+            }
+            (Mode::Account, Some(ACCOUNT_SIGN_OUT)) => {
+                if let Some(dir) = self.saves.parent() {
+                    horizon_client_render::msa::sign_out(dir);
+                }
+                self.sign_in = None;
+                Action::None
+            }
+            (Mode::Account, Some(ACCOUNT_CANCEL)) => {
+                // Dropping the sign-in cancels it.
+                self.sign_in = None;
+                Action::None
+            }
+            (Mode::Account, Some(ACCOUNT_BACK)) => {
+                self.sign_in = None;
+                self.mode = Mode::Main;
+                Action::None
+            }
             (Mode::BanNotice(_), Some(id @ 120..=122)) => {
                 // BanNoticeScreens' callback: Open in Browser opens the link, Copy copies it
                 // and answers no; all of them run `next`.
@@ -3757,6 +3893,11 @@ Would you like to enable the Narrator or visit the Accessibility Settings?",
             return;
         }
         match &self.mode {
+            Mode::Account => {
+                // Dropping the sign-in cancels it.
+                self.sign_in = None;
+                self.mode = Mode::Main;
+            }
             // OptimizeWorldScreen: `shouldCloseOnEsc` is false; the Backup wait takes no input.
             Mode::Backup { .. } | Mode::Optimize { .. } => {}
             Mode::MissingMods { .. } => self.leave_closed_for_missing_mods(),

@@ -182,6 +182,33 @@ impl Title {
                 }
                 batch.text_styled(atlas, &text, rect[0], rect[1], u32::MAX, true);
             }
+            Mode::Account => {
+                crate::ui::menu_background(batch, atlas, 0.0, 0.0, w, h, false);
+                phases(crate::screen_draw::RenderPhase::Background, batch);
+                let state = self.sign_in.as_ref().map(horizon_client_render::msa::SignIn::state);
+                let (message, _) = account_lines(state.as_ref());
+                let mut lines = Vec::new();
+                for (text, color) in &message {
+                    if text.is_empty() {
+                        lines.push((String::new(), *color));
+                    }
+                    for line in wrapped(atlas, text, w - 50.0) {
+                        lines.push((line, *color));
+                    }
+                }
+                self.message_lines.set(lines.len());
+                let top = confirm_top(h, lines.len());
+                centered(
+                    atlas,
+                    batch,
+                    &lang::get_or("horizon.account.title", "Microsoft Account"),
+                    top,
+                    u32::MAX,
+                );
+                for (i, (line, color)) in lines.iter().enumerate() {
+                    centered(atlas, batch, line, top + 17.0 + i as f32 * 9.0, *color);
+                }
+            }
             Mode::Select { worlds, selected } => {
                 crate::ui::menu_background(batch, atlas, 0.0, 0.0, w, h, false);
                 phases(crate::screen_draw::RenderPhase::Background, batch);
