@@ -1,0 +1,33 @@
+Loaded image: horizon-switch-toolchain:local
+Loaded image: bevy-horizon-toolchain:local
+==> compiling horizon-client for the Switch (Horizon OS)
+patch-std: current_exe on horizon is argv[0]
+    Updating crates.io index
+warning: patch `arboard v3.6.1 (/src/horizon-nx/packaging/switch/stubs/arboard)` was not used in the crate graph
+warning: patch `cpal v0.17.3 (/src/bevy-horizon/patches/cpal)` was not used in the crate graph
+warning: patch `getrandom v0.4.3 (/src/bevy-horizon/patches/getrandom)` was not used in the crate graph
+warning: patch `getrandom v0.2.17 (/src/bevy-horizon/patches/getrandom-0.2)` was not used in the crate graph
+warning: patch `getrandom v0.3.4 (/src/horizon-nx/third_party/getrandom-0.3)` was not used in the crate graph
+warning: patch `if-addrs v0.13.4 (/src/horizon-nx/packaging/switch/stubs/if-addrs)` was not used in the crate graph
+warning: patch `libmimalloc-sys v0.1.49 (/src/horizon-nx/packaging/switch/stubs/libmimalloc-sys)` was not used in the crate graph
+warning: patch `memmap2 v0.9.11 (/src/bevy-horizon/patches/memmap2)` was not used in the crate graph
+warning: patch `mimalloc v0.1.52 (/src/horizon-nx/packaging/switch/stubs/mimalloc)` was not used in the crate graph
+warning: patch `raw-window-handle v0.6.2 (/src/bevy-horizon/patches/raw-window-handle)` was not used in the crate graph
+warning: patch `ring v0.17.14 (/src/bevy-horizon/patches/ring)` was not used in the crate graph
+warning: patch `rustix v1.1.5 (/src/bevy-horizon/patches/rustix)` was not used in the crate graph
+warning: patch `socket2 v0.5.10 (/src/horizon-nx/third_party/socket2)` was not used in the crate graph
+warning: patch `wgpu v30.0.1 (/src/horizon-nx/third_party/wgpu)` was not used in the crate graph
+warning: patch `wgpu-core v30.0.1 (/src/horizon-nx/third_party/wgpu-core)` was not used in the crate graph
+warning: patch `wgpu-core-deps-windows-linux-android v30.0.1 (/src/horizon-nx/third_party/wgpu-core-deps-windows-linux-android)` was not used in the crate graph
+warning: patch `winit v0.30.13 (/src/horizon-nx/third_party/winit)` was not used in the crate graph
+help: Check that the patched package version and available features are compatible
+      with the dependency requirements. If the patch has a different version from
+      what is locked in the Cargo.lock file, run `cargo update` to use the new
+      version. This may also occur with an optional dependency that is not enabled.
+     Locking 1 package to highest compatible version
+      Adding libc v0.2.190 (/src/bevy-horizon/patches/libc)
+    Removing libc v0.2.189
+note: pass `--verbose` to see 12 unchanged dependencies behind latest
+warning: patch `arboard v3.6.1 (/src/horizon-nx/packaging/switch/stubs/arboard)` was not used in the crate graph
+warning: patch `if-addrs v0.13.4 (/src/horizon-nx/packaging/switch/stubs/if-addrs)` was not used in the crate graph
+error: a patch is not used: lock its version in Cargo.lock (cargo update --precise)
