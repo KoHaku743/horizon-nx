@@ -23,6 +23,18 @@ console.
   built after the first load (`game/world/world_rest.rs`).
 - Graphics presets stay within the render distance cap (12).
 
+## Ported since the merge
+
+- Credits: Horizon NX's people open the game's credits on the Switch; the README names KoHaku743.
+- Switch defaults (Cloud Distance 32, Cutout Leaves off), the CPU boost while a world opens.
+- Taps on Horizon's on-screen keyboard; gyro aiming and its modes; the Microsoft sign-in on the
+  title screen (beside Realms) and the saved account resuming at start.
+- Folder syncs skipped (the SD card driver opens no folder as a file), which failed every
+  advancement and statistics save.
+- Already upstream, nothing to port: Nintendo button letters, chat's custom click actions, a mod
+  browser. Not ported: the in-game updater (not wanted), server pack overlays (upstream reads packs
+  in layers now, without a merged folder: measure first).
+
 ## To port onto upstream's code (from switch-v010)
 
 Each was dropped where upstream rewrote the file, and comes back as its own commit:
