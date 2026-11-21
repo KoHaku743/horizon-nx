@@ -7,6 +7,9 @@ extern crate self as horizon_client;
 static TEST_ALLOCATOR: horizon_threads::allocation_probe::Allocator =
     horizon_threads::allocation_probe::Allocator;
 pub mod advancements;
+// The Switch build's updates from this fork's full releases; never started elsewhere.
+#[cfg_attr(not(target_os = "horizon"), allow(dead_code))]
+pub mod switch_update;
 pub mod ambience;
 pub mod animate_tick;
 pub mod api_text;

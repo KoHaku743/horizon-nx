@@ -155,6 +155,40 @@ fn warning_top(h: f32, lines: usize) -> f32 {
     ((h.ceil() - 102.0 - lines as f32 * 9.0) / 2.0).floor()
 }
 
+/// The Main screen's update button (`switch_update`), where Realms' sits while one is on offer.
+pub(super) const UPDATE: u8 = 155;
+/// The update question's buttons.
+pub(super) const UPDATE_YES: u8 = 156;
+pub(super) const UPDATE_NO: u8 = 157;
+
+/// The update button's label and whether it takes a press; none while there's no update.
+pub(super) fn update_button(status: &crate::switch_update::Status) -> Option<(String, bool)> {
+    use crate::switch_update::Status;
+    Some(match status {
+        Status::None => return None,
+        Status::Available { version } => (
+            translate("horizon.update.button", "Update to %s", &[version]),
+            true,
+        ),
+        Status::Downloading { version, percent } => (
+            translate(
+                "horizon.update.downloading",
+                "Downloading %s: %s%%",
+                &[version, percent],
+            ),
+            false,
+        ),
+        Status::Installed { .. } => (
+            lang::get_or("horizon.update.quit", "Quit to finish the update"),
+            true,
+        ),
+        Status::Failed { .. } => (
+            lang::get_or("horizon.update.retry", "Retry the update"),
+            true,
+        ),
+    })
+}
+
 /// The Main screen's Microsoft account button (`msa`), beside Realms on the Switch.
 pub(super) const ACCOUNT: u8 = 150;
 /// The account screen's buttons.
@@ -170,7 +204,9 @@ pub(super) fn account_button_shown() -> bool {
 }
 
 /// What the account screen shows: its lines, and whether a sign-in is under way.
-pub(super) fn account_lines(sign_in: Option<&horizon_client_render::msa::State>) -> (Vec<(String, u32)>, bool) {
+pub(super) fn account_lines(
+    sign_in: Option<&horizon_client_render::msa::State>,
+) -> (Vec<(String, u32)>, bool) {
     use horizon_client_render::msa::State;
     let white = u32::MAX;
     let grey = rgba(170, 170, 170, 255);
@@ -364,6 +400,10 @@ pub enum Mode {
     /// Horizon's Microsoft account screen (`msa`): sign in with a code, or sign out. The Switch
     /// has no launcher to sign in for it.
     Account,
+    /// The Switch update's question before it downloads (`switch_update`): the version on offer.
+    ConfirmUpdate {
+        version: crate::switch_update::Version,
+    },
     Select {
         worlds: Vec<WorldEntry>,
         selected: Option<usize>,
@@ -899,6 +939,7 @@ impl Mode {
         match self {
             Self::Main => "title",
             Self::Account => "horizon_account",
+            Self::ConfirmUpdate { .. } => "horizon_update",
             Self::Realms(_) => "realms",
             Self::Select { .. } => "world_select",
             Self::Create { .. } => "world_create",
@@ -982,6 +1023,8 @@ impl Title {
     }
     /// `splashes` is the pool `crate::splashes::pool` built for the current resources.
     pub fn new(saves: PathBuf, resources: &Path, splashes: &str) -> Self {
+        // The Switch build's one update check a launch, with the first title screen.
+        crate::switch_update::start_check();
         use chrono::Datelike;
         let today = chrono::Local::now();
         // `SplashManager.RANDOM`: `RandomSource.create()`. `getSplash` rolls for
@@ -1508,6 +1551,13 @@ impl Title {
 
     /// A client-lib decision for the game to admit before applying it.
     pub fn take_pending_toast(&mut self) -> Option<crate::toasts::SystemToast> {
+        // The Switch update's newest notice, once no world toast waits.
+        if self.pending_toast.is_none()
+            && self.toast.is_none()
+            && let Some(event) = crate::switch_update::take_event()
+        {
+            self.pending_toast = Some(WorldToast::Update(event));
+        }
         let (title, message) = self.pending_toast.take()?.text();
         Some(crate::toasts::SystemToast::new(title, Some(message)))
     }
@@ -2085,9 +2135,12 @@ impl Title {
         let info = match &self.mode {
             // TitleScreen: `narrator.screen.title`, not its (empty) title.
             Mode::Main => ScreenInfo::new("title", get("narrator.screen.title", "Title Screen")),
-            Mode::Account => ScreenInfo::new(
-                "account",
-                get("horizon.account.title", "Microsoft Account"),
+            Mode::Account => {
+                ScreenInfo::new("account", get("horizon.account.title", "Microsoft Account"))
+            }
+            Mode::ConfirmUpdate { .. } => ScreenInfo::new(
+                "update",
+                get("horizon.update.confirm.title", "Update Horizon?"),
             ),
             Mode::Select { .. } => {
                 ScreenInfo::new("select_world", get("selectWorld.title", "Select World"))
@@ -2583,6 +2636,16 @@ Would you like to enable the Narrator or visit the Accessibility Settings?",
                 Action::None
             }
             (Mode::Main, Some(2)) => Action::Quit,
+            (Mode::Main, Some(UPDATE)) => self.update_click(),
+            (Mode::ConfirmUpdate { .. }, Some(UPDATE_YES)) => {
+                self.mode = Mode::Main;
+                crate::switch_update::start_download();
+                Action::None
+            }
+            (Mode::ConfirmUpdate { .. }, Some(UPDATE_NO)) => {
+                self.mode = Mode::Main;
+                Action::None
+            }
             (Mode::Main, Some(ACCOUNT)) => {
                 self.sign_in = None;
                 self.mode = Mode::Account;
@@ -2590,7 +2653,8 @@ Would you like to enable the Narrator or visit the Accessibility Settings?",
             }
             (Mode::Account, Some(ACCOUNT_SIGN_IN)) => {
                 if let Some(dir) = self.saves.parent() {
-                    self.sign_in = Some(horizon_client_render::msa::SignIn::start(dir.to_path_buf()));
+                    self.sign_in =
+                        Some(horizon_client_render::msa::SignIn::start(dir.to_path_buf()));
                 }
                 Action::None
             }
@@ -3861,6 +3925,26 @@ Would you like to enable the Narrator or visit the Accessibility Settings?",
             self.next_ban_notice();
         }
     }
+    /// The Main screen's update button: asks before a download, retries one that failed without
+    /// asking again, or quits so that the installed build starts.
+    fn update_click(&mut self) -> Action {
+        use crate::switch_update::{self as update, Status};
+        match update::status() {
+            Status::Available { version } => {
+                self.mode = Mode::ConfirmUpdate { version };
+                Action::None
+            }
+            Status::Failed { .. } => {
+                update::start_download();
+                Action::None
+            }
+            Status::Installed { .. } => {
+                update::quit_to_update();
+                Action::Quit
+            }
+            Status::None | Status::Downloading { .. } => Action::None,
+        }
+    }
     pub fn escape(&mut self) {
         // GenericMessageScreen.shouldCloseOnEsc is false: the preparing
         // read takes no input, the player's options survive it.
@@ -3898,6 +3982,7 @@ Would you like to enable the Narrator or visit the Accessibility Settings?",
                 self.sign_in = None;
                 self.mode = Mode::Main;
             }
+            Mode::ConfirmUpdate { .. } => self.mode = Mode::Main,
             // OptimizeWorldScreen: `shouldCloseOnEsc` is false; the Backup wait takes no input.
             Mode::Backup { .. } | Mode::Optimize { .. } => {}
             Mode::MissingMods { .. } => self.leave_closed_for_missing_mods(),

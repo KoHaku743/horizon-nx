@@ -1349,5 +1349,20 @@
   "horizon.credits.nx.port": "The Switch Port",
   "horizon.credits.nx.driver": "The Switch Graphics Driver",
   "horizon.credits.nx.horizon": "Horizon",
-  "horizon.credits.nx.contributors": "and the Horizon contributors"
+  "horizon.credits.nx.contributors": "and the Horizon contributors",
+  "horizon.update.available": "Update available",
+  "horizon.update.available.message": "Horizon %s: Update on the title screen",
+  "horizon.update.installed": "Horizon %s installed",
+  "horizon.update.installed.message": "Quit Horizon to start it",
+  "horizon.update.failed": "Update failed",
+  "horizon.update.updated": "Horizon updated",
+  "horizon.update.updated.message": "Now on %s",
+  "horizon.update.button": "Update to %s",
+  "horizon.update.downloading": "Downloading %s: %s%%",
+  "horizon.update.quit": "Quit to finish the update",
+  "horizon.update.retry": "Retry the update",
+  "horizon.update.confirm.title": "Update Horizon?",
+  "horizon.update.confirm.message": "Horizon %s%s downloads now, then replaces this version when you quit Horizon. Your worlds and settings stay as they are.",
+  "horizon.update.dev_build": "Switch dev build",
+  "horizon.update.version": "Switch %s"
 }

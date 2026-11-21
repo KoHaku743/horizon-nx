@@ -622,6 +622,9 @@ impl Game<'_> {
         match &title.mode {
             Mode::Main => json!({ "mode": "main", "worlds": worlds() }),
             Mode::Account => json!({ "mode": "account" }),
+            Mode::ConfirmUpdate { version } => {
+                json!({ "mode": "confirm-update", "version": version.to_string() })
+            }
             Mode::Select {
                 worlds: list,
                 selected,

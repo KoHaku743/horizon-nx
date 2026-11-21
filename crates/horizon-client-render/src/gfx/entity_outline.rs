@@ -189,6 +189,11 @@ impl EntityOutline {
         posed: (u32, u32),
         size: [u32; 2],
     ) {
+        // On the Switch the outline and its chain run at half the window's size, and the blit
+        // scales it up bilinearly: five full-screen passes at 720p took ~10 ms of a frame with
+        // glowing entities about (RUN 44, Hypixel). The shaders take their texel from the target.
+        #[cfg(target_os = "horizon")]
+        let size = [(size[0] / 2).max(1), (size[1] / 2).max(1)];
         self.quads = (silhouettes.len() / 4) as u32;
         self.posed = posed;
         if self.quads == 0 && posed.1 == 0 {
@@ -252,7 +257,15 @@ impl EntityOutline {
             group(&outline, &self.nearest),
             group(&swap, &self.bilinear),
             group(&outline, &self.bilinear),
-            group(&swap, &self.nearest),
+            // Bilinear where the half-size outline is scaled up (the Switch).
+            group(
+                &swap,
+                if cfg!(target_os = "horizon") {
+                    &self.bilinear
+                } else {
+                    &self.nearest
+                },
+            ),
         ];
         self.targets = Some(Targets {
             size,

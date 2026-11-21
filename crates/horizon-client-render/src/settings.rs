@@ -257,7 +257,7 @@ impl Default for Settings {
             attack_indicator: 1,
             inactivity_fps_limit: "afk".into(),
             prioritize_chunk_updates: 0,
-            menu_blur: 5,
+            menu_blur: crate::options_file::DEFAULT_MENU_BLUR,
             invert_y: false,
             mouse_wheel_sensitivity: 1.0,
             discrete_scroll: false,

@@ -153,7 +153,18 @@ impl Title {
                         ];
                     }
                 }
-                let version = format!("Horizon {} (Rust)", horizon_core::VANILLA_VERSION);
+                let mut version = format!("Horizon {} (Rust)", horizon_core::VANILLA_VERSION);
+                // The Switch build names itself: what an update changes.
+                if cfg!(target_os = "horizon") {
+                    use crate::switch_update::{Version, current_version};
+                    let release = match current_version() {
+                        Version::DEVELOPMENT => {
+                            lang::get_or("horizon.update.dev_build", "Switch dev build")
+                        }
+                        release => translate("horizon.update.version", "Switch %s", &[&release]),
+                    };
+                    version = format!("{version}, {release}");
+                }
                 batch.text(atlas, &version, 2.0, h - 10.0, u32::MAX, true);
                 // A nightly names its build in the top-left corner, the one spot no button reaches at any GUI
                 // scale, so screenshots and reports say which build they come from.
@@ -182,10 +193,39 @@ impl Title {
                 }
                 batch.text_styled(atlas, &text, rect[0], rect[1], u32::MAX, true);
             }
+            Mode::ConfirmUpdate { version } => {
+                crate::ui::menu_background(batch, atlas, 0.0, 0.0, w, h, false);
+                phases(crate::screen_draw::RenderPhase::Background, batch);
+                let size = crate::switch_update::download_size()
+                    .map_or_else(String::new, |bytes| {
+                        format!(" ({:.0} MB)", bytes as f64 / 1_048_576.0)
+                    });
+                let message = translate(
+                    "horizon.update.confirm.message",
+                    "Horizon %s%s downloads now, then replaces this version when you quit Horizon. Your worlds and settings stay as they are.",
+                    &[version, &size],
+                );
+                let lines = wrapped(atlas, &message, w - 50.0);
+                self.message_lines.set(lines.len());
+                let top = confirm_top(h, lines.len());
+                centered(
+                    atlas,
+                    batch,
+                    &lang::get_or("horizon.update.confirm.title", "Update Horizon?"),
+                    top,
+                    u32::MAX,
+                );
+                for (i, line) in lines.iter().enumerate() {
+                    centered(atlas, batch, line, top + 17.0 + i as f32 * 9.0, u32::MAX);
+                }
+            }
             Mode::Account => {
                 crate::ui::menu_background(batch, atlas, 0.0, 0.0, w, h, false);
                 phases(crate::screen_draw::RenderPhase::Background, batch);
-                let state = self.sign_in.as_ref().map(horizon_client_render::msa::SignIn::state);
+                let state = self
+                    .sign_in
+                    .as_ref()
+                    .map(horizon_client_render::msa::SignIn::state);
                 let (message, _) = account_lines(state.as_ref());
                 let mut lines = Vec::new();
                 for (text, color) in &message {

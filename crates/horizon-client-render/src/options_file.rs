@@ -117,6 +117,13 @@ pub const DEFAULT_CUTOUT_LEAVES: bool = true;
 /// triangles and cost ~12 ms a frame (RUN 34: 35 fps against 59). The menu still turns it on.
 #[cfg(target_os = "horizon")]
 pub const DEFAULT_CUTOUT_LEAVES: bool = false;
+/// Menu Background Blur's default: vanilla's 5.
+#[cfg(not(target_os = "horizon"))]
+pub const DEFAULT_MENU_BLUR: i32 = 5;
+/// On the Switch, 0: blurring the world behind a menu took 5-6 passes and up to 15-18 ms of a
+/// frame on the Switch's GPU (RUN 44, Hypixel). The menu still goes to 10.
+#[cfg(target_os = "horizon")]
+pub const DEFAULT_MENU_BLUR: i32 = 0;
 const INACTIVITY: &[&str] = &["minimized", "afk"];
 const CLOUDS: &[&str] = &["false", "fast", "true"];
 const MAIN_HAND: &[&str] = &["left", "right"];
@@ -272,7 +279,7 @@ static TABLE: LazyLock<Vec<Def>> = LazyLock::new(|| {
         u("panoramaScrollSpeed", 1.0),
         b("telemetryOptInExtra", false),
         pb("onboardAccessibility", true),
-        i("menuBackgroundBlurriness", 0, 10, 5),
+        i("menuBackgroundBlurriness", 0, 10, DEFAULT_MENU_BLUR),
         pb("startedCleanly", true),
         n("musicToast", MUSIC_TOAST, 0),
         n("musicFrequency", MUSIC_FREQUENCY, 0),

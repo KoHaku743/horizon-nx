@@ -61,3 +61,12 @@ Each was dropped where upstream rewrote the file, and comes back as its own comm
 Upstream runs mod code with wasmtime, built with Pulley (its interpreter, no JIT), and can run it in a
 separate process. On the Switch it has to run in the game's own process; whether wasmtime builds for
 `aarch64-nintendo-horizon` is the first thing to find out once the game itself runs.
+
+## Ported in the second pass
+
+- The in-game updater (`switch_update.rs`): a release build checks this fork's newest **full** release
+  once a launch (drafts and pre-releases are skipped) and offers it in Realms' place on the title
+  screen. A test build (no `HORIZON_SWITCH_VERSION`) never checks, so it isn't offered an older release.
+- Horizon extras on in the Switch build: Horizon Settings and its mod and resource pack browser.
+- Performance defaults: Menu Background Blur 0 (5-6 passes, up to 18 ms of a frame), the glowing
+  entities' outline at half resolution (~10 ms at full).

@@ -38,17 +38,26 @@ impl Title {
                         self.allows_multiplayer,
                         4,
                     ),
-                    b(
-                        cx - 100.0,
-                        y + 48.0,
-                        // On the Switch the Microsoft account button (msa) takes the row's right half.
-                        if account_button_shown() { 98.0 } else { 200.0 },
-                        &lang::get_or("menu.online", "Minecraft Realms"),
-                        // TitleScreen.createNormalMenuOptions: Realms is off when
-                        // multiplayer is.
-                        self.allows_multiplayer,
-                        8,
-                    ),
+                    {
+                        // On the Switch the Microsoft account button (msa) takes the row's right
+                        // half, and an update on offer (switch_update) stands in for Realms.
+                        let width = if account_button_shown() { 98.0 } else { 200.0 };
+                        match update_button(&crate::switch_update::status()) {
+                            Some((label, enabled)) => {
+                                b(cx - 100.0, y + 48.0, width, &label, enabled, UPDATE)
+                            }
+                            None => b(
+                                cx - 100.0,
+                                y + 48.0,
+                                width,
+                                &lang::get_or("menu.online", "Minecraft Realms"),
+                                // TitleScreen.createNormalMenuOptions: Realms is off when
+                                // multiplayer is.
+                                self.allows_multiplayer,
+                                8,
+                            ),
+                        }
+                    },
                     b(
                         cx - 100.0,
                         y + 96.0,
@@ -104,13 +113,44 @@ impl Title {
                 }
                 buttons
             }
+            Mode::ConfirmUpdate { .. } => {
+                let y = confirm_top(h, self.message_lines.get())
+                    + 41.0
+                    + self.message_lines.get() as f32 * 9.0;
+                let (left, right) = ((w / 2.0).floor() - 155.0, (w / 2.0).floor() + 5.0);
+                vec![
+                    b(
+                        left,
+                        y,
+                        150.0,
+                        &lang::get_or("gui.yes", "Yes"),
+                        true,
+                        UPDATE_YES,
+                    ),
+                    b(
+                        right,
+                        y,
+                        150.0,
+                        &lang::get_or("gui.no", "No"),
+                        true,
+                        UPDATE_NO,
+                    ),
+                ]
+            }
             Mode::Account => {
                 let y = confirm_top(h, self.message_lines.get())
                     + 41.0
                     + self.message_lines.get() as f32 * 9.0;
-                let state = self.sign_in.as_ref().map(horizon_client_render::msa::SignIn::state);
+                let state = self
+                    .sign_in
+                    .as_ref()
+                    .map(horizon_client_render::msa::SignIn::state);
                 let (_, busy) = account_lines(state.as_ref());
-                let (cx, left, right) = ((w / 2.0).floor(), (w / 2.0).floor() - 155.0, (w / 2.0).floor() + 5.0);
+                let (cx, left, right) = (
+                    (w / 2.0).floor(),
+                    (w / 2.0).floor() - 155.0,
+                    (w / 2.0).floor() + 5.0,
+                );
                 if busy {
                     vec![b(
                         cx - 75.0,
@@ -130,7 +170,14 @@ impl Title {
                             true,
                             ACCOUNT_SIGN_OUT,
                         ),
-                        b(right, y, 150.0, &lang::get_or("gui.done", "Done"), true, ACCOUNT_BACK),
+                        b(
+                            right,
+                            y,
+                            150.0,
+                            &lang::get_or("gui.done", "Done"),
+                            true,
+                            ACCOUNT_BACK,
+                        ),
                     ]
                 } else {
                     let again = matches!(state, Some(horizon_client_render::msa::State::Failed(_)));
@@ -141,7 +188,14 @@ impl Title {
                     };
                     vec![
                         b(left, y, 150.0, &label, true, ACCOUNT_SIGN_IN),
-                        b(right, y, 150.0, &lang::get_or("gui.back", "Back"), true, ACCOUNT_BACK),
+                        b(
+                            right,
+                            y,
+                            150.0,
+                            &lang::get_or("gui.back", "Back"),
+                            true,
+                            ACCOUNT_BACK,
+                        ),
                     ]
                 }
             }
