@@ -25,6 +25,27 @@ pub const GAME_IDENTITY: [u8; horizon_mod_package::game_identity::MARK.len()] =
 /// Runs the game with the hooks registered so far, and returns when it ends. Register hooks
 /// (`horizon_platform::hooks::register`) before calling it.
 pub fn main() {
+    // The Switch: the homebrew loader's main thread has a small stack, which creating the render
+    // pipelines (naga's shader passes) overflowed. The game runs on a thread with room instead;
+    // nothing on the Switch needs the first thread (winit's Horizon loop runs on any).
+    #[cfg(target_os = "horizon")]
+    {
+        const STACK: usize = 64 << 20;
+        let game = std::thread::Builder::new()
+            .name("main".into())
+            .stack_size(STACK)
+            .spawn(run)
+            .expect("start the game's thread");
+        if game.join().is_err() {
+            std::process::exit(101);
+        }
+        return;
+    }
+    #[cfg(not(target_os = "horizon"))]
+    run();
+}
+
+fn run() {
     horizon_guest_stack::prepare_main();
     horizon_mod_host::exit_if_compile_child();
     let startup = horizon_client::entry::prepare();
