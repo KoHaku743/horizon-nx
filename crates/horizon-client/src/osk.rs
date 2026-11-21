@@ -250,6 +250,26 @@ pub struct Keyboard {
     suggests: bool,
     /// The right stick has picked and not come back to rest.
     stick_out: bool,
+    /// Where the last frame drew the keyboard, in the Ui's units: what a tap is matched against
+    /// ([`Keyboard::tap`]).
+    drawn: std::cell::Cell<Option<Drawn>>,
+}
+
+/// The keyboard as last drawn: its keys' grid (`x0`, `y0`) and the plate around it.
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct Drawn {
+    x0: f32,
+    y0: f32,
+    plate: (f32, f32, f32, f32),
+}
+
+/// What a tap did ([`Keyboard::tap`]).
+#[derive(Clone, Debug, PartialEq)]
+pub enum Tap {
+    /// Outside the keyboard: the screen under it takes the tap (chat's clickable messages).
+    Outside,
+    /// On the keyboard: on a key (typed, with what it gives the field) or between keys (nothing).
+    Inside(Option<Output>),
 }
 impl Default for Keyboard {
     fn default() -> Self {
@@ -263,11 +283,45 @@ impl Default for Keyboard {
             lines: false,
             suggests: false,
             stick_out: false,
+            drawn: std::cell::Cell::new(None),
         }
     }
 }
 
+/// The keys' size and spacing, in the Ui's units.
+const UNIT: f32 = 50.0;
+const GAP: f32 = 6.0;
+const KEY_H: f32 = 38.0;
+
 impl Keyboard {
+    /// A tap (the touch screen's, or a click) at (`x`, `y`) in the Ui's units, matched against the
+    /// keyboard as last drawn: a key under it gets focus and is typed, as A types the focused key.
+    pub fn tap(&mut self, x: f32, y: f32) -> Tap {
+        let Some(d) = self.drawn.get() else {
+            return Tap::Outside;
+        };
+        let (px, py, pw, ph) = d.plate;
+        if x < px || x >= px + pw || y < py || y >= py + ph {
+            return Tap::Outside;
+        }
+        for (r, row) in self.rows().iter().enumerate() {
+            let top = d.y0 + r as f32 * (KEY_H + GAP);
+            if y < top || y >= top + KEY_H {
+                continue;
+            }
+            for (i, (_, units)) in row.iter().enumerate() {
+                let (left, _) = Self::span(row, i);
+                let kx = d.x0 + left * (UNIT + GAP);
+                let kw = units * UNIT + (units - 1.0) * GAP;
+                if x >= kx && x < kx + kw {
+                    self.row = r;
+                    self.col = i;
+                    return Tap::Inside(self.press());
+                }
+            }
+        }
+        Tap::Inside(None)
+    }
     /// A keyboard over a field of many `lines` (New Line beside Done), and one with
     /// suggestions (`suggests`: RT and the right stick reach them).
     pub fn new(lines: bool, suggests: bool) -> Self {
@@ -436,9 +490,6 @@ impl Keyboard {
     /// Draw the keyboard across the bottom of the screen, or the top when
     /// the field it types into is in the lower half.
     pub fn draw(&self, ui: &mut Ui, at_top: bool, glyphs: Glyphs) {
-        const UNIT: f32 = 50.0;
-        const GAP: f32 = 6.0;
-        const KEY_H: f32 = 38.0;
         const LABEL_PAD: f32 = 4.0;
         let width = 10.0 * UNIT + 9.0 * GAP;
         let hints = self.hint_lines(ui, glyphs, width);
@@ -447,6 +498,11 @@ impl Keyboard {
         let height = PANEL_PAD + keys_h + HINT_GAP + hints.len() as f32 * line_h + PANEL_PAD;
         let x0 = ((ui.w - width) / 2.0).round();
         let y0 = if at_top { 16.0 } else { ui.h - height - 16.0 };
+        self.drawn.set(Some(Drawn {
+            x0,
+            y0,
+            plate: (x0 - PANEL_PAD, y0 - PANEL_PAD, width + 2.0 * PANEL_PAD, height),
+        }));
         ui.rounded(
             x0 - PANEL_PAD,
             y0 - PANEL_PAD,

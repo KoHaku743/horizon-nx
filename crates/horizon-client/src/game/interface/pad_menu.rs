@@ -159,6 +159,8 @@ pub(super) struct MenuCursor {
     repeats: u32,
     /// The on-screen keyboard, open over a text field.
     pub(super) osk: Option<Keyboard>,
+    /// A tap's press landed on the on-screen keyboard: its release is the keyboard's too.
+    pub(super) osk_tapped: bool,
     /// The recipe being crafted straight into the inventory (`pad_craft`).
     pub(super) craft: Option<super::pad_craft::DirectCraft>,
     /// LT held over the crafting book: it changes the category as it comes up, unless A was
@@ -2113,6 +2115,39 @@ impl Game<'_> {
 
     /// What a key of the on-screen keyboard does: the same as a typed key in
     /// the field that has focus.
+    /// A left button (a tap on the touch screen is one) while the keyboard is open: a press on
+    /// the keyboard types the key under it, and it and its release are the keyboard's (true).
+    /// A press elsewhere goes to the screen under it as usual, so chat's clickable messages
+    /// (a server's "click here") still work while typing.
+    pub(super) fn pad_osk_pointer(&mut self, pressed: bool) -> bool {
+        if !pressed {
+            return std::mem::take(&mut self.pad.menu.osk_tapped);
+        }
+        // The keyboard is laid out in a Ui's units, not GUI pixels (`draw_pad_cursor`).
+        let Some(batch) = self.gui_batch() else {
+            return false;
+        };
+        let (_, _, (x, y), _) = horizon_client::ui_theme::Ui::space(
+            batch.width,
+            batch.height,
+            batch.scale,
+            self.cursor,
+        );
+        let Some(keyboard) = self.pad.menu.osk.as_mut() else {
+            return false;
+        };
+        match keyboard.tap(x, y) {
+            osk::Tap::Outside => false,
+            osk::Tap::Inside(out) => {
+                self.pad.menu.osk_tapped = true;
+                if let Some(out) = out {
+                    self.pad_osk_output(out);
+                }
+                true
+            }
+        }
+    }
+
     fn pad_osk_output(&mut self, out: osk::Output) {
         use osk::Output;
         let (key, text) = match &out {
