@@ -1344,5 +1344,10 @@
   "horizon.options.menu_navigation": "Menu Navigation",
   "horizon.options.menu_pointer": "Pointer",
   "horizon.screenshot.canceled": "Screenshot canceled",
-  "horizon.screenshot.success_hdr": "Saved screenshot as %s and %s"
+  "horizon.screenshot.success_hdr": "Saved screenshot as %s and %s",
+  "horizon.credits.nx.fork": "Horizon NX for the Nintendo Switch",
+  "horizon.credits.nx.port": "The Switch Port",
+  "horizon.credits.nx.driver": "The Switch Graphics Driver",
+  "horizon.credits.nx.horizon": "Horizon",
+  "horizon.credits.nx.contributors": "and the Horizon contributors"
 }

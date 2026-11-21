@@ -86,6 +86,9 @@ impl WinScreen {
         if poem && let Some(s) = read("end.txt") {
             screen.add_poem_file(&s, player, font, &mut narrated);
         }
+        // The Switch build's own people first, in the credits' own form (Horizon NX).
+        #[cfg(target_os = "horizon")]
+        screen.add_credits_file(&switch_credits(), &mut narrated);
         if let Some(s) = read("credits.json") {
             match serde_json::from_str(&s) {
                 Ok(json) => screen.add_credits_file(&json, &mut narrated),
@@ -497,4 +500,23 @@ mod tests {
         s.draw_contents(&mut batch, &atlas, end + 1.0);
         assert!(s.finished(h));
     }
+}
+
+/// The Switch build's credits section, as `texts/credits.json` writes one: the people behind the
+/// port, its graphics driver and this fork (README "Credits").
+#[cfg(target_os = "horizon")]
+fn switch_credits() -> serde_json::Value {
+    let tr = crate::lang::get;
+    serde_json::json!([{
+        "section": "Horizon NX",
+        "disciplines": [{
+            "discipline": "",
+            "titles": [
+                {"title": tr("horizon.credits.nx.fork"), "names": ["KoHaku743"]},
+                {"title": tr("horizon.credits.nx.port"), "names": ["JohnUzoka"]},
+                {"title": tr("horizon.credits.nx.driver"), "names": ["danfromtico", "NaGaa95", "JohnUzoka"]},
+                {"title": tr("horizon.credits.nx.horizon"), "names": ["Ludovic Marie", tr("horizon.credits.nx.contributors")]}
+            ]
+        }]
+    }])
 }

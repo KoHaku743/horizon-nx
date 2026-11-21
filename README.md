@@ -260,7 +260,7 @@ example `v1.3.0`): it builds, tags the commit and attaches the zip. Details: [do
   NaGaa95, built on Mesa's NVK, with [JohnUzoka's changes](https://github.com/JohnUzoka/mesa-switch).
 - **The TLSF allocator**: [rlsf](https://github.com/yvt/rlsf) by yvt.
 - **The Switch homebrew toolchain**: [devkitPro](https://devkitpro.org) and [libnx](https://github.com/switchbrew/libnx).
-- **This fork**: [KoHaku743](https://github.com/KoHaku743).
+- **Horizon NX, this fork** (the Switch build's features, releases and the [companion app](https://github.com/KoHaku743/horizon-nx-companion)): [KoHaku743](https://github.com/KoHaku743).
 
 ## License
 
