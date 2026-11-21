@@ -23,7 +23,7 @@ use horizon_core::{
 pub use library::MaterialRuleLibrary;
 pub use noise::MaterialNoiseSources;
 use rule::CompiledRule;
-pub use rule::SurfaceVariants;
+pub use rule::{BandRule, CompiledSurfaceRule, SurfaceFill, SurfaceVariants};
 pub use rule::{MaterialRule, MaterialRuleError};
 use std::{
     collections::{BTreeMap, BTreeSet},
@@ -40,6 +40,17 @@ pub trait MaterialSurfaceQueries {
         _eager: bool,
     ) -> Result<usize, DecodeError> {
         Err(DecodeError::Field("missing material density provider"))
+    }
+    /// `bind_density` for a density that is read only at blocks whose y lies
+    /// in `rows` (an ore vein's `positive_y`): an eager binding may sample
+    /// those rows alone, and only once one of them is read.
+    fn bind_density_rows(
+        &mut self,
+        sampler: Arc<dyn horizon_core::density::DensitySampler>,
+        eager: bool,
+        _rows: [i32; 2],
+    ) -> Result<usize, DecodeError> {
+        self.bind_density(sampler, eager)
     }
     fn density(&mut self, _index: usize, _position: BlockPos) -> Result<f32, MaterialRuleError> {
         Err(MaterialRuleError::MissingDensityProvider)
@@ -95,6 +106,14 @@ impl<T: MaterialSurfaceQueries + ?Sized> MaterialSurfaceQueries for &mut T {
         eager: bool,
     ) -> Result<usize, DecodeError> {
         (**self).bind_density(sampler, eager)
+    }
+    fn bind_density_rows(
+        &mut self,
+        sampler: Arc<dyn horizon_core::density::DensitySampler>,
+        eager: bool,
+        rows: [i32; 2],
+    ) -> Result<usize, DecodeError> {
+        (**self).bind_density_rows(sampler, eager, rows)
     }
     fn density(&mut self, index: usize, position: BlockPos) -> Result<f32, MaterialRuleError> {
         (**self).density(index, position)
@@ -367,6 +386,56 @@ where
             kind: self.kind.clone(),
             revision: self.revision,
             result: self.result,
+        }
+    }
+}
+/// A chunk's possible biomes, by name and, where the surface numbers its
+/// biomes, as a bit per index (`Kind::BiomeIds`).
+struct PossibleBiomes<'a> {
+    names: &'a BTreeSet<String>,
+    ids: Vec<u64>,
+}
+impl<R: RandomSource> Compiled<R>
+where
+    R::Positional: Clone,
+{
+    /// This condition as `compile` makes it for a chunk with `possible`
+    /// biomes: a biome condition none of them, or all of them, meet is
+    /// constant.
+    fn fold_biomes(&self, possible: &PossibleBiomes) -> Self {
+        let decided = match &self.kind {
+            Kind::Biome(names) if names.is_disjoint(possible.names) => Some(false),
+            Kind::Biome(names) if possible.names.is_subset(names) => Some(true),
+            Kind::BiomeIds(bits) => {
+                let bit = |ids: &[u64], i: usize| ids.get(i).copied().unwrap_or(0);
+                let mut words = 0..possible.ids.len().max(bits.len());
+                if words
+                    .clone()
+                    .all(|i| bit(bits, i) & bit(&possible.ids, i) == 0)
+                {
+                    Some(false)
+                } else if words.all(|i| bit(&possible.ids, i) & !bit(bits, i) == 0) {
+                    Some(true)
+                } else {
+                    None
+                }
+            }
+            Kind::Not(child) => {
+                return Self {
+                    kind: Kind::Not(Box::new(child.fold_biomes(possible))),
+                    revision: self.revision,
+                    result: self.result,
+                };
+            }
+            _ => None,
+        };
+        match decided {
+            Some(value) => Self {
+                kind: Kind::Constant(value),
+                revision: self.revision,
+                result: self.result,
+            },
+            None => self.clone(),
         }
     }
 }

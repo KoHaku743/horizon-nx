@@ -120,6 +120,18 @@ pub fn init() {
         // `KEY=VALUE` per line, `#` starts a comment, blank lines ignored. A variable the loader
         // already set wins; each applied line is logged.
         apply_env_file();
+        // The game's home (options.txt, saves/, logs/) is the NRO's folder: the game reads
+        // HORIZON_HOME, else a desktop data folder the Switch doesn't have.
+        if std::env::var_os("HORIZON_HOME").is_none() {
+            // SAFETY: edition 2024 makes set_var unsafe; no other thread is running yet.
+            unsafe { std::env::set_var("HORIZON_HOME", ".") };
+        }
+        // std has no core count for Horizon; an application gets cores 0-2 (core 3 is the
+        // system's). The game sizes its worker pools from HORIZON_WORKER_THREADS.
+        if std::env::var_os("HORIZON_WORKER_THREADS").is_none() {
+            // SAFETY: as above, no other thread is running yet.
+            unsafe { std::env::set_var("HORIZON_WORKER_THREADS", "3") };
+        }
         // NAK's plat and ofold passes off, unless env.txt says otherwise
         // (nak_safe_default).
         nak_safe_default();

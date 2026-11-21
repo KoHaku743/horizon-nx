@@ -2,9 +2,11 @@
 //! `item.properties`, `entity.properties` (4.1). `key=value` lines, `#` comments, a trailing `\`
 //! continuing a value on the next line, and conditional directives evaluated with the
 //! standard and option macros (1.5 item 2). `#define` and `#undef` work in every one of them:
-//! a public pack defines a macro in its `shaders.properties` and tests it further down.
-//! No other escape is read: values are names, numbers and expressions. A later duplicate key
-//! replaces the earlier one, with a note.
+//! a public pack defines a macro in its `shaders.properties` and tests it further down. The
+//! lines of custom uniforms and variables (`uniform.*`, `variable.*`), and the values of images
+//! (`image.*`), have those macros expanded as each line is read; a definition after a line does
+//! not reach back to it. No other escape is read: values are names, numbers and expressions. A
+//! later duplicate key replaces the earlier one, with a note.
 
 use crate::Macros;
 use crate::condition::{Conditionals, split_directive};
@@ -47,24 +49,66 @@ impl Properties {
                 }
                 continue;
             }
-            // Continuation lines belong to their entry even inside a skipped branch.
+            if !on {
+                continue;
+            }
+            // The preprocessor consumes directive lines inside a continued value, and the lines of
+            // a branch not taken go away with them, so the value goes on with the next name line.
+            // A group opened *inside* the value belongs to it; the `#endif` that closes the branch
+            // the entry started in does not, as it would pull the next line, an entry of its own,
+            // into the value. `#else` and `#elif` end the entry either way: the branch they start
+            // writes the value again.
             let mut logical = line.to_owned();
-            while ends_with_continuation(&logical) {
+            // The groups `#if`/`#ifdef`/`#ifndef` opened since the entry line started.
+            let mut opened = 0u32;
+            'continuation: while ends_with_continuation(&logical) {
                 logical.pop();
-                match lines.next() {
-                    Some((next, _)) => logical.push_str(next.trim()),
-                    None => break,
+                loop {
+                    let Some((next, n)) = lines.next() else {
+                        break 'continuation;
+                    };
+                    let next = next.trim();
+                    if let Some(directive) = next.strip_prefix('#') {
+                        if let Some((word, rest)) = split_directive(directive) {
+                            out.directive(word, rest, n, &mut conditionals, &mut macros);
+                            match word {
+                                "if" | "ifdef" | "ifndef" => opened += 1,
+                                "endif" if opened > 0 => opened -= 1,
+                                "endif" | "else" | "elif" => break 'continuation,
+                                _ => {}
+                            }
+                        }
+                        continue;
+                    }
+                    // A skipped line leaves the continuation open, as if it were not in the file.
+                    if conditionals.active() {
+                        logical.push_str(next);
+                        break;
+                    }
                 }
             }
-            if !on || logical.is_empty() {
+            if logical.is_empty() {
                 continue;
             }
             match logical.split_once('=') {
-                Some((key, value)) if !key.trim().is_empty() => out.insert(Entry {
-                    key: key.trim().to_owned(),
-                    value: value.trim().to_owned(),
-                    line: number,
-                }),
+                Some((key, value)) if !key.trim().is_empty() => {
+                    let (mut key, mut value) = (key.trim().to_owned(), value.trim().to_owned());
+                    // A custom uniform's or variable's line is read with the macros expanded, as
+                    // Iris 1.11.7 reads it (probe pack): options, standard macros and this
+                    // file's own `#define`s, in the name too. An image's value is read the same
+                    // way, at its own line: a later `#define` doesn't reach back to it.
+                    if key.starts_with("uniform.") || key.starts_with("variable.") {
+                        key = macros.expand(&key).trim().to_owned();
+                        value = macros.expand(&value).trim().to_owned();
+                    } else if key.starts_with("image.") {
+                        value = macros.expand(&value).trim().to_owned();
+                    }
+                    out.insert(Entry {
+                        key,
+                        value,
+                        line: number,
+                    })
+                }
                 _ => out.note(number, "not a key=value line"),
             }
         }
@@ -118,8 +162,9 @@ impl Properties {
             Ok(true) => {}
             Ok(false) if conditionals.active() => match word {
                 "define" => {
-                    let (name, value) = rest.split_once(char::is_whitespace).unwrap_or((rest, ""));
-                    macros.define(name, value.trim());
+                    if let Err(e) = macros.define_line(rest) {
+                        self.note(number, &e);
+                    }
                 }
                 "undef" => macros.undef(rest),
                 _ => {}
@@ -180,6 +225,50 @@ mod tests {
             ]
         );
         assert_eq!(p.entry("sliders").unwrap().line, 4);
+    }
+
+    #[test]
+    fn continuations_continue_past_preprocessor_groups() {
+        let p = read(
+            "block.1 = \\\n#ifdef IRIS_TAG_SUPPORT\n#ifdef PT_TAG_DETECTION\n#tag minecraft:logs\n#endif\n#endif\nacacia_log acacia_planks \\\n#define TAGS\noak_log",
+        );
+        assert_eq!(p.get("block.1"), Some("acacia_log acacia_planks oak_log"));
+        assert!(p.notes.is_empty(), "{:?}", p.notes);
+    }
+
+    /// A continued value skips the lines of a branch not taken without ending, and an active
+    /// branch joins its names, backslash and all.
+    #[test]
+    fn inactive_continuation_lines_are_skipped() {
+        let p = read("x = a \\\n#ifdef OFF\nb \\\n#endif\nc");
+        assert_eq!(p.get("x"), Some("a c"));
+        assert!(p.notes.is_empty(), "{:?}", p.notes);
+        let p = read("x = a \\\n#ifdef SHADOWS\nb \\\n#endif\nc");
+        assert_eq!(p.get("x"), Some("a b c"));
+        assert!(p.notes.is_empty(), "{:?}", p.notes);
+    }
+
+    /// The `#endif` that closes the branch the entry started in ends its value, so the line after
+    /// it is an entry of its own; only a group opened inside the value is consumed by it.
+    #[test]
+    fn continuations_stop_at_the_endif_of_their_own_branch() {
+        let p = read("#define ON\n#ifdef ON\nu = 1 \\\n#endif\nw = 3");
+        assert_eq!(pairs(&p), [("u", "1"), ("w", "3")]);
+        assert!(p.notes.is_empty(), "{:?}", p.notes);
+        let p = read("#define ON\n#ifdef ON\nu = 1 \\\n#ifdef INNER\n#endif\n#endif\nw = 3");
+        assert_eq!(pairs(&p), [("u", "1"), ("w", "3")]);
+        assert!(p.notes.is_empty(), "{:?}", p.notes);
+    }
+
+    /// A continued value ending before `#else` stops there, and the line after `#endif` is an
+    /// entry of its own.
+    #[test]
+    fn continuations_stop_at_directives() {
+        let text = "#define ON\n#ifdef ON\nu = if( \\\n  a, 1.0, \\\n  0.5) \\\n#else\nu = 1.0\n#endif\n\n\
+                    #ifdef OFF\nv = 1 \\\n  2\n#endif\nw = 3";
+        assert_eq!(pairs(&read(text)), [("u", "if( a, 1.0, 0.5)"), ("w", "3")]);
+        let text = "#define ON\n#ifdef ON\nu = 1 \\\n#else\nu = 2\n#endif\nw = 3";
+        assert_eq!(pairs(&read(text)), [("u", "1"), ("w", "3")]);
     }
 
     #[test]

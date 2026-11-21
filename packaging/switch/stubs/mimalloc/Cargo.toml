@@ -1,0 +1,10 @@
+[package]
+name = "mimalloc-horizon-stub"
+version = "0.1.52"
+edition = "2021"
+license = "MIT"
+description = "The Switch build's stand-in for mimalloc: the system heap (newlib's, which horizon-nx backs with its TLSF heap). mimalloc needs mmap, which libnx lacks."
+publish = false
+
+[lib]
+name = "mimalloc"

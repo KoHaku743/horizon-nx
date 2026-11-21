@@ -3,6 +3,8 @@
 //! the codec form. See [`super::raw`] for the rest.
 use super::*;
 use crate::buf::Reader;
+use crate::item::{ATTRIBUTE_OPERATIONS, EQUIPMENT_SLOT_GROUPS};
+use horizon_world::snbt_text::to_snbt;
 
 const USE_ANIMATION: [&str; 12] = [
     "none",
@@ -23,12 +25,6 @@ const SWING: [&str; 3] = ["none", "whack", "stab"];
 const SLOT: [&str; 8] = [
     "mainhand", "feet", "legs", "chest", "head", "offhand", "body", "saddle",
 ];
-/// `EquipmentSlotGroup` by id.
-const SLOT_GROUP: [&str; 11] = [
-    "any", "mainhand", "offhand", "hand", "feet", "legs", "chest", "head", "armor", "body",
-    "saddle",
-];
-const OPERATION: [&str; 3] = ["add_value", "add_multiplied_base", "add_multiplied_total"];
 
 fn int(r: &mut Reader) -> Option<i32> {
     r.varint().ok()
@@ -99,7 +95,7 @@ pub(super) fn sound(r: &mut Reader, names: &dyn Names) -> Option<Sound> {
             })
         }
         id => {
-            let name = names.name("minecraft:sound_event", id - 1)?;
+            let name = names.name("minecraft:sound_event", id.wrapping_sub(1))?;
             Some(Sound {
                 code: string(&name),
                 name: Some(name),
@@ -121,7 +117,7 @@ fn holder_set(registry: &str, names: &dyn Names, r: &mut Reader) -> Option<HashC
     match int(r)? {
         0 => Some(string(&format!("#{}", r.string(32767).ok()?))),
         n => {
-            let n = usize::try_from(n - 1)
+            let n = usize::try_from(n.wrapping_sub(1))
                 .ok()
                 .filter(|n| *n <= r.remaining())?;
             let mut ids = Vec::with_capacity(n);
@@ -215,9 +211,43 @@ fn kinetic_condition(r: &mut Reader) -> Option<HashCode> {
     Some(float_or(rec, "min_relative_speed", relative, 0.0).build())
 }
 
-/// `BlockPredicate.STREAM_CODEC` as `BlockPredicate.CODEC` writes it. A block
-/// entity `nbt` (a lenient SNBT string) and `predicates` (partial component
-/// matchers) have no codec form built here.
+/// The `Codec.BOOL` fields of the component predicates' codecs
+/// (`FireworkPredicate`, `WrittenBookPredicate`, `MobEffectInstancePredicate`):
+/// they travel as NBT bytes and hash as booleans. The text components inside a
+/// written book's page predicates add [`TEXT_BOOLS`].
+pub(super) const PREDICATE_BOOLS: [&str; 12] = [
+    "has_twinkle",
+    "has_trail",
+    "resolved",
+    "ambient",
+    "visible",
+    "bold",
+    "italic",
+    "underlined",
+    "strikethrough",
+    "obfuscated",
+    "interpret",
+    "plain",
+];
+/// `DataComponentPredicate.STREAM_CODEC`: each entry is a type (a predicate
+/// type, or a component type for `AnyValue`) and the predicate as the NBT its
+/// `CODEC` encodes (`fromCodecWithRegistries`), hashed as the map
+/// `DataComponentPredicate.CODEC` (`Codec.dispatchedMap`) writes.
+fn partial_predicate(r: &mut Reader, names: &dyn Names) -> Option<(HashCode, HashCode)> {
+    let registry = if boolean(r)? {
+        "minecraft:data_component_predicate_type"
+    } else {
+        "minecraft:data_component_type"
+    };
+    let key = entry(names, registry, int(r)?)?;
+    let tag = r.nbt().ok()?;
+    // The nested `components` of an item predicate (`container`,
+    // `bundle_contents`) are component values as NBT: `exact` hashes them by
+    // each component's codec.
+    Some((key, super::exact::predicate(&tag, names)?))
+}
+
+/// `BlockPredicate.STREAM_CODEC` as `BlockPredicate.CODEC` writes it.
 fn block_predicate(r: &mut Reader, names: &dyn Names) -> Option<HashCode> {
     let blocks = optional(r, |r| holder_set("minecraft:block", names, r))?;
     // StatePropertiesPredicate: a name and an exact value or a (min, max) range.
@@ -238,27 +268,39 @@ fn block_predicate(r: &mut Reader, names: &dyn Names) -> Option<HashCode> {
         })?;
         Some(HashOps::create_map(props))
     })?;
-    if boolean(r)? {
-        return None;
-    }
+    // NbtPredicate: `TagParser.LENIENT_CODEC` encodes with its flattened codec,
+    // the tag's SNBT string.
+    let nbt = optional(r, |r| match r.nbt().ok()? {
+        tag @ horizon_core::nbt::Tag::Compound(_) => Some(string(&to_snbt(&tag))),
+        _ => None,
+    })?;
     // DataComponentExactPredicate: the expected components, by type name.
     let exact = list(r, |r| {
+        let _nested = crate::item::Nested::enter().ok()?;
         let kind = int(r)?;
         let name = entry(names, "minecraft:data_component_type", kind)?;
         let value = Component::read(kind, r).ok()?.code(kind, names)?;
         Some((name, value))
     })?;
-    if r.count(r.remaining()).ok()? != 0 {
+    // DataComponentPredicate: the partial matchers (at most 64).
+    let partial = list(r, |r| partial_predicate(r, names))?;
+    if partial.len() > 64 {
         return None;
     }
     let rec = RecordHash::new()
         .optional("blocks", blocks)
-        .optional("state", state);
+        .optional("state", state)
+        .optional("nbt", nbt);
+    let rec = if exact.is_empty() {
+        rec
+    } else {
+        rec.field("components", HashOps::create_map(exact))
+    };
     Some(
-        if exact.is_empty() {
+        if partial.is_empty() {
             rec
         } else {
-            rec.field("components", HashOps::create_map(exact))
+            rec.field("predicates", HashOps::create_map(partial))
         }
         .build(),
     )
@@ -279,14 +321,14 @@ pub(super) fn code(kind: i32, r: &mut Reader, names: &dyn Names) -> Option<HashC
             let attribute = holder("minecraft:attribute", names, r)?;
             let id = ident(r)?;
             let amount = r.f64().ok()?;
-            let operation = pick(&OPERATION, int(r)?)?;
+            let operation = pick(&ATTRIBUTE_OPERATIONS, int(r)?)?;
             let slot = int(r)?;
             let rec = RecordHash::new()
                 .field("type", attribute)
                 .field("id", id)
                 .field("amount", HashOps::create_double(amount.to_bits()))
                 .field("operation", operation);
-            let rec = or_default(rec, "slot", slot, 0, pick(&SLOT_GROUP, slot)?);
+            let rec = or_default(rec, "slot", slot, 0, pick(&EQUIPMENT_SLOT_GROUPS, slot)?);
             Some(
                 match int(r)? {
                     0 => rec,
@@ -533,7 +575,7 @@ pub(super) fn code(kind: i32, r: &mut Reader, names: &dyn Names) -> Option<HashC
         // encoded (vanilla's client would throw), so only a reference hashes.
         66 => match int(r)? {
             0 => return None,
-            id => entry(names, "minecraft:jukebox_song", id - 1)?,
+            id => entry(names, "minecraft:jukebox_song", id.wrapping_sub(1))?,
         },
         67 => holder_set("minecraft:banner_pattern", names, r)?,
         83 => sound(r, names)?.code,

@@ -51,7 +51,61 @@ fn versions_name_the_stable_ones() {
         "quilt-loader-0.19.2-1.21.4"
     );
     assert_eq!(Kind::parse(" Fabric ").unwrap(), Kind::Fabric);
-    assert!(Kind::parse("forge").is_err());
+    assert_eq!(Kind::parse("NeoForge").unwrap(), Kind::NeoForge);
+    assert!(Kind::parse("liteloader").is_err());
+}
+
+#[test]
+fn a_minecraft_version_the_loader_never_supported_says_so() {
+    // Fabric's service answers 400 for 1.12.2, Quilt's 404; their game lists start at 1.14.
+    let fetch = |url: &str| -> Result<Vec<u8>, String> {
+        if url.ends_with("/versions/game") {
+            return Ok(br#"[{"version": "1.21.4"}, {"version": "1.14"}]"#.to_vec());
+        }
+        Err(if url.contains("quiltmc") {
+            format!("{url} answered 404")
+        } else {
+            format!("{url} answered 400")
+        })
+    };
+    for kind in [Kind::Fabric, Kind::Quilt] {
+        let err = versions(kind, "1.12.2", &fetch).unwrap_err();
+        assert_eq!(
+            err,
+            format!("{} has no loader for Minecraft 1.12.2.", kind.name())
+        );
+        // The same answer for a version the game list has is an outage, and says so.
+        let err = versions(kind, "1.21.4", &fetch).unwrap_err();
+        assert!(
+            err.ends_with("/versions/loader/1.21.4 answered 400") || err.ends_with("answered 404"),
+            "{err}"
+        );
+    }
+    // Without a readable game list, the service's own answer stands.
+    let no_list = |url: &str| -> Result<Vec<u8>, String> { Err(format!("{url} answered 404")) };
+    assert!(versions(Kind::Quilt, "1.12.2", &no_list)
+        .unwrap_err()
+        .ends_with("/versions/loader/1.12.2 answered 404"));
+    // Nor with a list whose entries name no version (an error page in a list, a blank one).
+    for list in [
+        &br#"[{"error": "upstream unavailable"}]"#[..],
+        br#"[{"version": " "}]"#,
+    ] {
+        let odd_list = |url: &str| -> Result<Vec<u8>, String> {
+            if url.ends_with("/versions/game") {
+                return Ok(list.to_vec());
+            }
+            Err(format!("{url} answered 404"))
+        };
+        assert!(versions(Kind::Quilt, "1.21.4", &odd_list)
+            .unwrap_err()
+            .ends_with("/versions/loader/1.21.4 answered 404"));
+    }
+    let offline = |_: &str| -> Result<Vec<u8>, String> { Err("No connection: refused".into()) };
+    assert_eq!(
+        versions(Kind::Fabric, "1.21.4", &offline).unwrap_err(),
+        "No connection: refused"
+    );
 }
 
 #[test]
@@ -104,7 +158,7 @@ fn a_profile_comes_with_its_libraries_checked() {
     };
     let install_with = |served: &HashMap<String, Vec<u8>>, minecraft: &str| {
         let fetch = |url: &str| served.get(url).cloned().ok_or(format!("404 {url}"));
-        install(&loader, minecraft, &dir, &fetch, &|_| {})
+        install(&loader, minecraft, &dir, Path::new("java"), &fetch, &|_| {})
     };
     let id = install_with(&served, "1.21.4").unwrap();
     assert_eq!(id, Kind::Fabric.profile_id("0.16.9", "1.21.4"));
@@ -143,9 +197,14 @@ fn the_real_loaders_install() {
         let dir =
             std::env::temp_dir().join(format!("horizon-loaders-{kind}-{}", std::process::id()));
         let loader = choose(kind, "1.21.4", None).unwrap();
-        let id = install(&loader, "1.21.4", &dir, &crate::backend::get_bytes, &|l| {
-            eprintln!("{l}")
-        })
+        let id = install(
+            &loader,
+            "1.21.4",
+            &dir,
+            Path::new("java"),
+            &crate::backend::get_bytes,
+            &|l| eprintln!("{l}"),
+        )
         .unwrap();
         assert_eq!(id, loader.kind.profile_id(&loader.version, "1.21.4"));
         let kept: Value = serde_json::from_slice(

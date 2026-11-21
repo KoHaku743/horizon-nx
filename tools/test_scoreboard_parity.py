@@ -29,9 +29,10 @@ import sys
 from pathlib import Path
 
 try:
-    from . import lab, test_rust_parity as base
+    from . import lab, oracle_folders, test_rust_parity as base
 except ImportError:
     import lab
+    import oracle_folders
     import test_rust_parity as base
 
 PARITY = lab.ROOT / 'mods/horizon/src/test/java/dev/horizonlab/parity'
@@ -244,13 +245,15 @@ def main():
     oracle = ['java', '-Xmx1G', '-cp', str(classes) + os.pathsep + dependencies, 'dev.horizonlab.parity.VanillaScoreboardOracle']
     run(['javac', '--release', lock['minecraft']['java_major'], '-proc:none', '-nowarn', '-cp', dependencies, '-d', classes,
          PARITY / 'VanillaScoreboardOracle.java'], 'compile-java')
-    run([*oracle, 'export', build], 'export')
+    export = oracle_folders.folder(build / 'oracle-export', call=(classes, jars['server'], 'export'))
+    run([*oracle, 'export', export], 'export')
+    oracle_folders.copy(export, build, 'registries.json')
     registries = json.loads((build / 'registries.json').read_text())
     chosen = cases(args.count, registries)
     inputs = build / 'inputs.jsonl'
     inputs.write_text(''.join(json.dumps(c, ensure_ascii=False) + '\n' for c in chosen), encoding='utf-8')
     run([*oracle, 'run', inputs, build / 'vanilla.jsonl'], 'vanilla')
-    run(['cargo', 'build', '--profile', 'fast', '-p', 'horizon-client', '--example', 'client_probe'], 'compile-rust')
+    run(['cargo', 'build', '--profile', 'fast', '-p', 'horizon-client-lib', '--example', 'client_probe'], 'compile-rust')
     metadata = json.loads(subprocess.check_output(['cargo', 'metadata', '--no-deps', '--format-version', '1'], cwd=lab.ROOT, text=True))
     binary = Path(metadata['target_directory']) / 'fast/examples' / ('client_probe.exe' if os.name=='nt' else 'client_probe')
     run([binary, 'scoreboard_fixture',build / 'registries.json', inputs, build / 'rust.jsonl', build / 'vanilla.jsonl'], 'rust')

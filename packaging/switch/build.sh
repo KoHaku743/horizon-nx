@@ -91,6 +91,7 @@ nro() {
             # std is its own workspace and does not see our [patch]; a config-file patch applies to
             # it, but its Cargo.lock must move to the patched libc first.
             STD_LIB="$(rustc --print sysroot)/lib/rustlib/src/rust/library"
+            bash packaging/switch/patch-std.sh "$STD_LIB"
             cargo update $CONFIG -p libc --manifest-path "$STD_LIB/Cargo.toml"
             if grep -A2 "^name = \"libc\"" "$STD_LIB/Cargo.lock" | grep -q "^source = "; then
                 echo "error: std would build against crates.io libc, not bevy-horizon patches/libc" >&2
@@ -104,7 +105,7 @@ nro() {
             cargo build --release ${JOBS:+-j "$JOBS"} $CONFIG \
                 -Z build-std=core,alloc,std,panic_abort -Z json-target-spec \
                 --target /src/bevy-horizon/aarch64-nintendo-horizon.json \
-                -p horizon-client --bin '"$BIN"' --no-default-features ${FEATURES:+--features "$FEATURES"} $CARGO_ARGS'
+                -p horizon-game --bin '"$BIN"' --no-default-features ${FEATURES:+--features "$FEATURES"} $CARGO_ARGS'
 
     echo "==> packaging horizon.nro"
     local icon_mount=()

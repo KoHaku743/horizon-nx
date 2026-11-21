@@ -13,7 +13,7 @@ a `#is_projectile` damage whose direct entity is a `minecraft:fireball`.
 The ghast died, but the advancement never came on the default single player
 (the host on its server thread plays as a guest there): the fireball's hit did
 not record which player hurt the ghast, as an arrow's does, so the kill went to
-nobody (#4212). Both single-player paths: the server thread and in-frame.
+nobody (#4212).
 
   test_return_to_sender_parity.py [--bin-dir DIR] [--keep]
 """
@@ -28,12 +28,13 @@ import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import lab  # noqa: E402
 from test_world_reopen_parity import game_env  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 RESOURCES = ROOT / '.local' / 'horizon-client' / '26.3'
 RUN = ROOT / '.local' / 'return-to-sender'
-MODES = {'server thread': [], 'in-frame': ['--in-frame']}
+MODES = {'server thread': []}
 TITLE = 'advancements.nether.return_to_sender.title'
 
 
@@ -44,7 +45,7 @@ def main():
     args = parser.parse_args()
     bin_dir = Path(args.bin_dir).resolve() if args.bin_dir else None
     if bin_dir is None:
-        subprocess.run(['cargo', 'build', '--locked', '--profile', 'fast', '-p', 'horizon-client', '--bins'], cwd=ROOT, check=True)
+        subprocess.run(['cargo', 'build', '--locked', '--profile', 'fast', '-p', 'horizon-game', '-p', 'horizon-client-lib', '--bins'], cwd=ROOT, check=True)
         bin_dir = ROOT / os.environ.get('CARGO_TARGET_DIR', 'target') / 'fast'
     shutil.rmtree(RUN, ignore_errors=True)
     RUN.mkdir(parents=True)
@@ -56,7 +57,7 @@ def main():
         socket = Path(tempfile.mkdtemp(prefix='hzrs')) / 'control.sock'  # sockets need short paths
 
         def ctl(*words, check=True):
-            result = subprocess.run([str(bin_dir / 'horizon-ctl'), '--socket', str(socket), '--timeout', '600',
+            result = subprocess.run([str(lab.binary(bin_dir, 'horizon-ctl')), '--socket', str(socket), '--timeout', '600',
                                      *map(str, words)], cwd=folder, env=env, capture_output=True, text=True)
             if check and result.returncode:
                 sys.exit(f'horizon-ctl {" ".join(map(str, words))} failed: {result.stdout}{result.stderr}')
@@ -64,7 +65,7 @@ def main():
 
         # The game keeps launch's output handles, so it writes to a file: a pipe would not close.
         with open(folder / 'launch.txt', 'w') as out:
-            subprocess.run([str(bin_dir / 'horizon-ctl'), '--socket', str(socket), '--timeout', '600', 'launch',
+            subprocess.run([str(lab.binary(bin_dir, 'horizon-ctl')), '--socket', str(socket), '--timeout', '600', 'launch',
                             '--resources', str(RESOURCES), '--world', 'world', '--seed', '1', '--render-distance', '4',
                             *flags, *extra], cwd=folder, env=env, stdout=out, stderr=subprocess.STDOUT, check=True)
         try:

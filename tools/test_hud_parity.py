@@ -57,6 +57,10 @@ def cases(count, kinds):
 
 
 def close(p, q):
+    if isinstance(p, dict) and isinstance(q, dict):
+        return p.keys() == q.keys() and all(close(p[k], q[k]) for k in p)
+    if isinstance(p, (list, tuple)) and isinstance(q, (list, tuple)):
+        return len(p) == len(q) and all(close(a, b) for a, b in zip(p, q))
     if (isinstance(p, float) or isinstance(q, float)) and not isinstance(p, bool) and not isinstance(q, bool):
         return abs(p - q) <= 1e-4 * (1 + abs(p))
     return p == q
@@ -77,16 +81,7 @@ def normal(d):
 
 
 def same(x, y):
-    if x.keys() != y.keys():
-        return False
-    for k in x:
-        p, q = x[k], y[k]
-        if isinstance(p, list) and isinstance(q, list):
-            if len(p) != len(q) or not all(close(a, b) for a, b in zip(p, q)):
-                return False
-        elif not close(p, q):
-            return False
-    return True
+    return close(x, y)
 
 
 def main():
@@ -114,7 +109,7 @@ def main():
          *(PARITY / f'{n}.java' for n in ('ParityData', 'ParityFont', 'VanillaHudOracle'))], 'compile-java')
     run(['java', '-Xmx2G', '-cp', str(classes) + os.pathsep + dependencies, 'dev.horizonlab.parity.VanillaHudOracle',
          inputs, build / 'vanilla.jsonl'], 'vanilla')
-    run(['cargo', 'run', '--quiet', '--profile', 'fast', '-p', 'horizon-client', '--example', 'client_probe', '--',
+    run(['cargo', 'run', '--quiet', '--profile', 'fast', '-p', 'horizon-client-lib', '--example', 'client_probe', '--',
          'hud_fixture', resources, inputs, build / 'rust.jsonl'], 'rust')
     vanilla = [json.loads(l) for l in (build / 'vanilla.jsonl').read_text().splitlines()]
     rust = [json.loads(l) for l in (build / 'rust.jsonl').read_text().splitlines()]

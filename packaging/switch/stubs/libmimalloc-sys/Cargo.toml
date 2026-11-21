@@ -1,0 +1,10 @@
+[package]
+name = "libmimalloc-sys-horizon-stub"
+version = "0.1.49"
+edition = "2021"
+license = "MIT"
+description = "The Switch build's stand-in for libmimalloc-sys: the few calls the game makes, over the system heap."
+publish = false
+
+[lib]
+name = "libmimalloc_sys"
