@@ -516,6 +516,13 @@ impl Game<'_> {
             }),
         };
         let mut options = self.options.clone();
+        // The content mods the window's resources hold now, not the ones it
+        // launched with: a mod switched on live on the title screen is in the
+        // window's root, and a server started with the launch selection would
+        // stage a root without it (its recipes, loot tables and tags).
+        options.mods.selected = self.mods.selected.clone();
+        options.mods.applied = self.mods.applied.clone();
+        options.mods.refused = self.mods.refused.clone();
         // A server without a console: no local player, no window, no control socket.
         // Compatibility for gameplay checks outside startup/world loading.
         options.dedicated = Some(Vec::new());
