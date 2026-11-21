@@ -124,6 +124,7 @@ impl<'a> Split<'a> {
     pub(super) fn sync_setup(&mut self) -> bool {
         use horizon_client::options_ui::Page;
         if self.host.ui.options.page() != Page::SplitSetup {
+            self.controllers_shown = false;
             return false;
         }
         // Window/fullscreen changes during P1's turn can invalidate Windows monitor handles.
@@ -150,6 +151,7 @@ impl<'a> Split<'a> {
         let applied = setup.apply.take();
         let identify = std::mem::take(&mut setup.identify);
         let give_up = std::mem::take(&mut setup.give_up_pad);
+        let show_controllers = std::mem::take(&mut setup.show_controllers);
         if std::mem::take(&mut setup.toggle_names) {
             let e = &mut self.host.settings.extras;
             e.splitscreen_names = !e.splitscreen_names;
@@ -159,10 +161,21 @@ impl<'a> Split<'a> {
         if give_up {
             self.give_up_pad();
         }
+        // The Switch: its controller screen, as games show it before local multiplayer, once
+        // as Setup opens with splitscreen on, then from Controllers.
+        let on = self.host.settings.extras.splitscreen || self.forced;
+        let first = on && !std::mem::replace(&mut self.controllers_shown, on);
+        #[cfg(target_os = "horizon")]
+        if show_controllers || first {
+            horizon_nx::controllers::show(4);
+        }
+        #[cfg(not(target_os = "horizon"))]
+        let _ = (show_controllers, first);
         // Give Up Pad shows while P1 has a controller in a world others can join.
         let p1_pad = self.p1_pad.owner.is_some() && self.in_world();
         let setup = &mut self.host.ui.options.split_setup;
         setup.names_shown = names_shown;
+        setup.controllers = cfg!(target_os = "horizon");
         setup.p1_pad = p1_pad;
         setup.idle = self.surfaces.is_empty();
         setup.live = Some(live);

@@ -52,6 +52,10 @@ pub struct SplitUi {
     /// P1 has a controller (the game sets it), and Give Up Pad pressed: it's offered to join.
     pub p1_pad: bool,
     pub give_up_pad: bool,
+    /// The system has a controller screen (the Switch: the game sets it), and Controllers
+    /// pressed: the game shows it.
+    pub controllers: bool,
+    pub show_controllers: bool,
     edit: Option<Draft>,
     selected: Option<usize>,
     /// A tile held by the mouse: whose, and where the pointer is (`None` until it moves).
@@ -92,6 +96,8 @@ enum Target {
     Names,
     /// P1's controller freed and offered to join (handed to a friend).
     GiveUpPad,
+    /// The system's controller screen (the Switch), to connect and order controllers.
+    Controllers,
     Revert,
     Apply,
     Done,
@@ -288,6 +294,10 @@ impl SplitUi {
             .filter(|w| Some(w.number) != mine)
             .map(|w| (tr("window", &[&w.number]), Spot::Window(w.number)))
             .collect();
+        // The Switch has one screen: no other window or monitor to go to.
+        if cfg!(target_os = "horizon") {
+            return spots;
+        }
         spots.push((tr("new_window", &[]), Spot::New));
         for m in &self.monitors {
             let filled = draft
@@ -400,12 +410,17 @@ impl SplitUi {
             Target::GiveUpPad,
             true,
         );
+        let controllers = (64.0, tr("controllers", &[]), Target::Controllers, true);
         if !self.on || self.idle {
             let mut out = vec![switch];
             if self.on && self.p1_pad {
                 out.push(give_up);
             }
-            row(&mut out, h - 27.0, vec![done]);
+            let footer = match self.on && self.controllers {
+                true => vec![controllers, done],
+                false => vec![done],
+            };
+            row(&mut out, h - 27.0, footer);
             return out;
         }
         let (_, windows, tiles) = self.map(w, h);
@@ -486,8 +501,12 @@ impl SplitUi {
         }
         // Narrow enough for two squares in the narrowest view (320 GUI pixels).
         let editing = self.changed();
+        // With a controller screen (one window: nothing to identify), it takes Identify's place.
+        footer.push(match self.controllers {
+            true => controllers,
+            false => (64.0, tr("identify", &[]), Target::Identify, true),
+        });
         footer.extend([
-            (64.0, tr("identify", &[]), Target::Identify, true),
             (64.0, tr("revert", &[]), Target::Revert, editing),
             (64.0, tr("apply", &[]), Target::Apply, editing),
             done,
@@ -510,6 +529,7 @@ impl SplitUi {
             Target::Identify => tr("help.identify", &[]),
             Target::Names => tr("help.names", &[]),
             Target::GiveUpPad => tr("help.give_up_pad", &[]),
+            Target::Controllers => tr("help.controllers", &[]),
             Target::Revert if *active => tr("help.revert", &[]),
             Target::Apply if *active => tr("help.apply", &[]),
             Target::Revert | Target::Apply => tr("help.unchanged", &[]),
@@ -862,6 +882,7 @@ impl SplitUi {
             Target::Identify => self.identify = true,
             Target::Names => self.toggle_names = true,
             Target::GiveUpPad => self.give_up_pad = true,
+            Target::Controllers => self.show_controllers = true,
             Target::Revert => self.edit = None,
             Target::Apply => {
                 // Windows emptied in the draft close now, not as players moved.
@@ -1051,6 +1072,20 @@ mod tests {
             ui.click((r[0] + 1.0, r[1] + 1.0), SIZE, false),
             Click::Switch
         ));
+    }
+
+    #[test]
+    fn with_a_controller_screen_controllers_asks_for_it_alone_and_with_others() {
+        let mut ui = screen(1);
+        ui.idle = true;
+        ui.controllers = true;
+        press(&mut ui, "Controllers");
+        assert!(ui.show_controllers);
+        let mut ui = screen(2);
+        ui.controllers = true;
+        assert!(!labels(&ui).iter().any(|l| l == "Identify"));
+        press(&mut ui, "Controllers");
+        assert!(ui.show_controllers);
     }
 
     fn rect(ui: &SplitUi, label: &str) -> [f32; 4] {

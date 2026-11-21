@@ -125,6 +125,8 @@ pub(super) struct Split<'a> {
     order: Vec<usize>,
     /// Seats represented by the open Setup draft, to detect join/leave changes.
     setup_seats: Vec<usize>,
+    /// The Switch's controller screen was shown since Setup opened with splitscreen on.
+    controllers_shown: bool,
     /// Whether Window 1 is shown (hidden while nobody plays in it): set once per change, since
     /// Wayland can't say whether a window is visible.
     window1_shown: bool,
@@ -193,6 +195,7 @@ impl<'a> Split<'a> {
             p1_window: 1,
             order: Vec::new(),
             setup_seats: Vec::new(),
+            controllers_shown: false,
             window1_shown: true,
             window_rects: Default::default(),
             screens: Vec::new(),

@@ -38,6 +38,9 @@ mod motion;
 /// HD rumble on the Joy-Cons, step by step.
 #[cfg(target_os = "horizon")]
 pub mod rumble;
+/// The system's controller screen, for splitscreen's players.
+#[cfg(target_os = "horizon")]
+pub mod controllers;
 
 pub use compat::{
     ThreadCorePolicy, set_thread_core_policy, set_thread_logging, thread_core_policy,
