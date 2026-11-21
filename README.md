@@ -4,7 +4,7 @@
   <img src="https://img.shields.io/badge/Minecraft-Java%2026.3-5D9C3F" alt="Minecraft Java 26.3">
   <img src="https://img.shields.io/badge/platform-Nintendo%20Switch%20(homebrew)-E60012" alt="Nintendo Switch homebrew">
   <img src="https://img.shields.io/badge/status-playable,%20experimental-F0A030" alt="Playable, experimental">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-3B2F7E" alt="MIT license"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-LGPL--3.0--or--later-3B2F7E" alt="LGPL-3.0-or-later license"></a>
 </p>
 
 This is a fork of [JohnUzoka/horizon-nx](https://github.com/JohnUzoka/horizon-nx), the Nintendo Switch port of
@@ -264,5 +264,5 @@ example `v1.3.0`): it builds, tags the commit and attaches the zip. Details: [do
 
 ## License
 
-MIT, as Horizon: see [LICENSE](LICENSE). Third-party code and its licenses: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+LGPL-3.0-or-later, as Horizon: see [LICENSE](LICENSE). Third-party code and its licenses: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 Minecraft is a trademark of Mojang Synergies AB.
