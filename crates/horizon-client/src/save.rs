@@ -199,7 +199,9 @@ impl SessionLock {
         match file.try_lock() {
             Ok(()) => {}
             Err(fs::TryLockError::WouldBlock) => {
-                return Err(format!("{} is already open in another instance", world.display()).into());
+                return Err(
+                    format!("{} is already open in another instance", world.display()).into(),
+                );
             }
             Err(e) if cfg!(target_os = "horizon") => {
                 let _ = e;
@@ -2040,16 +2042,20 @@ fn write_region_records(
         };
         let mut region = region.lock().map_err(|_| "region file poisoned")?;
         let _writing = far_regions::writing(cache, (rx, rz));
-        let mut changed = false;
-        for (pos, record) in &list {
-            match record {
-                Some(record) => {
-                    region.write(*pos, record)?;
-                    changed = true;
+        // One header write for the region's chunks, not one each (`RegionFile::batch`).
+        let changed = region.batch(|region| {
+            let mut changed = false;
+            for (pos, record) in &list {
+                match record {
+                    Some(record) => {
+                        region.write(*pos, record)?;
+                        changed = true;
+                    }
+                    None => changed |= region.clear(*pos, timestamp)?,
                 }
-                None => changed |= region.clear(*pos, timestamp)?,
             }
-        }
+            Ok(changed)
+        })?;
         if changed {
             region.sync()?;
         }

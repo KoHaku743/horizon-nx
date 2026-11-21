@@ -516,3 +516,38 @@ fn a_chunk_write_rewrites_the_whole_region_header() {
     }
     assert_eq!(bytes[4096 + 20..4096 + 24], 12345u32.to_be_bytes());
 }
+
+#[test]
+fn a_batch_writes_the_header_once_and_reuses_no_sector_it_freed() {
+    let dir = Directory::new();
+    let (a, b, c) = (
+        ChunkPos::new(-32, 0),
+        ChunkPos::new(-31, 0),
+        ChunkPos::new(-30, 0),
+    );
+    let mut region = RegionFile::open_writable(dir.region(), true).unwrap();
+    // a at sectors 2..4.
+    region.write(a, &record(2 * 4096 - 5)).unwrap();
+    let sectors = |path: &Path| fs::metadata(path).unwrap().len() / 4096;
+    region
+        .batch(|region| {
+            // a grows and moves to 4..7; b must not take its old sectors 2..4, which the header
+            // on disk still points at until the batch ends.
+            region.write(a, &record(3 * 4096 - 5))?;
+            region.write(b, &record(2 * 4096 - 5))?;
+            Ok(())
+        })
+        .unwrap();
+    assert_eq!(sectors(&dir.region()), 9);
+    // The batch over, a's old sectors are free: c takes them and the file doesn't grow.
+    region.write(c, &record(2 * 4096 - 5)).unwrap();
+    assert_eq!(sectors(&dir.region()), 9);
+    drop(region);
+    let mut reader = RegionFile::open(dir.region()).unwrap();
+    for (pos, size) in [(a, 3 * 4096 - 5), (b, 2 * 4096 - 5), (c, 2 * 4096 - 5)] {
+        assert_eq!(
+            reader.read(pos).unwrap().unwrap().compressed,
+            record(size).compressed
+        );
+    }
+}

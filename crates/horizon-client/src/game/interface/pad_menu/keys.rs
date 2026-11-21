@@ -280,7 +280,13 @@ impl Game<'_> {
             WindowEvent::MouseWheel { .. } => true,
             _ => false,
         };
-        if takeover {
+        // On the Switch the pointer is the touch screen, held in the same hands as the
+        // controller: a tap to attack while playing must not take the sticks away (it zeroed
+        // the move stick and blocked it until it was let go). Menus still hand over.
+        let touch_in_play = cfg!(target_os = "horizon")
+            && self.screen == Screen::Playing
+            && !matches!(event, WindowEvent::KeyboardInput { .. });
+        if takeover && !touch_in_play {
             self.pad_yield_input(event_loop);
         }
         match event {

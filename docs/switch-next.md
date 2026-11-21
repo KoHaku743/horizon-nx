@@ -89,3 +89,12 @@ separate process. On the Switch it has to run in the game's own process; whether
 - HD rumble a quarter stronger than the first tuning.
 - Entity and particle culling on by default on the Switch. A normal world (RUN 46, ~38 fps) was
   GPU-bound: world 3-6 ms, entity skinning 2-3 ms, HUD 1.5-2.9 ms, animated sprites 1-1.7 ms.
+
+## Fifth pass
+
+- Flying stutter: over 10 s the SD card spent up to 4.5 s in calls, 3.2 s of it in 486 writes of
+  3.9 MiB, and reads waited behind them (1.3-2.7 MiB/s). Half of it was the region header (8 KiB)
+  rewritten for every chunk: `RegionFile::batch` writes it once per region save, and frees the
+  batch's old sectors only after that header is on disk. Still seen: about one short-lived 2 MiB
+  thread a second (not yet traced).
+- A tap on the touch screen in play no longer takes the sticks from the controller.

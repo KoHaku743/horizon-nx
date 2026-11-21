@@ -75,6 +75,11 @@ pub struct RegionFile {
     /// The first free sector (`RegionBitmap`'s low watermark): allocation
     /// starts its first-fit search here instead of at sector 0.
     first_free: usize,
+    /// Inside [`RegionFile::batch`]: the sectors its writes and clears freed, released once the
+    /// header no longer points at them.
+    batch: Option<Vec<(usize, usize)>>,
+    /// Inside a batch: the header changed since it was last written.
+    header_dirty: bool,
 }
 
 pub fn position_from_path(path: &Path) -> io::Result<ChunkPos> {
@@ -250,6 +255,8 @@ impl RegionFile {
             timestamps,
             used: Vec::new(),
             first_free: 0,
+            batch: None,
+            header_dirty: false,
         };
         region.force(0, 2);
         for offset in offsets.into_iter().filter(|&o| o != 0) {
@@ -355,12 +362,12 @@ impl RegionFile {
         let old = self.offsets[i];
         self.offsets[i] = (start as u32) << 8 | sectors as u32;
         self.timestamps[i] = record.timestamp;
-        self.write_header()?;
+        self.header_changed()?;
         if !external {
             remove_if_exists(&external_file)?;
         }
         if old != 0 {
-            self.free((old >> 8) as usize, (old & 255) as usize);
+            self.release((old >> 8) as usize, (old & 255) as usize);
         }
         Ok(())
     }
@@ -375,11 +382,58 @@ impl RegionFile {
         }
         self.offsets[i] = 0;
         self.timestamps[i] = timestamp;
-        self.write_header()?;
+        self.header_changed()?;
         let directory = self.path.parent().unwrap_or(Path::new("."));
         remove_if_exists(&external_path(directory, chunk))?;
-        self.free((old >> 8) as usize, (old & 255) as usize);
+        self.release((old >> 8) as usize, (old & 255) as usize);
         Ok(true)
+    }
+
+    /// The writes and clears in `f` with one header write at the end, not one each: the same
+    /// file, in half the writes when chunks are saved together (a slow SD card spent half its
+    /// time rewriting the 8 KiB header). The sectors they free are released only after that
+    /// header is written, so a crash in between leaves no chunk pointing at reused sectors; if
+    /// the header write fails they stay taken until the region is opened again.
+    pub fn batch<R>(&mut self, f: impl FnOnce(&mut Self) -> io::Result<R>) -> io::Result<R> {
+        let outer = self.batch.replace(Vec::new());
+        let result = f(self);
+        let freed = std::mem::replace(&mut self.batch, outer).unwrap_or_default();
+        if self.batch.is_some() {
+            // Nested: the outer batch writes the header and frees.
+            self.batch.as_mut().expect("outer batch").extend(freed);
+            return result;
+        }
+        let header = if std::mem::take(&mut self.header_dirty) {
+            self.write_header()
+        } else {
+            Ok(())
+        };
+        if header.is_ok() {
+            for (start, count) in freed {
+                self.free(start, count);
+            }
+        }
+        let value = result?;
+        header?;
+        Ok(value)
+    }
+
+    /// The header changed: written now, or at the end of the batch.
+    fn header_changed(&mut self) -> io::Result<()> {
+        if self.batch.is_some() {
+            self.header_dirty = true;
+            Ok(())
+        } else {
+            self.write_header()
+        }
+    }
+
+    /// Sectors a chunk no longer uses: free now, or once the batch's header is written.
+    fn release(&mut self, start: usize, count: usize) {
+        match &mut self.batch {
+            Some(freed) => freed.push((start, count)),
+            None => self.free(start, count),
+        }
     }
 
     /// Flush the writes to the disk.
