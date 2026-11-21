@@ -1,7 +1,8 @@
 //! HD rumble: steps played on the Joy-Cons' linear actuators through libnx's vibration API
-//! (`switch/services/hid.h`), each band with its own amplitude and frequency. A worker thread
-//! plays one list of steps at a time; a new list cuts the one playing, and the motors stop at
-//! the end.
+//! (`switch/services/hid.h`), each band with its own amplitude and frequency. Each controller
+//! (player 1 with the handheld Joy-Con, then players 2 to 4: splitscreen's) has a worker thread
+//! that plays one list of steps at a time; a new list cuts the one playing, and the motors stop
+//! at the end.
 use std::sync::mpsc::{Receiver, RecvTimeoutError, Sender, channel};
 use std::sync::{Mutex, OnceLock};
 use std::time::Duration;
@@ -49,23 +50,30 @@ unsafe extern "C" {
     ) -> u32;
 }
 
-/// libnx `HidNpadIdType_No1` and `HidNpadIdType_Handheld`.
-const PLAYER_1: u32 = 0;
+/// libnx `HidNpadIdType_Handheld`.
 const HANDHELD: u32 = 0x20;
 /// libnx `HidNpadStyleTag`s with two vibration devices.
 const STYLE_FULL_KEY: u32 = 1 << 0;
 const STYLE_HANDHELD: u32 = 1 << 1;
 const STYLE_JOY_DUAL: u32 = 1 << 2;
 
-/// Plays `steps` now, cutting whatever plays.
-pub fn play(steps: Vec<Step>) {
-    static WORKER: OnceLock<Option<Mutex<Sender<Vec<Step>>>>> = OnceLock::new();
-    let worker = WORKER.get_or_init(|| {
+/// The controllers that can vibrate: gamepad 0 (player 1, or the handheld Joy-Con) to 3.
+const PLAYERS: usize = 4;
+
+/// Plays `steps` now on gamepad `pad`'s controller (0 = player 1 or the handheld Joy-Con, 1 to
+/// 3 = players 2 to 4, as the controller reader numbers them), cutting whatever plays there.
+pub fn play(pad: usize, steps: Vec<Step>) {
+    type Worker = OnceLock<Option<Mutex<Sender<Vec<Step>>>>>;
+    static WORKERS: [Worker; PLAYERS] = [const { OnceLock::new() }; PLAYERS];
+    let Some(worker) = WORKERS.get(pad) else {
+        return;
+    };
+    let worker = worker.get_or_init(|| {
         let (send, receive) = channel();
         std::thread::Builder::new()
-            .name("rumble".into())
+            .name(format!("rumble {}", pad + 1))
             .stack_size(64 * 1024)
-            .spawn(move || run(&receive))
+            .spawn(move || run(pad, &receive))
             .ok()
             .map(|_| Mutex::new(send))
     });
@@ -74,8 +82,12 @@ pub fn play(steps: Vec<Step>) {
     }
 }
 
-fn run(receive: &Receiver<Vec<Step>>) {
-    let mut motors = Motors::default();
+fn run(pad: usize, receive: &Receiver<Vec<Step>>) {
+    let mut motors = Motors {
+        pad,
+        target: None,
+        handles: [0; 2],
+    };
     while let Ok(mut steps) = receive.recv() {
         'list: loop {
             for step in &steps {
@@ -103,16 +115,16 @@ fn run(receive: &Receiver<Vec<Step>>) {
     }
 }
 
-/// The vibration devices of the controller the player holds, made again when it changes.
-#[derive(Default)]
+/// The vibration devices of gamepad `pad`'s controller, made again when it changes.
 struct Motors {
+    pad: usize,
     target: Option<(u32, u32)>,
     handles: [u32; 2],
 }
 
 impl Motors {
     fn send(&mut self, value: VibrationValue) {
-        let Some(target) = active_target() else {
+        let Some(target) = target(self.pad) else {
             self.target = None;
             return;
         };
@@ -132,19 +144,25 @@ impl Motors {
     }
 }
 
-/// The npad id and style the player is holding: the handheld Joy-Con when attached, else player
-/// 1's Pro Controller or Joy-Con pair. None for a single Joy-Con or no controller.
-fn active_target() -> Option<(u32, u32)> {
-    // SAFETY: plain libnx queries.
-    let handheld = unsafe { hidGetNpadStyleSet(HANDHELD) };
-    if handheld & STYLE_HANDHELD != 0 {
-        return Some((HANDHELD, STYLE_HANDHELD));
+/// The npad id and style gamepad `pad` vibrates: for gamepad 0 the handheld Joy-Con when
+/// attached, else player 1's; for the others players 2 to 4. Each a Pro Controller or Joy-Con
+/// pair: None for a single Joy-Con or no controller.
+fn target(pad: usize) -> Option<(u32, u32)> {
+    if pad == 0 {
+        // SAFETY: a plain libnx query.
+        let handheld = unsafe { hidGetNpadStyleSet(HANDHELD) };
+        if handheld & STYLE_HANDHELD != 0 {
+            return Some((HANDHELD, STYLE_HANDHELD));
+        }
     }
-    let player = unsafe { hidGetNpadStyleSet(PLAYER_1) };
-    if player & STYLE_FULL_KEY != 0 {
-        Some((PLAYER_1, STYLE_FULL_KEY))
-    } else if player & STYLE_JOY_DUAL != 0 {
-        Some((PLAYER_1, STYLE_JOY_DUAL))
+    // libnx `HidNpadIdType_No1` to `No8` are 0 to 7.
+    let id = u32::try_from(pad).ok()?;
+    // SAFETY: a plain libnx query.
+    let style = unsafe { hidGetNpadStyleSet(id) };
+    if style & STYLE_FULL_KEY != 0 {
+        Some((id, STYLE_FULL_KEY))
+    } else if style & STYLE_JOY_DUAL != 0 {
+        Some((id, STYLE_JOY_DUAL))
     } else {
         None
     }

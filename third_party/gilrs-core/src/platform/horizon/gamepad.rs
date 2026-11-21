@@ -7,9 +7,10 @@
 
 //! The npad through libnx's pad API (`switch/runtime/pad.h`).
 //!
-//! One gamepad, id 0: libnx's default pad, which merges player 1 and the handheld Joy-Con, so a
-//! Pro Controller, a pair of Joy-Con held together or the console in handheld mode all come
-//! through it. Buttons are reported by position (the bottom face button, Nintendo's B, is South; A
+//! Up to `PLAYERS` gamepads, one per npad player: id 0 merges player 1 and the handheld Joy-Con
+//! (libnx's default pad), so a Pro Controller, a pair of Joy-Con held together or the console in
+//! handheld mode all come through it; ids 1 to 3 are players 2 to 4, each a controller of its own
+//! (splitscreen's other players). Buttons are reported by position (the bottom face button, Nintendo's B, is South; A
 //! is East; Y is West; X is North), and the vendor id is Nintendo's, so a game that picks glyphs
 //! by vendor shows Nintendo's letters. The sticks run -32767..=32767 with up positive. No SDL
 //! mapping applies (the UUID is nil), so gilrs maps these native codes one to one.
@@ -64,8 +65,11 @@ extern "C" {
 
 /// libnx `HidNpadStyleSet_NpadStandard`: Pro Controller, handheld, dual Joy-Con, one Joy-Con.
 const STYLE_SET_STANDARD: u32 = 0x1F;
-/// Player 1 and the handheld controls, libnx `padInitializeDefault`'s mask.
-const PAD_MASK: u64 = (1 << 0) | (1 << 32);
+/// The npad players read: player 1 (with the handheld controls) and up to three more.
+const PLAYERS: usize = 4;
+/// Each gamepad's npads: player 1 and the handheld controls (libnx `padInitializeDefault`'s
+/// mask), then players 2, 3 and 4.
+const PAD_MASKS: [u64; PLAYERS] = [(1 << 0) | (1 << 32), 1 << 1, 1 << 2, 1 << 3];
 /// libnx `HidNpadAttribute_IsConnected`.
 const ATTRIBUTE_IS_CONNECTED: u32 = 1 << 0;
 /// libnx `HidNpadStyleTag`s that name the controller.
@@ -142,35 +146,51 @@ const STICK: AxisInfo = AxisInfo {
     deadzone: None,
 };
 
+/// One npad player's state and what was last reported for it.
 #[derive(Debug)]
-pub struct Gilrs {
+struct Slot {
     pad: PadState,
     buttons: u64,
     axes: [i32; 4],
-    events: VecDeque<Event>,
     gamepad: Gamepad,
+}
+
+#[derive(Debug)]
+pub struct Gilrs {
+    slots: Vec<Slot>,
+    events: VecDeque<Event>,
 }
 
 impl Gilrs {
     pub(crate) fn new() -> Result<Self, PlatformError> {
-        let mut pad = PadState::default();
-        // SAFETY: libnx's pad setup; `pad` is a plain struct libnx fills.
-        unsafe {
-            padConfigureInput(1, STYLE_SET_STANDARD);
-            padInitializeWithMask(&mut pad, PAD_MASK);
-        }
+        let slots = PAD_MASKS
+            .iter()
+            .map(|&mask| {
+                let mut pad = PadState::default();
+                // SAFETY: `pad` is a plain struct libnx fills.
+                unsafe { padInitializeWithMask(&mut pad, mask) };
+                Slot {
+                    pad,
+                    buttons: 0,
+                    axes: [0; 4],
+                    gamepad: Gamepad::new(),
+                }
+            })
+            .collect();
+        // SAFETY: libnx's pad setup: the players and styles HID accepts. More than one player
+        // lets a second controller connect as player 2 instead of taking over player 1.
+        unsafe { padConfigureInput(PLAYERS as u32, STYLE_SET_STANDARD) };
         Ok(Gilrs {
-            pad,
-            buttons: 0,
-            axes: [0; 4],
+            slots,
             events: VecDeque::new(),
-            gamepad: Gamepad::new(),
         })
     }
 
     pub(crate) fn next_event(&mut self) -> Option<Event> {
         if self.events.is_empty() {
-            self.poll();
+            for id in 0..self.slots.len() {
+                self.poll(id);
+            }
         }
         self.events.pop_front()
     }
@@ -189,37 +209,38 @@ impl Gilrs {
     }
 
     pub fn gamepad(&self, id: usize) -> Option<&Gamepad> {
-        (id == 0).then_some(&self.gamepad)
+        self.slots.get(id).map(|slot| &slot.gamepad)
     }
 
     /// Returns index greater than index of last connected gamepad.
     pub fn last_gamepad_hint(&self) -> usize {
-        1
+        self.slots.len()
     }
 
-    /// Reads the pad once and queues what changed since the last read.
-    fn poll(&mut self) {
-        // SAFETY: `self.pad` was set up by padInitializeWithMask; padUpdate only writes it.
-        unsafe { padUpdate(&mut self.pad) };
-        let connected = self.pad.attributes & ATTRIBUTE_IS_CONNECTED != 0;
-        if connected != self.gamepad.connected {
-            self.gamepad.update(&self.pad, connected);
+    /// Reads gamepad `id`'s npads once and queues what changed since the last read.
+    fn poll(&mut self, id: usize) {
+        let slot = &mut self.slots[id];
+        // SAFETY: `slot.pad` was set up by padInitializeWithMask; padUpdate only writes it.
+        unsafe { padUpdate(&mut slot.pad) };
+        let connected = slot.pad.attributes & ATTRIBUTE_IS_CONNECTED != 0;
+        if connected != slot.gamepad.connected {
+            slot.gamepad.update(&slot.pad, connected);
             let event = if connected {
                 EventType::Connected
             } else {
                 EventType::Disconnected
             };
-            self.events.push_back(Event::new(0, event));
+            self.events.push_back(Event::new(id, event));
             if !connected {
-                self.buttons = 0;
-                self.axes = [0; 4];
+                slot.buttons = 0;
+                slot.axes = [0; 4];
             }
         }
         if !connected {
             return;
         }
-        let buttons = self.pad.buttons_cur;
-        let changed = buttons ^ self.buttons;
+        let buttons = slot.pad.buttons_cur;
+        let changed = buttons ^ slot.buttons;
         for (bit, code) in BUTTONS {
             if changed & bit != 0 {
                 let code = crate::EvCode(code);
@@ -228,20 +249,20 @@ impl Gilrs {
                 } else {
                     EventType::ButtonReleased(code)
                 };
-                self.events.push_back(Event::new(0, event));
+                self.events.push_back(Event::new(id, event));
             }
         }
-        self.buttons = buttons;
-        let [left, right] = self.pad.sticks;
+        slot.buttons = buttons;
+        let [left, right] = slot.pad.sticks;
         let axes = [left.x, left.y, right.x, right.y];
         for (i, value) in axes.into_iter().enumerate() {
-            if value != self.axes[i] {
+            if value != slot.axes[i] {
                 let code = crate::EvCode(AXIS_CODES[i]);
                 self.events
-                    .push_back(Event::new(0, EventType::AxisValueChanged(value, code)));
+                    .push_back(Event::new(id, EventType::AxisValueChanged(value, code)));
             }
         }
-        self.axes = axes;
+        slot.axes = axes;
     }
 }
 

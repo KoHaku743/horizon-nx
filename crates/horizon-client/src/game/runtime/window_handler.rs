@@ -514,8 +514,9 @@ impl ApplicationHandler for Game<'_> {
     fn about_to_wait(&mut self, event_loop: &ActiveEventLoop) {
         // Switch: drain the applet message queue each pass so the system reports focus and
         // honors a HOME-button exit, and flush the log so a killed process keeps its tail.
+        // P1's game only: a splitscreen player's would take the messages P1 must see.
         #[cfg(target_os = "horizon")]
-        {
+        if !self.options.split_guest {
             if !horizon_nx::process_applet_messages()
                 && let Err(error) = self.begin_closing_save(true)
             {

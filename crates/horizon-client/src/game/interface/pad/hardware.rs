@@ -941,6 +941,11 @@ impl Game<'_> {
         #[cfg(target_os = "horizon")]
         {
             let _ = pulse;
+            // This player's controller: the one splitscreen's router reads for it, else the
+            // one in use. The reader numbers them as the npad players (0 = player 1).
+            let Some(pad) = self.pad.feed_source.or(self.pad.devices.active) else {
+                return;
+            };
             let steps = rumble
                 .hd()
                 .into_iter()
@@ -951,7 +956,7 @@ impl Game<'_> {
                     freq_high: step.high.1,
                     millis: step.millis,
                 });
-            horizon_nx::rumble::play(steps.collect());
+            horizon_nx::rumble::play(usize::from(pad), steps.collect());
         }
         #[cfg(not(target_os = "horizon"))]
         self.pad_vibrate_motors(rumble, pulse, strength);
