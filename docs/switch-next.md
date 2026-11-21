@@ -120,3 +120,11 @@ separate process. On the Switch it has to run in the game's own process; whether
 - RUN 50, with the network thread asleep: 45-60 fps, often 56-60. Short drops (17-30 fps over
   10 s) came with bursts of meshed sections uploaded in one frame (up to ~1 MiB). The Switch's
   defaults cap uploads at 8 sections and 512 KiB a frame (`chunkUpdates`, `uploadBudgetKiB`).
+
+## Ninth pass
+
+- RUN 51 (GPU overclocked at times): overclocked stretches halved the GPU's time but the frame rate
+  barely rose and the GPU wait fell to 0: the render thread is then the limit. Its running time:
+  drawing 49%, command encoding 18%, the GUI atlas's animated sprites 13% (resized and blended on
+  the CPU every frame while interpolating). On the Switch those show whole frames. Copies still
+  reached 1.4 MiB a frame with the 512 KiB section budget: something else is copied too.

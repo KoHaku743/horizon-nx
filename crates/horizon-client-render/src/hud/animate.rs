@@ -18,7 +18,16 @@ impl super::HudRenderer {
             // `SpriteContents.AnimationState`: the frame from the mcmeta's
             // list, blended into the next one by the sub-frame's thousandths
             // when the sprite interpolates; or what a Polytone `mode` picks.
-            let blend = animation.blend_with(tick, inputs);
+            #[allow(unused_mut)]
+            let mut blend = animation.blend_with(tick, inputs);
+            // On the Switch an interpolating sprite shows whole frames: blending changed it every
+            // frame, and each change resized and mixed it on the render thread and uploaded it,
+            // about a seventh of that thread's work in a world (RUN 51's profile).
+            #[cfg(target_os = "horizon")]
+            {
+                blend.next = blend.frame;
+                blend.millis = 0;
+            }
             let state = (blend.frame, blend.next, blend.millis);
             if state == *previous {
                 continue;
