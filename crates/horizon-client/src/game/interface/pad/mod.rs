@@ -869,11 +869,13 @@ impl Game<'_> {
                     *u += (a - *u) * (seconds * 4.0).min(1.0);
                 }
             }
-            // The sensor keeps running between presses, so gravity stays known.
+            // The sensor keeps running between presses, so gravity stays known. Held as the
+            // game reads it: the triggers (attack and use by default) are analog, never in the
+            // state's buttons, and count past the trigger threshold.
             let held = |action| {
                 settings
                     .binding(action)
-                    .is_some_and(|b| self.pad.state.held(b))
+                    .is_some_and(|b| self.pad.edges.is_held(b))
             };
             if !settings.gyro.aims(held("key.attack"), held("key.use")) {
                 return (0.0, 0.0);
