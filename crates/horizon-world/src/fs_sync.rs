@@ -13,7 +13,8 @@ pub fn sync_dir(folder: &Path) -> io::Result<()> {
     } else {
         folder
     };
-    #[cfg(unix)]
+    // The Switch's SD card driver opens no folder as a file (ENOENT): nothing to sync there.
+    #[cfg(all(unix, not(target_os = "horizon")))]
     match std::fs::File::open(folder)?.sync_all() {
         // Some filesystems (network and FUSE ones among them) refuse to sync
         // a directory. A rename there is as durable as they make it; failing
@@ -25,7 +26,7 @@ pub fn sync_dir(folder: &Path) -> io::Result<()> {
             ) => {}
         result => result?,
     }
-    #[cfg(not(unix))]
+    #[cfg(not(all(unix, not(target_os = "horizon"))))]
     let _ = folder;
     Ok(())
 }

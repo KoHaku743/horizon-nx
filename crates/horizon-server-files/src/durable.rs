@@ -19,9 +19,10 @@ use std::{fs, io, path::Path};
 /// (POSIX; Windows has no directory handle to sync, and its write-through
 /// move is journaled by NTFS).
 fn sync_dir(path: &Path) -> io::Result<()> {
-    #[cfg(unix)]
+    // The Switch's SD card driver opens no folder as a file (ENOENT): nothing to sync there.
+    #[cfg(all(unix, not(target_os = "horizon")))]
     fs::File::open(path)?.sync_all()?;
-    #[cfg(not(unix))]
+    #[cfg(not(all(unix, not(target_os = "horizon"))))]
     let _ = path;
     Ok(())
 }

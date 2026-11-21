@@ -3132,7 +3132,8 @@ fn write_synced(path: &Path, bytes: &[u8]) -> std::io::Result<()> {
 /// The folder of `path` synced, so that a rename into it is on the disk (POSIX; Windows has
 /// no folder handle to sync, and its rename is journaled by NTFS).
 fn sync_folder(path: &Path) -> std::io::Result<()> {
-    #[cfg(unix)]
+    // The Switch's SD card driver opens no folder as a file (ENOENT): nothing to sync there.
+    #[cfg(all(unix, not(target_os = "horizon")))]
     if let Some(dir) = path.parent() {
         // A bare file name's parent is "": the working directory.
         let dir = if dir.as_os_str().is_empty() {
@@ -3142,7 +3143,7 @@ fn sync_folder(path: &Path) -> std::io::Result<()> {
         };
         fs::File::open(dir)?.sync_all()?;
     }
-    #[cfg(not(unix))]
+    #[cfg(not(all(unix, not(target_os = "horizon"))))]
     let _ = path;
     Ok(())
 }
