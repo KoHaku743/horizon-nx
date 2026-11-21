@@ -231,7 +231,17 @@ pub fn rows() -> Vec<(Page, Vec<(&'static str, Vec<Setting>)>)> {
                             Opt::PadLookDeadzone,
                             "How far the right stick moves before the view turns. Raise it if the view drifts.",
                         ),
-                    ],
+                    ]
+                    .into_iter()
+                    // Gyro aiming reads the Switch controllers' motion sensor.
+                    .chain(cfg!(target_os = "horizon").then_some([
+                        option(Opt::PadGyro, "Aim by turning the controller, on top of the right stick."),
+                        option(
+                            Opt::PadGyroSensitivity,
+                            "How fast turning the controller turns the view.",
+                        ),
+                    ]).into_iter().flatten())
+                    .collect(),
                 ),
                 (
                     "Movement",

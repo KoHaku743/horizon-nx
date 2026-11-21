@@ -88,6 +88,12 @@ pub(super) struct Pads {
     connections: Vec<Connection>,
     /// The right stick's turn still easing out under the cinematic camera.
     look: gamepad::SmoothLook,
+    /// Gyro aiming: gravity's direction in the controller's axes, smoothed (a swing's own
+    /// acceleration must not tip it), and whether the motion sensor runs.
+    #[cfg(target_os = "horizon")]
+    gyro_up: [f32; 3],
+    #[cfg(target_os = "horizon")]
+    gyro_running: bool,
     /// The cursor the pad drives in menus.
     pub(super) menu: super::pad_menu::MenuCursor,
     /// The radial menu while its opener is held, and the page it stays on.
@@ -827,18 +833,58 @@ impl Game<'_> {
         }
         // A long frame (a hitch) must not spin the view.
         let seconds = seconds.min(0.1);
-        let turn = gamepad::look_delta(
-            self.pad.state.right,
-            settings,
-            seconds,
-            self.camera_type.is_first_person() && self.scoping(),
-        );
+        let scoping = self.camera_type.is_first_person() && self.scoping();
+        let turn = gamepad::look_delta(self.pad.state.right, settings, seconds, scoping);
+        let gyro = self.pad_gyro(seconds, scoping);
+        let turn = (turn.0 + gyro.0, turn.1 + gyro.1);
         // The cinematic camera eases the stick's turn in and out, as it does the mouse's.
         let (yaw, pitch) = self.pad.look.turn(turn, seconds, self.smooth_camera);
         if yaw == 0.0 && pitch == 0.0 {
             return;
         }
         self.look_turn(yaw / 0.15, pitch / 0.15);
+    }
+
+    /// Gyro aiming's turn this frame, `(yaw, pitch)` in degrees: the Switch controller's motion
+    /// sensor, while the option is on and the pad plays.
+    fn pad_gyro(&mut self, seconds: f32, scoping: bool) -> (f32, f32) {
+        #[cfg(target_os = "horizon")]
+        {
+            let settings = &self.settings.controller;
+            if !settings.gyro.on() || !self.pad.in_use {
+                if std::mem::take(&mut self.pad.gyro_running) {
+                    horizon_nx::stop_motion();
+                }
+                return (0.0, 0.0);
+            }
+            self.pad.gyro_running = true;
+            let Some(m) = horizon_nx::motion() else {
+                return (0.0, 0.0);
+            };
+            let up = &mut self.pad.gyro_up;
+            if *up == [0.0; 3] {
+                *up = m.acceleration;
+            } else {
+                for (u, a) in up.iter_mut().zip(m.acceleration) {
+                    *u += (a - *u) * (seconds * 4.0).min(1.0);
+                }
+            }
+            // The sensor keeps running between presses, so gravity stays known.
+            let held = |action| {
+                settings
+                    .binding(action)
+                    .is_some_and(|b| self.pad.state.held(b))
+            };
+            if !settings.gyro.aims(held("key.attack"), held("key.use")) {
+                return (0.0, 0.0);
+            }
+            gamepad::gyro_delta(m.rotation, self.pad.gyro_up, settings, seconds, scoping)
+        }
+        #[cfg(not(target_os = "horizon"))]
+        {
+            let _ = (seconds, scoping);
+            (0.0, 0.0)
+        }
     }
 
     /// Vibrate the active pad, when vibration is on and the pad is the one

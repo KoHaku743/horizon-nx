@@ -629,6 +629,61 @@ impl TextKeyboard {
 /// Whether A on a text field asks Steam for its keyboard
 /// (`steam://open/keyboard`) instead of opening Horizon's: chosen, or `Auto`
 /// on a Steam Deck (Steam sets `SteamDeck=1` for the games it starts).
+/// When gyro aiming turns the view (the Switch controllers' motion sensor).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum GyroMode {
+    #[default]
+    Off,
+    Always,
+    /// While the attack button is held (mining, fighting).
+    Attack,
+    /// While the use button is held (placing blocks, drawing a bow).
+    Use,
+    AttackOrUse,
+}
+impl GyroMode {
+    pub const ALL: [GyroMode; 5] = [
+        GyroMode::Off,
+        GyroMode::Always,
+        GyroMode::Attack,
+        GyroMode::Use,
+        GyroMode::AttackOrUse,
+    ];
+    pub fn name(self) -> &'static str {
+        match self {
+            GyroMode::Off => "off",
+            GyroMode::Always => "always",
+            GyroMode::Attack => "attack",
+            GyroMode::Use => "use",
+            GyroMode::AttackOrUse => "attack_or_use",
+        }
+    }
+    /// Also reads the first build's on/off.
+    pub fn parse(name: &str) -> Self {
+        match name {
+            "always" | "true" => GyroMode::Always,
+            "attack" => GyroMode::Attack,
+            "use" => GyroMode::Use,
+            "attack_or_use" => GyroMode::AttackOrUse,
+            _ => GyroMode::Off,
+        }
+    }
+    /// The sensor runs at all.
+    pub fn on(self) -> bool {
+        self != GyroMode::Off
+    }
+    /// It turns the view now, with attack and use held or not.
+    pub fn aims(self, attacking: bool, using: bool) -> bool {
+        match self {
+            GyroMode::Off => false,
+            GyroMode::Always => true,
+            GyroMode::Attack => attacking,
+            GyroMode::Use => using,
+            GyroMode::AttackOrUse => attacking || using,
+        }
+    }
+}
+
 pub fn steam_keyboard(choice: TextKeyboard) -> bool {
     match choice {
         TextKeyboard::Steam => true,
@@ -673,6 +728,11 @@ pub struct PadSettings {
     /// by default on the Switch only.
     pub nintendo_letters: bool,
     pub keyboard: TextKeyboard,
+    /// Aim by turning the controller (its motion sensor), on top of the right stick: when.
+    pub gyro: GyroMode,
+    /// Gyro aiming's speed, 0..1: [`gyro_delta`] turns the view `4 *` this times the
+    /// controller's own turn (0.25 turns the view as much as the controller).
+    pub gyro_sensitivity: f32,
     /// The gameplay guide: what the buttons do now, in the HUD's corners while the pad plays.
     pub guide_detail: GuideDetail,
     /// Menu pointer multiplier, scroll lines/second, and repeat times in seconds.
@@ -720,6 +780,8 @@ impl Default for PadSettings {
             glyphs: GlyphStyle::Auto,
             nintendo_letters: cfg!(target_os = "horizon"),
             keyboard: TextKeyboard::Auto,
+            gyro: GyroMode::Off,
+            gyro_sensitivity: 0.5,
             guide_detail: GuideDetail::Full,
             pointer_speed: 1.0,
             scroll_speed: 12.0,
@@ -792,6 +854,8 @@ impl PadSettings {
                 "glyphs" => s.glyphs = GlyphStyle::parse(value),
                 "nintendoLetters" => s.nintendo_letters = flag(s.nintendo_letters),
                 "keyboard" => s.keyboard = TextKeyboard::parse(value),
+                "gyro" => s.gyro = GyroMode::parse(value),
+                "gyroSensitivity" => s.gyro_sensitivity = unit(s.gyro_sensitivity),
                 "gameplayGuide" => s.guide_detail = GuideDetail::parse(value),
                 "pointerSpeed" => s.pointer_speed = bounded(s.pointer_speed, 0.25, 3.0),
                 "scrollSpeed" => s.scroll_speed = bounded(s.scroll_speed, 1.0, 36.0),
@@ -927,6 +991,11 @@ impl PadSettings {
         text.push_str(&format!(
             "playInBackground:{}\n",
             bool_text(self.play_in_background)
+        ));
+        text.push_str(&format!(
+            "gyro:{}\ngyroSensitivity:{}\n",
+            self.gyro.name(),
+            self.gyro_sensitivity
         ));
         text.push_str(&format!(
             "radialMode:{}\nradialStick:{}\n",
@@ -1082,6 +1151,48 @@ pub fn move_vector(stick: [f32; 2], deadzone: f32) -> Option<[f32; 2]> {
 /// Degrees per second at full tilt and the default sensitivity.
 pub const YAW_SPEED: f32 = 200.0;
 pub const PITCH_SPEED: f32 = 140.0;
+
+/// Below this the controller is held still (turns per second, about 1.4 degrees a second): the
+/// sensor's noise must not drift the view.
+const GYRO_STILL: f32 = 0.004;
+
+/// The view turn from the controller's own turn over `seconds` (gyro aiming): `(yaw, pitch)`
+/// in degrees as [`look_delta`] gives them. `rotation` is the motion sensor's turning speed
+/// (turns per second around the controller's right, top and out-of-face axes) and `up` the
+/// direction gravity holds up, in the same axes. Yaw is the turn around `up`, so turning
+/// left and right works whether the console is held upright or the controller lies flat;
+/// pitch is the tilt around the controller's right axis.
+pub fn gyro_delta(
+    rotation: [f32; 3],
+    up: [f32; 3],
+    settings: &PadSettings,
+    seconds: f32,
+    scoping: bool,
+) -> (f32, f32) {
+    let len = (up[0] * up[0] + up[1] * up[1] + up[2] * up[2]).sqrt();
+    // No gravity reading yet: the controller held upright.
+    let up = if len > 0.3 {
+        [up[0] / len, up[1] / len, up[2] / len]
+    } else {
+        [0.0, 1.0, 0.0]
+    };
+    let still = |v: f32| {
+        if v.abs() < GYRO_STILL {
+            0.0
+        } else {
+            v - GYRO_STILL * v.signum()
+        }
+    };
+    let turn = still(rotation[0] * up[0] + rotation[1] * up[1] + rotation[2] * up[2]);
+    let tilt = still(rotation[0]);
+    let speed =
+        360.0 * 4.0 * settings.gyro_sensitivity * if scoping { 0.25 } else { 1.0 } * seconds;
+    // The Switch's sensor turns positive to the right around `up` (checked on a console).
+    let x = turn * if settings.invert_x { -1.0 } else { 1.0 };
+    let y = tilt * if settings.invert_y { -1.0 } else { 1.0 };
+    (x * speed, -y * speed)
+}
+
 
 /// The view turn from the right stick over `seconds`: `(yaw, pitch)` in
 /// degrees, pitch positive looking down as in `Entity.turn`. A squared

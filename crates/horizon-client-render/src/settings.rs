@@ -897,6 +897,8 @@ pub enum Opt {
     PadAdaptiveTriggers,
     PadLightbar,
     PadLookSensitivity,
+    PadGyro,
+    PadGyroSensitivity,
     PadPointerSpeed,
     PadScrollSpeed,
     PadRepeatDelay,
