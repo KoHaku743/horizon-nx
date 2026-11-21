@@ -81,3 +81,11 @@ separate process. On the Switch it has to run in the game's own process; whether
   for every controller.
 - Still to look at: in a normal world 1.3.0 held 60 fps with 2-3 render passes a frame; this build
   runs about 40, with the server thread and the newer passes on the same three cores.
+
+## Fourth pass
+
+- Mods screen: on the Switch the footer's left button turns the selected mod off or on (no folder
+  to open, no launcher to choose); the change waits for a restart.
+- HD rumble a quarter stronger than the first tuning.
+- Entity and particle culling on by default on the Switch. A normal world (RUN 46, ~38 fps) was
+  GPU-bound: world 3-6 ms, entity skinning 2-3 ms, HUD 1.5-2.9 ms, animated sprites 1-1.7 ms.

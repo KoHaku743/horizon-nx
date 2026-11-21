@@ -3322,6 +3322,12 @@ impl OptionsUi {
                 }
                 Do::Link(url) => events.push(Event::OpenLink(url)),
                 Do::Copy(text) => events.push(Event::CopyText(text)),
+                Do::Toggle(i) => {
+                    s.mods.toggle(i);
+                    let on = s.mods.is_on(i);
+                    self.mods_page(s, size).set_on(i, on);
+                    events.push(Event::Changed);
+                }
             }
             return events;
         }

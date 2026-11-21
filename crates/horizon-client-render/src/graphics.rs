@@ -976,9 +976,19 @@ impl Default for Graphics {
             blue_map: crate::bluemap::Settings::default(),
             cave_culling: true,
             gpu_culling: GpuCullingMode::Off,
-            entity_culling: EntityCullingMode::Off,
+            // On the Switch, mobs and items behind walls are neither animated nor drawn: their
+            // skinning took 2-3 ms of the GPU's frame in a normal world (RUN 46).
+            entity_culling: if cfg!(target_os = "horizon") {
+                EntityCullingMode::Synchronous
+            } else {
+                EntityCullingMode::Off
+            },
             entity_culling_precheck: 64,
-            particle_culling: ParticleCullingMode::Off,
+            particle_culling: if cfg!(target_os = "horizon") {
+                ParticleCullingMode::Asynchronous
+            } else {
+                ParticleCullingMode::Off
+            },
             leaf_culling: LeafCullingMode::Off,
             opaque_ice: false,
             cache_shulker_boxes: false,

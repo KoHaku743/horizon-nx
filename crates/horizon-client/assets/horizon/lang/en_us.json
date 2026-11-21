@@ -1366,5 +1366,8 @@
   "horizon.update.dev_build": "Switch dev build",
   "horizon.update.version": "Switch %s",
   "horizon.mods.browse.pack_done": "%s %s installed: turn it on in Options > Resource Packs.",
-  "horizon.options.vibration_strength": "Vibration Strength"
+  "horizon.options.vibration_strength": "Vibration Strength",
+  "horizon.mods.screen.turn_off": "Turn Off",
+  "horizon.mods.screen.turn_on": "Turn On",
+  "horizon.mods.screen.restart": "Restart Horizon for this to take effect"
 }

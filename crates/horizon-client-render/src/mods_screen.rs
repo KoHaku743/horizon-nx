@@ -56,7 +56,14 @@ pub enum Action {
     Link(String),
     /// A click to copy the mod id or version.
     Copy(String),
+    /// Turn the installed mod at this index of `ModList::installed` on or off (the Switch's
+    /// footer, where no launcher chooses).
+    Toggle(usize),
 }
+
+/// The footer's left button turns the selected mod on or off rather than opening its folder:
+/// the Switch has no file browser and no launcher to choose which mods run.
+const TOGGLE_IN_FOOTER: bool = cfg!(target_os = "horizon");
 
 /// One mod as the screen shows it.
 #[derive(Clone, Debug, Default)]
@@ -81,6 +88,11 @@ struct Entry {
     status: Option<Text>,
     /// Dependency-policy notices, independently scrollable below the status.
     note: Option<Text>,
+    /// Whether it is on, for a mod the player can turn on or off (not the built-in entries or a
+    /// dev mod).
+    on: Option<bool>,
+    /// It has a load problem, which its status shows whatever it is switched to.
+    problem: bool,
 }
 impl Entry {
     fn minecraft() -> Self {
@@ -326,6 +338,8 @@ impl ModsScreen {
                     .is_some_and(|page| !page.settings.is_empty()),
                 status,
                 note,
+                on: (!installed.dev).then(|| mods.is_on(index)),
+                problem: installed.problem.is_some(),
             });
         }
         let mut search = TextField::new(0, 0, SIDEBAR_W - SORT_W - 4, CONTROL_H);
@@ -438,6 +452,16 @@ impl ModsScreen {
     }
     fn current(&self) -> Option<&Entry> {
         self.entries.get(self.selected?)
+    }
+    /// After [`Action::Toggle`]: installed mod `index` is now `on`; its status says that the
+    /// change waits for a restart.
+    pub fn set_on(&mut self, index: usize, on: bool) {
+        for e in self.entries.iter_mut().filter(|e| e.index == Some(index)) {
+            e.on = Some(on);
+            if !e.problem {
+                e.status = Some(tr("horizon.mods.screen.restart").with_color(GOLD));
+            }
+        }
     }
     /// The up and down keys: the previous or next mod in the list.
     pub fn step(&mut self, delta: i32) {
@@ -682,10 +706,17 @@ impl ModsScreen {
         for (i, r) in g.footer.into_iter().enumerate() {
             if hit(r, x, y) {
                 self.search.focused = false;
-                let action = if i == 0 {
-                    Action::OpenFolder
-                } else {
-                    Action::Back
+                let action = match i {
+                    0 if TOGGLE_IN_FOOTER => match self.current() {
+                        Some(Entry {
+                            on: Some(_),
+                            index: Some(index),
+                            ..
+                        }) => Action::Toggle(*index),
+                        _ => return (Action::None, false),
+                    },
+                    0 => Action::OpenFolder,
+                    _ => Action::Back,
                 };
                 return (action, true);
             }
@@ -1029,10 +1060,17 @@ impl ModsScreen {
         }
 
         // The footer.
-        let labels = [tr("horizon.mods.open_folder"), tr("gui.back")];
+        let on = selected.and_then(|e| e.on);
+        let first = match (TOGGLE_IN_FOOTER, on) {
+            (false, _) => tr("horizon.mods.open_folder"),
+            (true, Some(false)) => tr("horizon.mods.screen.turn_on"),
+            (true, _) => tr("horizon.mods.screen.turn_off"),
+        };
+        let labels = [first, tr("gui.back")];
         for (i, (r, label)) in g.footer.into_iter().zip(&labels).enumerate() {
+            let active = i == 1 || !TOGGLE_IN_FOOTER || on.is_some();
             let hover = d::inside(mouse, r[0], r[1], r[2], r[3]);
-            crate::widgets::widget_cursor(hover, true);
+            crate::widgets::widget_cursor(hover, active);
             if i == 1 {
                 crate::widgets::declare_action(
                     crate::widgets::Action::Back,
@@ -1043,10 +1081,10 @@ impl ModsScreen {
             crate::widgets::record(
                 &label.plain(),
                 [r[0] as f32, r[1] as f32, r[2] as f32, r[3] as f32],
-                true,
+                active,
             );
             d::button(
-                &mut out, m, label, r[0], r[1], r[2], r[3], true, hover, now_ms,
+                &mut out, m, label, r[0], r[1], r[2], r[3], active, hover, now_ms,
             );
         }
         if let Some(tooltip) = tooltip {

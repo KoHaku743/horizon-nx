@@ -1884,7 +1884,13 @@ impl Rumble {
         let Some(p) = self.pulse() else {
             return Vec::new();
         };
-        let step = |low: (f32, f32), high: (f32, f32), millis: u32| HdStep { low, high, millis };
+        // Every level a quarter up on the first tuning, which felt a little faint on hardware.
+        const GAIN: f32 = 1.25;
+        let step = |low: (f32, f32), high: (f32, f32), millis: u32| HdStep {
+            low: ((low.0 * GAIN).min(1.0), low.1),
+            high: ((high.0 * GAIN).min(1.0), high.1),
+            millis,
+        };
         match self {
             Rumble::Hurt(_) => {
                 let k = p.strong;
