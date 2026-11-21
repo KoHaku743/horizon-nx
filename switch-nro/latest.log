@@ -54,8 +54,8 @@ help: Check that the patched package version and available features are compatib
  Downloading crates ...
   Downloaded addr2line v0.27.1
   Downloaded cfg-if v1.0.4
-  Downloaded getopts v0.2.24
   Downloaded rustc-literal-escaper v0.0.8
+  Downloaded getopts v0.2.24
   Downloaded gimli v0.34.0
    Compiling compiler_builtins v0.1.160 (/usr/local/rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/compiler-builtins/compiler-builtins)
    Compiling core v0.0.0 (/usr/local/rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core)
@@ -82,30 +82,23 @@ help: Check that the patched package version and available features are compatib
    Compiling anyhow v1.0.104
    Compiling semver v1.0.28
    Compiling heck v0.5.0
-   Compiling typenum v1.20.1
    Compiling serde_json v1.0.151
    Compiling bitflags v2.13.2
+   Compiling typenum v1.20.1
    Compiling itoa v1.0.18
-   Compiling equivalent v1.0.2
    Compiling winnow v1.0.4
-   Compiling toml_parser v1.1.3+spec-1.1.0
+   Compiling equivalent v1.0.2
    Compiling indexmap v2.14.2
+   Compiling toml_parser v1.1.3+spec-1.1.0
    Compiling serde_spanned v1.1.2
    Compiling toml_datetime v1.1.1+spec-1.1.0
-   Compiling zerocopy v0.8.60
-   Compiling prettyplease v0.2.37
    Compiling toml_writer v1.1.3+spec-1.1.0
+   Compiling prettyplease v0.2.37
+   Compiling zerocopy v0.8.60
    Compiling toml v1.1.6+spec-1.1.0
-   Compiling crypto-common v0.1.7
    Compiling block-buffer v0.10.4
+   Compiling crypto-common v0.1.7
    Compiling digest v0.10.7
-   Compiling rustc-std-workspace-core v1.99.0 (/usr/local/rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/rustc-std-workspace-core)
-   Compiling alloc v0.0.0 (/usr/local/rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/alloc)
-   Compiling unwind v0.0.0 (/usr/local/rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/unwind)
-   Compiling adler2 v2.0.1
-   Compiling cfg-if v1.0.4
-   Compiling rustc-demangle v0.1.28
-   Compiling rustc-literal-escaper v0.0.8
    Compiling getrandom v0.2.17 (/src/bevy-horizon/patches/getrandom-0.2)
 warning: use of deprecated associated function `core::num::<impl usize>::max_value`: replaced by the `MAX` associated constant on this type
   --> /src/bevy-horizon/patches/getrandom-0.2/src/use_file.rs:19:33
@@ -126,28 +119,30 @@ warning: `getrandom` (lib) generated 2 warnings
    Compiling sha2 v0.10.9
    Compiling rand_core v0.6.4
    Compiling ppv-lite86 v0.2.21
+   Compiling rustc-std-workspace-core v1.99.0 (/usr/local/rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/rustc-std-workspace-core)
+   Compiling alloc v0.0.0 (/usr/local/rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/alloc)
+   Compiling unwind v0.0.0 (/usr/local/rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/unwind)
+   Compiling adler2 v2.0.1
+   Compiling rustc-demangle v0.1.28
+   Compiling cfg-if v1.0.4
+   Compiling rustc-literal-escaper v0.0.8
    Compiling crc32fast v1.5.2
-   Compiling rustc-std-workspace-alloc v1.99.0 (/usr/local/rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/rustc-std-workspace-alloc)
-   Compiling gimli v0.34.0
-   Compiling addr2line v0.27.1
-   Compiling std_detect v0.1.5 (/usr/local/rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/std_detect)
-   Compiling miniz_oxide v0.9.1
-   Compiling panic_unwind v0.0.0 (/usr/local/rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/panic_unwind)
-   Compiling panic_abort v0.0.0 (/usr/local/rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/panic_abort)
    Compiling rand_chacha v0.3.1
    Compiling siphasher v1.0.4
    Compiling phf_shared v0.11.3
    Compiling rand v0.8.8
+   Compiling rustc-std-workspace-alloc v1.99.0 (/usr/local/rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/rustc-std-workspace-alloc)
+   Compiling gimli v0.34.0
+   Compiling std_detect v0.1.5 (/usr/local/rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/std_detect)
+   Compiling addr2line v0.27.1
+   Compiling miniz_oxide v0.9.1
+   Compiling panic_abort v0.0.0 (/usr/local/rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/panic_abort)
+   Compiling panic_unwind v0.0.0 (/usr/local/rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/panic_unwind)
    Compiling phf_generator v0.11.3
    Compiling phf_codegen v0.11.3
    Compiling wasmparser v0.261.0
-   Compiling id-arena v2.3.0
-   Compiling cfg_aliases v0.2.2
-   Compiling unicode_names2_generator v2.0.0
-   Compiling unicode_names2 v2.0.0
-   Compiling serde_derive v1.0.229
    Compiling proc_macro v0.0.0 (/usr/local/rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/proc_macro)
-   Compiling thiserror-impl v2.0.21
+   Compiling serde_derive v1.0.229
 warning: struct `stat` is never constructed
    --> /src/bevy-horizon/patches/libc/src/unix/newlib/horizon/mod.rs:118:16
     |
@@ -158,16 +153,21 @@ warning: struct `stat` is never constructed
     = note: this warning originates in the macro `s` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 warning: `libc` (lib) generated 1 warning
+   Compiling thiserror-impl v2.0.21
    Compiling allocator-api2 v0.2.21
    Compiling horizon-mod-surface v0.1.0 (/src/horizon-nx/crates/horizon-mod-surface)
    Compiling horizon-mod-point-shape v0.1.0 (/src/horizon-nx/crates/horizon-mod-point-shape)
    Compiling smallvec v1.16.2
    Compiling simd-adler32 v0.3.10
-   Compiling wit-parser v0.261.0
+   Compiling id-arena v2.3.0
+   Compiling cfg_aliases v0.2.2
    Compiling bytemuck_derive v1.12.1
+   Compiling wit-parser v0.261.0
+   Compiling unicode_names2_generator v2.0.0
+   Compiling unicode_names2 v2.0.0
+   Compiling bytemuck v1.25.2
    Compiling bumpalo v3.20.3
    Compiling phf v0.11.3
-   Compiling bytemuck v1.25.2
    Compiling horizon-mod-source v0.1.0 (/src/horizon-nx/crates/horizon-mod-source)
    Compiling horizon-game-discovery v0.1.0 (/src/horizon-nx/crates/horizon-game-discovery)
    Compiling horizon-mod-api-gen v0.1.0 (/src/horizon-nx/crates/horizon-mod-api-gen)
@@ -176,45 +176,327 @@ warning: `libc` (lib) generated 1 warning
    Compiling horizon-core v0.1.0 (/src/horizon-nx/crates/horizon-core)
    Compiling once_cell v1.21.4
    Compiling zerofrom-derive v0.1.8
-   Compiling flate2 v1.1.10
-   Compiling termcolor v1.4.1
    Compiling arrayvec v0.7.8
+   Compiling termcolor v1.4.1
+   Compiling flate2 v1.1.10
    Compiling autocfg v1.5.1
    Compiling zerofrom v0.1.8
    Compiling num-traits v0.2.19
    Compiling yoke-derive v0.8.4
    Compiling stable_deref_trait v1.2.1
-   Compiling rustix v1.1.5 (/src/bevy-horizon/patches/rustix)
-   Compiling errno v0.3.14
    Compiling getrandom v0.4.3 (/src/bevy-horizon/patches/getrandom)
    Compiling yoke v0.8.3
-error[E0308]: mismatched types
-  --> /src/bevy-horizon/patches/rustix/src/backend/libc/net/read_sockaddr.rs:89:20
-   |
-89 |         sa_family: 0_u16,
-   |                    ^^^^^ expected `u8`, found `u16`
-
-error[E0063]: missing field `sa_len` in initializer of `libc::sockaddr`
-  --> /src/bevy-horizon/patches/rustix/src/backend/libc/net/read_sockaddr.rs:59:13
-   |
-59 |     let _ = c::sockaddr {
-   |             ^^^^^^^^^^^ missing `sa_len`
-
-error[E0063]: missing field `sin_len` in initializer of `libc::sockaddr_in`
- --> /src/bevy-horizon/patches/rustix/src/backend/libc/net/write_sockaddr.rs:9:5
-  |
-9 |     c::sockaddr_in {
-  |     ^^^^^^^^^^^^^^ missing `sin_len`
-
    Compiling cobs v0.3.0
    Compiling zerovec-derive v0.11.6
-error[E0308]: mismatched types
-  --> /src/bevy-horizon/patches/rustix/src/backend/libc/net/read_sockaddr.rs:93:18
-   |
-93 |         sa_data: [0; 26],
-   |                  ^^^^^^^ expected an array with a size of 14, found one with a size of 26
+   Compiling rustix v1.1.5 (/src/bevy-horizon/patches/rustix)
+   Compiling regex-syntax v0.8.11
+   Compiling zerovec v0.11.8
+   Compiling postcard v1.1.3
+   Compiling zopfli v0.8.4
+   Compiling errno v0.3.14
+   Compiling displaydoc v0.2.7
+   Compiling typed-path v0.13.0
+   Compiling rustc-hash v1.1.0
+   Compiling zerocopy-derive v0.8.60
+   Compiling zip v9.1.3
+   Compiling naga-types v30.0.1
+   Compiling naga v30.0.1 (/src/horizon-nx/third_party/naga)
+   Compiling hashbrown v0.16.1
+   Compiling unicode-xid v0.2.6
+   Compiling unicode-width v0.2.2
+   Compiling bit-vec v0.9.1
+   Compiling find-msvc-tools v0.1.14
+   Compiling shlex v2.0.1
+   Compiling cc v1.6.0
+   Compiling bit-set v0.10.0
+   Compiling codespan-reporting v0.13.1
+   Compiling half v2.7.1
+   Compiling pp-rs v0.2.1
+   Compiling spirv v0.4.0+sdk-1.4.341.0
+   Compiling either v1.19.0
+   Compiling fnv v1.0.7
+   Compiling rustversion v1.0.23
+   Compiling itertools v0.14.0
+   Compiling tinystr v0.8.4
+   Compiling horizon-mod-runtime v0.1.0 (/src/horizon-nx/crates/horizon-mod-runtime)
+   Compiling writeable v0.6.4
+   Compiling litemap v0.8.3
+   Compiling scopeguard v1.2.0
+   Compiling aho-corasick v1.1.5
+   Compiling icu_locale_core v2.3.0
+   Compiling regex-automata v0.4.18
+   Compiling prost-derive v0.14.4
+   Compiling zerotrie v0.2.5
+   Compiling potential_utf v0.1.6
+   Compiling horizon-guest-stack v0.1.0 (/src/horizon-nx/crates/horizon-guest-stack)
+warning: constant `REQUIRED` is never used
+   --> crates/horizon-guest-stack/src/lib.rs:129:7
+    |
+129 | const REQUIRED: usize = GUEST_STACK_BYTES + HOST_HEADROOM;
+    |       ^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
 
-Some errors have detailed explanations: E0063, E0308.
-For more information about an error, try `rustc --explain E0063`.
-error: could not compile `rustix` (lib) due to 4 previous errors
+warning: `horizon-guest-stack` (lib) generated 1 warning
+   Compiling utf8_iter v1.0.4
+   Compiling rustc_version v0.4.1
+   Compiling icu_normalizer_data v2.3.0
+   Compiling icu_properties_data v2.3.0
+   Compiling logos-codegen v0.15.1
+   Compiling icu_collections v2.3.0
+   Compiling icu_provider v2.3.1
+   Compiling glam v0.30.10
+   Compiling bytes v1.12.1
+   Compiling prost v0.14.4
+   Compiling miniz_oxide v0.8.9
+   Compiling fdeflate v0.3.7
+   Compiling horizon-mod-api-macros v0.1.0 (/src/horizon-nx/crates/horizon-mod-api-macros)
+   Compiling beef v0.5.2
+   Compiling lazy_static v1.5.1
+   Compiling png v0.18.1
+   Compiling icu_properties v2.3.0
+   Compiling icu_normalizer v2.3.0
+   Compiling prost-types v0.14.4
+   Compiling logos-codegen v0.16.1
+   Compiling ring v0.17.14 (/src/bevy-horizon/patches/ring)
+   Compiling horizon-assets v0.1.0 (/src/horizon-nx/crates/horizon-assets)
+   Compiling raw-window-handle v0.6.2 (/src/bevy-horizon/patches/raw-window-handle)
+   Compiling libmimalloc-sys v0.1.49 (/src/horizon-nx/packaging/switch/stubs/libmimalloc-sys)
+   Compiling mimalloc v0.1.52 (/src/horizon-nx/packaging/switch/stubs/mimalloc)
+   Compiling zeroize v1.9.1
+   Compiling miette-derive v7.6.0
+   Compiling unicode-width v0.1.14
+   Compiling wasmtime-internal-core v50.0.1
+   Compiling horizon-world v0.1.0 (/src/horizon-nx/crates/horizon-world)
+   Compiling miette v7.6.0
+   Compiling rustls-pki-types v1.15.1
+   Compiling horizon-threads v0.1.0 (/src/horizon-nx/crates/horizon-threads)
+   Compiling logos-derive v0.16.1
+   Compiling idna_adapter v1.2.2
+   Compiling logos-derive v0.15.1
+   Compiling libloading v0.8.9
+   Compiling xxhash-rust v0.8.19
+   Compiling lz4_flex v0.14.0
+   Compiling ash v0.38.0+1.3.281
+   Compiling foldhash v0.1.5
+   Compiling pkg-config v0.3.34
+   Compiling cranelift-srcgen v0.137.1
+   Compiling parking_lot_core v0.9.12
+   Compiling linux-raw-sys v0.12.1
+   Compiling cranelift-assembler-x64-meta v0.137.1
+   Compiling wayland-sys v0.31.11
+   Compiling hashbrown v0.15.5
+   Compiling logos v0.15.1
+   Compiling idna v1.1.0
+   Compiling logos v0.16.1
+error[E0432]: unresolved import `rustix::fs::Dir`
+   --> crates/horizon-world/src/native_load_context.rs:543:22
+    |
+543 |     use rustix::fs::{Dir, Mode, OFlags, open, openat};
+    |                      ^^^ no `Dir` in `fs`
+    |
+    = help: consider importing this struct instead:
+            std::fs::Dir
+note: found an item that was configured out
+   --> /src/bevy-horizon/patches/rustix/src/fs/mod.rs:80:15
+    |
+ 78 |     not(any(target_os = "espidf", target_os = "horizon", target_os = "redox"))
+    |        ----------------------------------------------------------------------- the item is gated here
+ 79 | ))]
+ 80 | pub use dir::{Dir, DirEntry};
+    |               ^^^
+
+   Compiling encoding_rs v0.8.42
+   Compiling untrusted v0.9.0
+   Compiling static_assertions v1.1.0
+   Compiling getrandom v0.3.4 (/src/horizon-nx/third_party/getrandom-0.3)
+error[E0599]: no associated function or constant named `NOFOLLOW` found for struct `OFlags` in the current scope
+   --> crates/horizon-world/src/native_load_context.rs:545:42
+    |
+545 |     let flags = OFlags::RDONLY | OFlags::NOFOLLOW | OFlags::NONBLOCK | OFlags::CLOEXEC;
+    |                                          ^^^^^^^^ associated function or constant not found in `OFlags`
+
+error[E0599]: no associated function or constant named `DIRECTORY` found for struct `OFlags` in the current scope
+   --> crates/horizon-world/src/native_load_context.rs:547:36
+    |
+547 |         open(root, flags | OFlags::DIRECTORY, Mode::empty()).map_err(Into::into),
+    |                                    ^^^^^^^^^ associated function or constant not found in `OFlags`
+
+error[E0599]: no associated function or constant named `DIRECTORY` found for struct `OFlags` in the current scope
+   --> crates/horizon-world/src/native_load_context.rs:550:47
+    |
+550 |         openat(&root, mod_id, flags | OFlags::DIRECTORY, Mode::empty()).map_err(Into::into),
+    |                                               ^^^^^^^^^ associated function or constant not found in `OFlags`
+
+warning: method call on a diverging inference variable
+   --> crates/horizon-world/src/native_load_context.rs:558:26
+    |
+558 |         let name = entry.file_name();
+    |                          ^^^^^^^^^
+    |
+    = help: consider providing a type annotation
+    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+    = note: for more information, see issue #156047 <https://github.com/rust-lang/rust/issues/156047>
+    = note: `#[warn(method_call_on_diverging_infer_var)]` (part of `#[warn(future_incompatible)]`) on by default
+
+error[E0599]: no method named `file_name` found for type `!` in the current scope
+   --> crates/horizon-world/src/native_load_context.rs:558:26
+    |
+558 |         let name = entry.file_name();
+    |                          ^^^^^^^^^ method not found in `!`
+
+   Compiling khronos-egl v6.0.0
+   Compiling fixedbitset v0.5.7
+   Compiling fastrand v2.5.0
+   Compiling tempfile v3.27.0
+   Compiling petgraph v0.8.3
+   Compiling wgpu-types v30.0.1
+warning: hiding a lifetime that's elided elsewhere is confusing
+  --> /src/bevy-horizon/patches/ring/src/polyfill/slice/as_chunks.rs:19:44
+   |
+19 | pub fn as_chunks<T, const N: usize>(slice: &[T]) -> (AsChunks<T, N>, &[T]) {
+   |                                            ^^^^      ^^^^^^^^^^^^^^  ^^^^ the same lifetime is elided here
+   |                                            |         |
+   |                                            |         the same lifetime is hidden here
+   |                                            the lifetime is elided here
+   |
+   = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+   = note: `#[warn(mismatched_lifetime_syntaxes)]` on by default
+help: use `'_` for type paths
+   |
+19 | pub fn as_chunks<T, const N: usize>(slice: &[T]) -> (AsChunks<'_, T, N>, &[T]) {
+   |                                                               +++
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+  --> /src/bevy-horizon/patches/ring/src/polyfill/slice/as_chunks_mut.rs:18:48
+   |
+18 | pub fn as_chunks_mut<T, const N: usize>(slice: &mut [T]) -> (AsChunksMut<T, N>, &mut [T]) {
+   |                                                ^^^^^^^^      ^^^^^^^^^^^^^^^^^  ^^^^^^^^ the same lifetime is elided here
+   |                                                |             |
+   |                                                |             the same lifetime is hidden here
+   |                                                the lifetime is elided here
+   |
+   = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+help: use `'_` for type paths
+   |
+18 | pub fn as_chunks_mut<T, const N: usize>(slice: &mut [T]) -> (AsChunksMut<'_, T, N>, &mut [T]) {
+   |                                                                          +++
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+  --> /src/bevy-horizon/patches/ring/src/polyfill/slice/as_chunks_mut.rs:60:19
+   |
+60 |     pub fn as_ref(&self) -> AsChunks<T, N> {
+   |                   ^^^^^     ^^^^^^^^^^^^^^ the same lifetime is hidden here
+   |                   |
+   |                   the lifetime is elided here
+   |
+   = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+help: use `'_` for type paths
+   |
+60 |     pub fn as_ref(&self) -> AsChunks<'_, T, N> {
+   |                                      +++
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+  --> /src/bevy-horizon/patches/ring/src/polyfill/slice/as_chunks_mut.rs:67:47
+   |
+67 |     pub fn chunks_mut<const CHUNK_LEN: usize>(&mut self) -> AsChunksMutChunksMutIter<T, N> {
+   |                                               ^^^^^^^^^     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the same lifetime is hidden here
+   |                                               |
+   |                                               the lifetime is elided here
+   |
+   = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+help: use `'_` for type paths
+   |
+67 |     pub fn chunks_mut<const CHUNK_LEN: usize>(&mut self) -> AsChunksMutChunksMutIter<'_, T, N> {
+   |                                                                                      +++
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+   --> /src/bevy-horizon/patches/ring/src/arithmetic/bigint/modulus.rs:116:27
+    |
+116 |     pub(crate) fn modulus(&self, cpu_features: cpu::Features) -> Modulus<M> {
+    |                           ^^^^^ the lifetime is elided here      ^^^^^^^^^^ the same lifetime is hidden here
+    |
+    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+help: use `'_` for type paths
+    |
+116 |     pub(crate) fn modulus(&self, cpu_features: cpu::Features) -> Modulus<'_, M> {
+    |                                                                          +++
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+  --> /src/bevy-horizon/patches/ring/src/arithmetic/limbs512/storage.rs:45:9
+   |
+45 |         &mut self,
+   |         ^^^^^^^^^ the lifetime is elided here
+...
+48 |     ) -> Result<AsChunksMut<Limb, LIMBS_PER_CHUNK>, LenMismatchError> {
+   |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the same lifetime is hidden here
+   |
+   = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+help: use `'_` for type paths
+   |
+48 |     ) -> Result<AsChunksMut<'_, Limb, LIMBS_PER_CHUNK>, LenMismatchError> {
+   |                             +++
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+  --> /src/bevy-horizon/patches/ring/src/pkcs8.rs:56:21
+   |
+56 |     fn alg_id_value(&self) -> untrusted::Input {
+   |                     ^^^^^     ^^^^^^^^^^^^^^^^ the same lifetime is hidden here
+   |                     |
+   |                     the lifetime is elided here
+   |
+   = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+help: use `'_` for type paths
+   |
+56 |     fn alg_id_value(&self) -> untrusted::Input<'_> {
+   |                                               ++++
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+  --> /src/bevy-horizon/patches/ring/src/pkcs8.rs:65:22
+   |
+65 |     pub fn curve_oid(&self) -> untrusted::Input {
+   |                      ^^^^^     ^^^^^^^^^^^^^^^^ the same lifetime is hidden here
+   |                      |
+   |                      the lifetime is elided here
+   |
+   = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+help: use `'_` for type paths
+   |
+65 |     pub fn curve_oid(&self) -> untrusted::Input<'_> {
+   |                                                ++++
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+  --> /src/bevy-horizon/patches/ring/src/rsa/public_modulus.rs:91:25
+   |
+91 |     pub(super) fn value(&self, cpu_features: cpu::Features) -> bigint::Modulus<N> {
+   |                         ^^^^^ the lifetime is elided here      ^^^^^^^^^^^^^^^^^^ the same lifetime is hidden here
+   |
+   = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+help: use `'_` for type paths
+   |
+91 |     pub(super) fn value(&self, cpu_features: cpu::Features) -> bigint::Modulus<'_, N> {
+   |                                                                                +++
+
+warning: `ring` (lib) generated 9 warnings (run `cargo fix --lib -p ring` to apply 9 suggestions)
+   Compiling prost-reflect v0.16.5
+   Compiling protox-parse v0.9.0
+   Compiling dlib v0.5.3
+   Compiling regex v1.13.1
+   Compiling lock_api v0.4.14
+   Compiling wgpu-hal v30.0.1 (/src/horizon-nx/third_party/wgpu-hal)
+   Compiling inout v0.1.4
+   Compiling pulley-macros v50.0.1
+   Compiling simdutf8 v0.1.5
+   Compiling bitflags v1.3.2
+   Compiling presser v0.3.1
+   Compiling percent-encoding v2.3.2
+   Compiling multiversion_no_op v1.0.0
+   Compiling multimap v0.10.1
+   Compiling crossbeam-utils v0.8.23
+   Compiling rustls v0.23.46
+   Compiling prost-build v0.14.4
+Some errors have detailed explanations: E0432, E0599.
+For more information about an error, try `rustc --explain E0432`.
+warning: `horizon-world` (lib) generated 1 warning
+error: could not compile `horizon-world` (lib) due to 5 previous errors; 2 warnings emitted
 warning: build failed, waiting for other jobs to finish...
