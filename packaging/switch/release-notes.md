@@ -10,6 +10,22 @@ On a Mac, run `dot_clean -m` on the SD card before ejecting it, or copy over FTP
 
 Already on 1.0.0 or later? The title screen offers new releases itself (the button left of Sign In, in Realms' place).
 
+### New in 2.0.2
+
+- **Splitscreen on the Switch.** A Pro Controller or a second pair of Joy-Con joins as player 2
+  (up to 4 players). Turn it on in Options → Horizon Settings → Splitscreen; Setup opens the
+  Switch's own controller screen (and its Controllers button opens it again), and a player is
+  moved between the two halves there. Each player's rumble plays on their own controller.
+- **Faster GPU.** In handheld mode Horizon now runs the GPU at 460.8 MHz, a speed the Switch offers
+  games (it was 307.2 MHz). During splitscreen in handheld mode it runs at 614.4 MHz, an
+  overclock like sys-clk's: it uses more battery and runs warmer. `HORIZON_NX_SPLIT_GPU_MHZ=0`
+  in `switch/horizon/env.txt` turns that off, and `HORIZON_NX_GPU_CLOCKS=system` keeps the
+  Switch's own speed. Docked is unchanged.
+- **Water draws faster.** An open sea or lake is drawn as strips instead of one square per block
+  again (John Uzoka's optimization from 1.x).
+- **Gyro aiming** While Attacking / While Using works (only Always turned the view before).
+- **No crash when quitting.** The game no longer crashes on its way back to the HOME menu.
+
 ### New in 2.0.1
 
 - **Mods switch on and off without a restart.** A content mod like Salvage turned on in Options →

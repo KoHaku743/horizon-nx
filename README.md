@@ -22,7 +22,7 @@ much faster loading on the console itself.
 
 ## Status
 
-Tested on a Switch with Atmosphère, November 2026. Current release: **v2.0.1**.
+Tested on a Switch with Atmosphère, November 2026. Current release: **v2.0.2**.
 
 | | |
 |---|---|
