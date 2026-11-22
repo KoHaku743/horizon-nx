@@ -132,6 +132,18 @@ pub const GLYPH_ROWS: u32 = 512;
 /// The largest atlas side: the 2D texture limit of the GPUs Horizon runs on
 /// (Apple silicon, RADV and Intel allow 16384; NVIDIA 32768).
 pub const MAX_ATLAS_SIZE: u32 = 16384;
+/// The GUI atlas's largest side: [`MAX_ATLAS_SIZE`], but 8192 on the Switch, whose ~3 GiB heap
+/// holds the CPU's and the GPU's memory alike. A side of 16384 is 1 GiB of pixels, kept in
+/// memory and on the GPU, and compressing the copy in memory asks for as much again: MCC
+/// Island's pack built a ~350 MiB atlas there and the game aborted ("memory allocation of
+/// 369098776 bytes failed", `pack_pixels`). Past this, the layout's own fallbacks reduce
+/// model and mod textures, as on any GPU when a pack outgrows the largest texture. The default
+/// resources need 4096x5120.
+pub const GUI_ATLAS_LIMIT: u32 = if cfg!(target_os = "horizon") {
+    8192
+} else {
+    MAX_ATLAS_SIZE
+};
 /// 128x128 atlas slots for map textures. A lobby paints its signs as walls of
 /// framed maps, so the pool holds a wall; too few slots re-upload every map
 /// every frame. 26.3's `MapTextureManager` keeps a texture per map instead.
@@ -1535,14 +1547,14 @@ impl HudAtlas {
         }
         images.sort_by(|a, b| b.2.cmp(&a.2).then(b.1.cmp(&a.1)));
         let (width, placements, glyph_region) =
-            Self::layout_leaving_out(&mut images, &mut animated, &cit_names, MAX_ATLAS_SIZE)
+            Self::layout_leaving_out(&mut images, &mut animated, &cit_names, GUI_ATLAS_LIMIT)
                 .or_else(|error| -> Result<_> {
                     let models = reducible_model_sprites(root, &images, &bordered);
                     let reduced = Self::layout_reducing_models(
                         &mut images,
                         &mut gui_sizes,
                         &models,
-                        MAX_ATLAS_SIZE,
+                        GUI_ATLAS_LIMIT,
                     );
                     let layout = match reduced {
                         Ok(layout) => layout,
@@ -1553,7 +1565,7 @@ impl HudAtlas {
                                 &mut gui_sizes,
                                 &keep,
                                 &mod_namespaces(),
-                                MAX_ATLAS_SIZE,
+                                GUI_ATLAS_LIMIT,
                             )?;
                             log::warn!(
                                 "reduced the resolution of mods' HUD textures to keep the resource packs: {error}"
@@ -1569,6 +1581,12 @@ impl HudAtlas {
         // A multiple of 1024 rather than a power of two: the default resources
         // need 4096x5120 (8192 rows before), Faithful 32x 4096x12288 (16384).
         let height = (glyph_region + GLYPH_ROWS).next_multiple_of(1024);
+        if full {
+            log::info!(
+                "Horizon: GUI atlas {width}x{height} ({} MiB)",
+                u64::from(width) * u64::from(height) * 4 >> 20
+            );
+        }
         let mut pixels = vec![0u8; (width * height * 4) as usize];
         let mut sprites = HashMap::new();
         let mut translucent = HashSet::new();
