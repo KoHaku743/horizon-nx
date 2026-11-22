@@ -14,7 +14,7 @@ pub(super) const SERVER_TIMEOUT: Duration = Duration::from_secs(1);
 
 /// JNDI reads them from resolv.conf on Unix and from the network adapters on
 /// Windows, where it leaves out the scoped IPv6 ones.
-#[cfg(unix)]
+#[cfg(all(unix, not(target_os = "horizon")))]
 pub(super) fn system_name_servers() -> Vec<SocketAddr> {
     std::fs::read_to_string("/etc/resolv.conf")
         .map_or_else(|_| Vec::new(), |conf| name_servers(&conf))
@@ -42,6 +42,59 @@ pub(super) fn system_name_servers() -> Vec<SocketAddr> {
     Vec::new()
 }
 
+/// The Switch has no resolv.conf: its connection's DNS servers come from nifm
+/// (libnx `nifmGetCurrentIpConfigInfo`, addresses in network order), the ones
+/// the console's internet settings give it. Without them no SRV record was ever
+/// asked for, and a server whose address names one (another host or port)
+/// refused the connection at the name's own address (os error 111).
+#[cfg(target_os = "horizon")]
+pub(super) fn system_name_servers() -> Vec<SocketAddr> {
+    unsafe extern "C" {
+        fn nifmInitialize(service_type: u32) -> u32;
+        fn nifmExit();
+        fn nifmGetCurrentIpConfigInfo(
+            current_addr: *mut u32,
+            subnet_mask: *mut u32,
+            gateway: *mut u32,
+            primary_dns_server: *mut u32,
+            secondary_dns_server: *mut u32,
+        ) -> u32;
+    }
+    /// libnx `NifmServiceType_User`.
+    const USER: u32 = 0;
+    let (mut addr, mut mask, mut gateway, mut primary, mut secondary) = (0, 0, 0, 0, 0);
+    // SAFETY: nifm is reference-counted by libnx: this opens and closes a use
+    // of it; the query writes five u32s.
+    let rc = unsafe {
+        match nifmInitialize(USER) {
+            0 => {
+                let rc = nifmGetCurrentIpConfigInfo(
+                    &mut addr,
+                    &mut mask,
+                    &mut gateway,
+                    &mut primary,
+                    &mut secondary,
+                );
+                nifmExit();
+                rc
+            }
+            rc => rc,
+        }
+    };
+    if rc != 0 {
+        return Vec::new();
+    }
+    let mut servers = Vec::new();
+    for raw in [primary, secondary] {
+        let ip = std::net::Ipv4Addr::from(raw.to_ne_bytes());
+        let server = SocketAddr::new(ip.into(), 53);
+        if !ip.is_unspecified() && !servers.contains(&server) {
+            servers.push(server);
+        }
+    }
+    servers
+}
+
 /// Link-local and site-local IPv6 addresses (such as Windows' `fec0:0:0:ffff::1`
 /// defaults), which only work with a scope the adapter's list doesn't carry.
 #[cfg(any(windows, test))]
@@ -50,7 +103,7 @@ fn scoped(ip: std::net::IpAddr) -> bool {
 }
 
 /// `nameserver` lines of resolv.conf, in order.
-#[cfg(any(unix, test))]
+#[cfg(any(all(unix, not(target_os = "horizon")), test))]
 fn name_servers(conf: &str) -> Vec<SocketAddr> {
     conf.lines()
         .filter_map(|line| line.strip_prefix("nameserver"))
