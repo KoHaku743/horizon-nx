@@ -6,6 +6,7 @@ use crate::{Error, Result};
 use std::net::{IpAddr, SocketAddr, ToSocketAddrs};
 
 mod dns;
+pub use dns::set_name_servers;
 
 #[derive(Debug)]
 pub(crate) struct Resolved {

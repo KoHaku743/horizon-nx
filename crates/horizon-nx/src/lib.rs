@@ -41,6 +41,9 @@ pub mod rumble;
 /// The system's controller screen, for splitscreen's players.
 #[cfg(target_os = "horizon")]
 pub mod controllers;
+/// The console's DNS servers, for SRV records.
+#[cfg(target_os = "horizon")]
+pub mod dns;
 
 pub use compat::{
     ThreadCorePolicy, set_thread_core_policy, set_thread_logging, thread_core_policy,

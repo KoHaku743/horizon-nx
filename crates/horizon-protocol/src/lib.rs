@@ -24,7 +24,7 @@ pub mod payload_negotiation;
 pub mod quiet;
 pub mod registry;
 mod resolver;
-pub use resolver::server_redirect;
+pub use resolver::{server_redirect, set_name_servers};
 pub mod rsa;
 pub mod secure_chat;
 pub mod server_status;
