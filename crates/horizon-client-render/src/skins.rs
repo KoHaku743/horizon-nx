@@ -356,7 +356,13 @@ const MAX_PROFILES: usize = 256;
 const PROFILE_TTL: std::time::Duration = std::time::Duration::from_secs(10 * 60);
 /// The most profile fetches that may run at once. Each is an OS thread and an HTTP request; a
 /// mod calling `resolve_id` in a loop must not exhaust them.
+#[cfg(not(target_os = "horizon"))]
 const MAX_FETCHES: usize = 16;
+/// On the Switch, 3: every request goes through the console's own network services, and
+/// joining MCC Island (a lobby of NPCs with skins of their own) started 16 of these and 16 skin
+/// downloads at once, after which the whole console froze.
+#[cfg(target_os = "horizon")]
+const MAX_FETCHES: usize = 3;
 /// The fetch slots a mod's lookups may use. The last one is kept for the game's own lookups
 /// (`/fetchprofile`, skins), so a mod polling every tick cannot stall them.
 const MOD_FETCHES: usize = MAX_FETCHES - 1;
@@ -1153,7 +1159,12 @@ struct Bounds {
 const BOUNDS: Bounds = Bounds {
     states: 4096,
     resources: 4096,
-    downloads: 16,
+    downloads: if cfg!(target_os = "horizon") {
+        // The Switch: two at once, as `MAX_FETCHES` there (32 requests at once froze the console).
+        2
+    } else {
+        16
+    },
 };
 /// `images` is bounded only so a long session on a busy server does not grow
 /// without end; the disk cache holds everything it drops.
