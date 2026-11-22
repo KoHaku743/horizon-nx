@@ -35,6 +35,9 @@ fn tr(key: &str, args: &[&dyn std::fmt::Display]) -> String {
     crate::text::format_translation(&template, &args).plain()
 }
 
+/// The Switch: one screen, so no new window or monitor to move a player to.
+const ONE_SCREEN: bool = cfg!(target_os = "horizon");
+
 #[derive(Default)]
 pub struct SplitUi {
     pub on: bool,
@@ -295,7 +298,7 @@ impl SplitUi {
             .map(|w| (tr("window", &[&w.number]), Spot::Window(w.number)))
             .collect();
         // The Switch has one screen: no other window or monitor to go to.
-        if cfg!(target_os = "horizon") {
+        if ONE_SCREEN {
             return spots;
         }
         spots.push((tr("new_window", &[]), Spot::New));
@@ -332,6 +335,10 @@ impl SplitUi {
                 stops.push((label, Drop::Place(w.number, k)));
             }
         }
+        // The Switch has one screen: a player moves only among the places in its one window.
+        if ONE_SCREEN {
+            return stops;
+        }
         stops.push((tr("new_window", &[]), Drop::At(Spot::New)));
         for m in &self.monitors {
             let filled = draft
@@ -354,6 +361,10 @@ impl SplitUi {
         let inside = |[rx, ry, rw, rh]: [f32; 4]| x >= rx && x < rx + rw && y >= ry && y < ry + rh;
         if let Some((n, _)) = windows.iter().rev().find(|(_, r)| inside(*r)) {
             return Some(Spot::Window(*n));
+        }
+        // The Switch has one screen: outside its window there is nowhere to go.
+        if ONE_SCREEN {
+            return None;
         }
         let m = &self.monitors[monitors.iter().position(|r| inside(*r))?];
         if m.name == self.main {
