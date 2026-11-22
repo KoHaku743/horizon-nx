@@ -43,6 +43,8 @@ pub struct Device {
     /// The npad id and style the handles were made for, and the handles.
     target: Option<(u32, u32)>,
     handles: [u32; 2],
+    /// The magnitudes last sent: the motors start still.
+    sent: (u16, u16),
 }
 
 impl Device {
@@ -50,12 +52,23 @@ impl Device {
         Device {
             target: None,
             handles: [0; 2],
+            sent: (0, 0),
         }
     }
 
     /// Sets magnitude for strong and weak ff motors. The values stay until the next call, which
     /// gilrs makes as effects start, change and stop.
+    ///
+    /// Unchanged magnitudes ask HID nothing. gilrs's force-feedback thread calls this on every
+    /// tick, the motors still or not (the game's own rumble goes through horizon-nx), and keeps
+    /// running while the app exits: a HID query after the app has closed HID aborts it (libnx
+    /// NotInitialized, 2345-0008), which crashed every exit since the controllers had four
+    /// gamepads.
     pub fn set_ff_state(&mut self, strong: u16, weak: u16, _min_duration: Duration) {
+        if (strong, weak) == self.sent {
+            return;
+        }
+        self.sent = (strong, weak);
         let Some(target) = active_target() else {
             return;
         };
