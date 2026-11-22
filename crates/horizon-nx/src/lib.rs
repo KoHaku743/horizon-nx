@@ -49,6 +49,8 @@ pub use compat::{
 #[cfg(target_os = "horizon")]
 pub use boost::loading_world;
 #[cfg(target_os = "horizon")]
+pub use clocks::splitscreen_clocks;
+#[cfg(target_os = "horizon")]
 pub use keyboard::software_keyboard;
 #[cfg(target_os = "horizon")]
 pub use motion::{Motion, motion, stop_motion};

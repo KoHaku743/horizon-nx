@@ -748,6 +748,9 @@ impl ApplicationHandler for Split<'_> {
             self.refresh_monitors();
         }
         self.host.split_hud.menu = self.guests.iter().any(|g| g.name.is_some());
+        // The Switch: a faster handheld GPU while the world is drawn more than once.
+        #[cfg(target_os = "horizon")]
+        horizon_nx::splitscreen_clocks(!self.guests.is_empty());
         // Off, or the last other player gone: P1 draws on its window again.
         if !self.surfaces.is_empty()
             && (!on || self.guests.is_empty())

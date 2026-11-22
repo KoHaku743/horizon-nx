@@ -16,6 +16,14 @@
 //! boost's FastLoad configurations stand in for either only while the boost is on (boost.rs).
 
 use crate::logging::write_log_line;
+use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
+
+/// The handheld configuration at launch, to go back to after splitscreen (0 until read), and
+/// whether env.txt's `HORIZON_NX_GPU_CLOCKS` already asked for faster clocks.
+static LAUNCH_HANDHELD: AtomicU32 = AtomicU32::new(0);
+static FAST_FROM_ENV: AtomicBool = AtomicBool::new(false);
+/// Splitscreen's faster handheld GPU is asked for.
+static SPLIT_FAST: AtomicBool = AtomicBool::new(false);
 
 /// libnx `ApmPerformanceMode`: Normal is the handheld mode, Boost the docked one.
 const MODE_HANDHELD: i32 = 0;
@@ -94,6 +102,11 @@ pub(crate) fn start_from_env() {
         return;
     }
     log_clocks("at launch, as the system set them");
+    let mut launch = 0;
+    // SAFETY: apm is set up for an Application (checked above); `launch` is written.
+    if unsafe { apmGetPerformanceConfiguration(MODE_HANDHELD, &mut launch) } == 0 {
+        LAUNCH_HANDHELD.store(launch, Ordering::Relaxed);
+    }
     let choice = std::env::var("HORIZON_NX_GPU_CLOCKS").ok();
     let handheld = match choice.as_deref().map(str::trim) {
         None | Some("system") => return,
@@ -106,6 +119,7 @@ pub(crate) fn start_from_env() {
             return;
         }
     };
+    FAST_FROM_ENV.store(true, Ordering::Relaxed);
     for (mode, name, wanted) in [
         (MODE_HANDHELD, "handheld", handheld),
         (MODE_DOCKED, "docked", DOCKED_FAST),
@@ -120,6 +134,38 @@ pub(crate) fn start_from_env() {
     log_clocks("after asking");
 }
 
+/// Splitscreen: while another player is in, the handheld GPU runs at 460.8 MHz (0x92220008,
+/// `HORIZON_NX_GPU_CLOCKS=fast`'s, a configuration the system offers games), as two views draw
+/// the world twice; alone again, the launch configuration comes back. Docked, the GPU already
+/// runs at 768 MHz. Nothing changes when env.txt asked for faster clocks already. Called every
+/// frame; asks apm only when `on` changes.
+pub fn splitscreen_clocks(on: bool) {
+    if FAST_FROM_ENV.load(Ordering::Relaxed) || SPLIT_FAST.swap(on, Ordering::Relaxed) == on {
+        return;
+    }
+    if !is_application() {
+        return;
+    }
+    let wanted = match on {
+        true => HANDHELD_FAST,
+        false => match LAUNCH_HANDHELD.load(Ordering::Relaxed) {
+            0 => return,
+            launch => launch,
+        },
+    };
+    // SAFETY: apm is set up for an Application (checked above).
+    let rc = unsafe { apmSetPerformanceConfiguration(MODE_HANDHELD, wanted) };
+    let why = if on {
+        "splitscreen"
+    } else {
+        "back to one player"
+    };
+    write_log_line(format_args!(
+        "[Clocks] {why}: handheld asked for {} (result 0x{rc:x})\n",
+        describe(wanted)
+    ));
+}
+
 /// Logs whether the console is docked and both modes' configurations. From `start_from_env`, and
 /// from `process_applet_messages` when the system says the operation or performance mode changed.
 pub(crate) fn log_clocks(when: &str) {
@@ -129,7 +175,11 @@ pub(crate) fn log_clocks(when: &str) {
     // SAFETY: plain libnx getters of the applet state it keeps.
     let (operation, performance) =
         unsafe { (appletGetOperationMode(), appletGetPerformanceMode()) };
-    let mode = if operation == OPERATION_DOCKED { "docked" } else { "handheld" };
+    let mode = if operation == OPERATION_DOCKED {
+        "docked"
+    } else {
+        "handheld"
+    };
     write_log_line(format_args!(
         "[Clocks] {when}: {mode} (performance mode {performance}); handheld configuration {}, docked {}\n",
         configuration(MODE_HANDHELD),
