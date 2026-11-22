@@ -1,29 +1,25 @@
-//! The clocks in the log, and a faster-GPU diagnostic.
+//! The clocks: the handheld GPU Horizon plays at, splitscreen's faster one, and the log.
 //!
-//! An application runs in the system's performance configurations: in handheld mode 0x00020003
-//! (CPU 1020 MHz, GPU 307.2 MHz, memory 1331.2 MHz). The game ships at those clocks, so they are
-//! the default. `[Clocks]` lines log the mode (handheld or docked) and both modes' configurations
-//! at launch and whenever the system says the mode changed (`log_clocks`, from
-//! `process_applet_messages`), so a log says which clocks its frames had.
-//!
-//! `HORIZON_NX_GPU_CLOCKS` in env.txt asks apm for faster configurations the system offers games
+//! An application starts in the system's performance configurations: in handheld mode 0x00020003
+//! (CPU 1020 MHz, GPU 307.2 MHz, memory 1331.2 MHz). Horizon asks apm for 0x92220008 in handheld
+//! mode (GPU 460.8 MHz, memory still 1331.2 MHz), a configuration the system offers games
 //! (`apmSetPerformanceConfiguration`; switchbrew "PTM services", PerformanceConfiguration; libnx
-//! switch/services/apm.h, where `appletInitialize` sets apm up for an Application), as a
-//! diagnostic, not for shipping. `fast` is 0x92220008 in handheld mode (GPU 460.8 MHz, memory still
-//! 1331.2 MHz) and 0x00010001 docked (GPU 768 MHz); `max` raises handheld memory to 1600 MHz too
-//! (0x92220007). Against a run at the default, `fast` shows how much of a frame's GPU time scales
-//! with the GPU's clock (shader and raster work) and how much doesn't (memory traffic). The CPU
-//! boost's FastLoad configurations stand in for either only while the boost is on (boost.rs).
+//! switch/services/apm.h, where `appletInitialize` sets apm up for an Application), and 0x00010001
+//! docked (GPU 768 MHz, the system's own). `HORIZON_NX_GPU_CLOCKS` in env.txt picks another:
+//! `system` keeps the system's, `max` raises handheld memory to 1600 MHz too (0x92220007).
+//!
+//! While splitscreen has another player in handheld mode, the GPU runs faster still, 614.4 MHz
+//! by default: past every configuration apm offers, so set on the GPU's clock itself (clkrst,
+//! 8.0.0+), as sys-clk does, and set again if the system puts its own back.
+//! `HORIZON_NX_SPLIT_GPU_MHZ` in env.txt picks the rate (`0` leaves the GPU alone). Alone again,
+//! or docked, the rate from before comes back. `[Clocks]` lines log the mode and both modes'
+//! configurations at launch and whenever the system says the mode changed (`log_clocks`, from
+//! `process_applet_messages`), and splitscreen's changes, so a log says which clocks its frames
+//! had. The CPU boost's FastLoad mode stands in for the CPU while it is on (boost.rs).
 
 use crate::logging::write_log_line;
-use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
-
-/// The handheld configuration at launch, to go back to after splitscreen (0 until read), and
-/// whether env.txt's `HORIZON_NX_GPU_CLOCKS` already asked for faster clocks.
-static LAUNCH_HANDHELD: AtomicU32 = AtomicU32::new(0);
-static FAST_FROM_ENV: AtomicBool = AtomicBool::new(false);
-/// Splitscreen's faster handheld GPU is asked for.
-static SPLIT_FAST: AtomicBool = AtomicBool::new(false);
+use std::sync::Mutex;
+use std::time::{Duration, Instant};
 
 /// libnx `ApmPerformanceMode`: Normal is the handheld mode, Boost the docked one.
 const MODE_HANDHELD: i32 = 0;
@@ -65,7 +61,22 @@ unsafe extern "C" {
     fn appletGetPerformanceMode() -> i32;
     fn apmSetPerformanceConfiguration(mode: i32, configuration: u32) -> u32;
     fn apmGetPerformanceConfiguration(mode: i32, configuration: *mut u32) -> u32;
+    fn clkrstInitialize() -> u32;
+    fn clkrstOpenSession(session: *mut ClkrstSession, module: u32, unk: u32) -> u32;
+    fn clkrstSetClockRate(session: *mut ClkrstSession, hz: u32) -> u32;
+    fn clkrstGetClockRate(session: *mut ClkrstSession, hz: *mut u32) -> u32;
 }
+
+/// libnx `ClkrstSession`: a `Service` (16 bytes), with room to spare.
+#[repr(C, align(8))]
+struct ClkrstSession([u64; 4]);
+/// libnx `PcvModuleId_GPU`.
+const MODULE_GPU: u32 = 0x4000_0002;
+/// Splitscreen's handheld GPU rate unless env.txt says otherwise: 614.4 MHz, one of the GPU's own
+/// steps.
+const SPLIT_GPU_HZ: u32 = 614_400_000;
+/// How often splitscreen checks the system kept its rate.
+const RECHECK: Duration = Duration::from_secs(1);
 
 fn describe(configuration: u32) -> String {
     let clocks = CONFIGURATIONS
@@ -92,8 +103,8 @@ fn configuration(mode: i32) -> String {
     }
 }
 
-/// Logs the clocks and, with `HORIZON_NX_GPU_CLOCKS=fast` or `max`, asks for faster ones. `init`
-/// calls it once, after env.txt is applied and before the CPU boost goes on.
+/// Logs the clocks and asks for the ones Horizon plays at (`HORIZON_NX_GPU_CLOCKS`, the module's
+/// doc). `init` calls it once, after env.txt is applied and before the CPU boost goes on.
 pub(crate) fn start_from_env() {
     if !is_application() {
         write_log_line(format_args!(
@@ -102,15 +113,10 @@ pub(crate) fn start_from_env() {
         return;
     }
     log_clocks("at launch, as the system set them");
-    let mut launch = 0;
-    // SAFETY: apm is set up for an Application (checked above); `launch` is written.
-    if unsafe { apmGetPerformanceConfiguration(MODE_HANDHELD, &mut launch) } == 0 {
-        LAUNCH_HANDHELD.store(launch, Ordering::Relaxed);
-    }
     let choice = std::env::var("HORIZON_NX_GPU_CLOCKS").ok();
     let handheld = match choice.as_deref().map(str::trim) {
-        None | Some("system") => return,
-        Some("fast") => HANDHELD_FAST,
+        Some("system") => return,
+        None | Some("fast") => HANDHELD_FAST,
         Some("max") => HANDHELD_MAX,
         Some(other) => {
             write_log_line(format_args!(
@@ -119,7 +125,6 @@ pub(crate) fn start_from_env() {
             return;
         }
     };
-    FAST_FROM_ENV.store(true, Ordering::Relaxed);
     for (mode, name, wanted) in [
         (MODE_HANDHELD, "handheld", handheld),
         (MODE_DOCKED, "docked", DOCKED_FAST),
@@ -134,36 +139,120 @@ pub(crate) fn start_from_env() {
     log_clocks("after asking");
 }
 
-/// Splitscreen: while another player is in, the handheld GPU runs at 460.8 MHz (0x92220008,
-/// `HORIZON_NX_GPU_CLOCKS=fast`'s, a configuration the system offers games), as two views draw
-/// the world twice; alone again, the launch configuration comes back. Docked, the GPU already
-/// runs at 768 MHz. Nothing changes when env.txt asked for faster clocks already. Called every
-/// frame; asks apm only when `on` changes.
+/// Splitscreen's GPU: the session to the clock, the rate asked for, the one from before, and when
+/// it was last checked.
+struct Split {
+    session: ClkrstSession,
+    /// No session could be opened: the rate stays the system's.
+    failed: bool,
+    on: Option<(u32, u32)>,
+    checked: Instant,
+}
+static SPLIT: Mutex<Option<Split>> = Mutex::new(None);
+
+/// `HORIZON_NX_SPLIT_GPU_MHZ`: splitscreen's handheld GPU rate in Hz, 0 to leave it alone.
+fn split_rate() -> u32 {
+    match std::env::var("HORIZON_NX_SPLIT_GPU_MHZ") {
+        Err(_) => SPLIT_GPU_HZ,
+        Ok(mhz) => mhz
+            .trim()
+            .parse::<f64>()
+            .map_or(0, |mhz| (mhz * 1_000_000.0).round().clamp(0.0, 1e9) as u32),
+    }
+}
+
+/// Splitscreen: while another player is in (`on`) in handheld mode, the GPU runs at
+/// `split_rate`, set again within a second if the system puts its own back; otherwise the rate
+/// from before comes back. Called every frame.
 pub fn splitscreen_clocks(on: bool) {
-    if FAST_FROM_ENV.load(Ordering::Relaxed) || SPLIT_FAST.swap(on, Ordering::Relaxed) == on {
+    let mut split = SPLIT.lock().unwrap_or_else(|e| e.into_inner());
+    if split.is_none() && !on {
         return;
     }
-    if !is_application() {
-        return;
+    // SAFETY: a plain libnx getter of the applet state it keeps.
+    let docked = unsafe { appletGetOperationMode() } == OPERATION_DOCKED;
+    let rate = if on && !docked { split_rate() } else { 0 };
+    if split.is_none() {
+        if rate == 0 || !is_application() {
+            return;
+        }
+        let mut session = ClkrstSession([0; 4]);
+        // SAFETY: clkrst comes up once and stays for the process; `session` has libnx's room.
+        let rc = unsafe {
+            match clkrstInitialize() {
+                0 => clkrstOpenSession(&mut session, MODULE_GPU, 3),
+                rc => rc,
+            }
+        };
+        if rc != 0 {
+            write_log_line(format_args!(
+                "[Clocks] splitscreen: no session to the GPU's clock (0x{rc:x}); its rate stays\n"
+            ));
+            *split = Some(Split {
+                session,
+                failed: true,
+                on: None,
+                checked: Instant::now(),
+            });
+            return;
+        }
+        *split = Some(Split {
+            session,
+            failed: false,
+            on: None,
+            checked: Instant::now(),
+        });
     }
-    let wanted = match on {
-        true => HANDHELD_FAST,
-        false => match LAUNCH_HANDHELD.load(Ordering::Relaxed) {
-            0 => return,
-            launch => launch,
-        },
+    let Some(split) = split.as_mut().filter(|split| !split.failed) else {
+        return;
     };
-    // SAFETY: apm is set up for an Application (checked above).
-    let rc = unsafe { apmSetPerformanceConfiguration(MODE_HANDHELD, wanted) };
-    let why = if on {
-        "splitscreen"
-    } else {
-        "back to one player"
-    };
-    write_log_line(format_args!(
-        "[Clocks] {why}: handheld asked for {} (result 0x{rc:x})\n",
-        describe(wanted)
-    ));
+    let mut now = 0;
+    match (split.on, rate) {
+        (None, 0) => {}
+        (None, wanted) => {
+            // SAFETY: the session was opened above.
+            unsafe { clkrstGetClockRate(&mut split.session, &mut now) };
+            // SAFETY: as above.
+            let rc = unsafe { clkrstSetClockRate(&mut split.session, wanted) };
+            write_log_line(format_args!(
+                "[Clocks] splitscreen: GPU {} -> {} MHz (result 0x{rc:x})\n",
+                f64::from(now) / 1e6,
+                f64::from(wanted) / 1e6
+            ));
+            split.on = Some((wanted, now));
+            split.checked = Instant::now();
+        }
+        // Docked, the system has set its own (faster) clocks: they stay.
+        (Some(_), 0) if docked => {
+            write_log_line(format_args!(
+                "[Clocks] splitscreen over: docked, the system's GPU rate stays\n"
+            ));
+            split.on = None;
+        }
+        (Some((_, before)), 0) => {
+            // A rate that couldn't be read stays the splitscreen one until the system sets its own.
+            let rc = match before {
+                0 => 0,
+                // SAFETY: as above.
+                before => unsafe { clkrstSetClockRate(&mut split.session, before) },
+            };
+            write_log_line(format_args!(
+                "[Clocks] splitscreen over: GPU back to {} MHz (result 0x{rc:x})\n",
+                f64::from(before) / 1e6
+            ));
+            split.on = None;
+        }
+        (Some((wanted, _)), _) if split.checked.elapsed() >= RECHECK => {
+            split.checked = Instant::now();
+            // SAFETY: as above.
+            unsafe { clkrstGetClockRate(&mut split.session, &mut now) };
+            if now != wanted {
+                // SAFETY: as above.
+                unsafe { clkrstSetClockRate(&mut split.session, wanted) };
+            }
+        }
+        _ => {}
+    }
 }
 
 /// Logs whether the console is docked and both modes' configurations. From `start_from_env`, and
