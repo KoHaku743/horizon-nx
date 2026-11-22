@@ -44,11 +44,15 @@ const MIN_MAGAZINE: usize = 2;
 const MAX_MAGAZINE: usize = 32;
 /// The most the depot keeps, in bytes, across all classes. A thread that frees a big structure
 /// fills magazines faster than its shard can hold them; past this limit each further magazine's
-/// blocks go back to newlib's `free` one at a time, which sorts every block into its bin (log14:
-/// `Behaviours::load` dropping a JSON tree spent 95% of 188 s there). Parked magazines serve the
-/// class's next allocations, and malloc running out gets them all back (`drain`).
+/// blocks go back to the backend one at a time. It was 128 MiB while that backend was newlib's
+/// `free`, which sorts every block into its bin (log14: `Behaviours::load` dropping a JSON tree
+/// spent 95% of 188 s there). The backend is the TLSF heap now, whose `free` takes constant time,
+/// and the depot's blocks serve only their own class: a console's log of 22 November had it
+/// holding 114 MiB through a whole session while the heap's pools, which never shrink, grew to
+/// 928 MiB. Given back, any size can use them. Parked magazines serve the class's next
+/// allocations, and malloc running out gets them all back (`drain`).
 /// `BH_ALLOC_DEPOT_MIB` sets it at boot; 0 parks nothing.
-pub(crate) const DEPOT_BYTES: usize = 128 << 20;
+pub(crate) const DEPOT_BYTES: usize = 32 << 20;
 
 /// Where blocks come from and go back to: newlib's malloc on the Switch.
 pub(crate) trait Backend {

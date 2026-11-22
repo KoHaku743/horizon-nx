@@ -47,10 +47,11 @@ const CLASS_KIB: [usize; 11] = [12, 16, 24, 32, 48, 64, 96, 128, 192, 224, 256];
 const CLASSES: usize = CLASS_KIB.len();
 
 /// The most the cache holds, in bytes. log8's live set from 64 KiB up is 7.5 MiB; the budget leaves
-/// room for an LOD drop's burst to be absorbed rather than dumped into malloc. A cached block is a
-/// malloc block it counts as in use, and malloc has hundreds of MiB free (log8: 682 MiB in holes),
-/// so this is a small slice of the ~3 GiB heap.
-const BUDGET: usize = 48 << 20;
+/// room for an LOD drop's burst to be absorbed rather than dumped into the backend. It was 48 MiB
+/// while the backend was newlib's malloc; it is the TLSF heap now, which frees in constant time,
+/// and whose pools never shrink, so a block parked here is memory no other size can use (a
+/// console's log of 22 November: 34-47 MiB held through a session).
+const BUDGET: usize = 16 << 20;
 
 /// The class a block of `size` bytes goes in, or `None` if this cache doesn't take it (too small,
 /// too large, or over the alignment malloc offers).

@@ -20,6 +20,9 @@ Already on 1.0.0 or later? The title screen offers new releases itself (the butt
   host or port) refused the connection (os error 111): the Switch now asks its own DNS servers for
   the record, as Minecraft does. If a lookup gets no answer within a few seconds, the game joins
   the address as typed; `HORIZON_NX_SRV=0` in `switch/horizon/env.txt` turns the lookup off.
+- **Less memory held back.** The game kept up to 176 MiB of freed memory aside for reuse, and a
+  console held about 150 MiB of it for whole sessions; it now keeps at most 48 MiB, which leaves
+  more room for the world and the GPU.
 
 ### New in 2.0.2
 
