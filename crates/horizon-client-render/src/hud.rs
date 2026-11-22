@@ -1559,6 +1559,32 @@ impl HudAtlas {
         let (width, placements, glyph_region) =
             Self::layout_leaving_out(&mut images, &mut animated, &cit_names, GUI_ATLAS_LIMIT)
                 .or_else(|error| -> Result<_> {
+                    // The Switch: font sheets leave the atlas first, the largest first, which
+                    // costs no resolution; only if the rest still doesn't fit do textures
+                    // shrink. Shrinking first took MCC Island's lobby and cosmetics to 16
+                    // texels before the sheets, which alone were enough, went.
+                    if cfg!(target_os = "horizon") {
+                        let fonts: HashSet<String> = full_size_sprites(root, &images, &bordered)
+                            .into_iter()
+                            .filter(|name| !bordered.contains(name))
+                            .collect();
+                        let before = images.len();
+                        let fitted = Self::layout_leaving_out_fonts(
+                            &mut images,
+                            &fonts,
+                            GUI_ATLAS_LIMIT,
+                            GUI_ATLAS_MAX_WIDTH,
+                        );
+                        let left_out = before - images.len();
+                        if left_out > 0 {
+                            log::warn!(
+                                "left {left_out} font sheets out of the GUI atlas: their glyphs are copied in as they are drawn"
+                            );
+                        }
+                        if let Ok((layout, _)) = fitted {
+                            return Ok(layout);
+                        }
+                    }
                     let models = reducible_model_sprites(root, &images, &bordered);
                     let reduced = Self::layout_reducing_models(
                         &mut images,
@@ -1579,36 +1605,13 @@ impl HudAtlas {
                                     image.0.split_once(':').map(|(ns, _)| ns.to_owned())
                                 }));
                             }
-                            let capped = Self::layout_capping_mod_textures(
+                            let layout = Self::layout_capping_mod_textures(
                                 &mut images,
                                 &mut gui_sizes,
                                 &keep,
                                 &shrinkable,
                                 GUI_ATLAS_LIMIT,
-                            );
-                            let layout = match capped {
-                                Ok(layout) => layout,
-                                // The Switch: font sheets out of the atlas, the largest first.
-                                Err(capped_error) if cfg!(target_os = "horizon") => {
-                                    let fonts: HashSet<String> = keep
-                                        .iter()
-                                        .filter(|name| !bordered.contains(*name))
-                                        .cloned()
-                                        .collect();
-                                    let (layout, left_out) = Self::layout_leaving_out_fonts(
-                                        &mut images,
-                                        &fonts,
-                                        GUI_ATLAS_LIMIT,
-                                        GUI_ATLAS_MAX_WIDTH,
-                                    )
-                                    .map_err(|_| capped_error)?;
-                                    log::warn!(
-                                        "left {left_out} font sheets out of the GUI atlas: their glyphs are copied in as they are drawn"
-                                    );
-                                    layout
-                                }
-                                Err(capped_error) => return Err(capped_error),
-                            };
+                            )?;
                             log::warn!(
                                 "reduced the resolution of mods' HUD textures to keep the resource packs: {error}"
                             );

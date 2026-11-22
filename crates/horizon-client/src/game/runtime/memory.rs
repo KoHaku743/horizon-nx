@@ -718,7 +718,13 @@ impl Game<'_> {
         }
         let now = Instant::now();
         // The first one a minute into the world, when its chunks have loaded.
-        let next = NEXT.with(|next| *next.get().get_or_insert(now + Duration::from_secs(60)));
+        let next = NEXT.with(|cell| {
+            cell.get().unwrap_or_else(|| {
+                let first = now + Duration::from_secs(60);
+                cell.set(Some(first));
+                first
+            })
+        });
         if now < next {
             return;
         }
