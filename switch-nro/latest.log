@@ -56,11 +56,11 @@ help: Check that the patched package version and available features are compatib
       what is locked in the Cargo.lock file, run `cargo update` to use the new
       version. This may also occur with an optional dependency that is not enabled.
  Downloading crates ...
-  Downloaded cfg-if v1.0.4
   Downloaded addr2line v0.27.1
+  Downloaded cfg-if v1.0.4
   Downloaded getopts v0.2.24
-  Downloaded rustc-literal-escaper v0.0.8
   Downloaded gimli v0.34.0
+  Downloaded rustc-literal-escaper v0.0.8
    Compiling compiler_builtins v0.1.160 (/usr/local/rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/compiler-builtins/compiler-builtins)
    Compiling core v0.0.0 (/usr/local/rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core)
    Compiling libc v0.2.190 (/src/bevy-horizon/patches/libc)
@@ -73,23 +73,23 @@ help: Check that the patched package version and available features are compatib
    Compiling version_check v0.9.5
    Compiling cfg-if v1.0.5
    Compiling zmij v1.0.23
-   Compiling generic-array v0.14.7
    Compiling serde v1.0.229
+   Compiling generic-array v0.14.7
    Compiling syn v3.0.6
    Compiling syn v2.0.119
    Compiling memchr v2.8.3
    Compiling semver v1.0.28
    Compiling anyhow v1.0.104
    Compiling libm v0.2.16
+   Compiling bitflags v2.13.2
    Compiling typenum v1.20.1
    Compiling serde_json v1.0.151
-   Compiling bitflags v2.13.2
-   Compiling foldhash v0.2.0
    Compiling zerocopy v0.8.60
+   Compiling foldhash v0.2.0
    Compiling hashbrown v0.17.1
-   Compiling itoa v1.0.18
    Compiling winnow v1.0.4
    Compiling equivalent v1.0.2
+   Compiling itoa v1.0.18
    Compiling indexmap v2.14.2
    Compiling toml_parser v1.1.3+spec-1.1.0
    Compiling serde_spanned v1.1.2
@@ -110,8 +110,8 @@ warning: use of deprecated associated function `core::num::<impl usize>::max_val
    |                                      ^^^^^^^^^
 
 warning: `getrandom` (lib) generated 2 warnings
-   Compiling toml_writer v1.1.3+spec-1.1.0
    Compiling prettyplease v0.2.37
+   Compiling toml_writer v1.1.3+spec-1.1.0
    Compiling toml v1.1.6+spec-1.1.0
    Compiling rand_core v0.6.4
    Compiling ppv-lite86 v0.2.21
@@ -126,8 +126,8 @@ warning: `getrandom` (lib) generated 2 warnings
    Compiling alloc v0.0.0 (/usr/local/rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/alloc)
    Compiling unwind v0.0.0 (/usr/local/rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/unwind)
    Compiling adler2 v2.0.1
-   Compiling cfg-if v1.0.4
    Compiling rustc-demangle v0.1.28
+   Compiling cfg-if v1.0.4
    Compiling rustc-literal-escaper v0.0.8
    Compiling siphasher v1.0.4
    Compiling cpufeatures v0.2.17
@@ -139,32 +139,31 @@ warning: `getrandom` (lib) generated 2 warnings
    Compiling phf_generator v0.11.3
    Compiling thiserror v2.0.21
    Compiling phf_codegen v0.11.3
-   Compiling cfg_aliases v0.2.2
-   Compiling unicode_names2_generator v2.0.0
    Compiling rustc-std-workspace-alloc v1.99.0 (/usr/local/rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/rustc-std-workspace-alloc)
    Compiling gimli v0.34.0
+   Compiling std_detect v0.1.5 (/usr/local/rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/std_detect)
    Compiling miniz_oxide v0.9.1
    Compiling addr2line v0.27.1
-   Compiling std_detect v0.1.5 (/usr/local/rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/std_detect)
    Compiling panic_unwind v0.0.0 (/usr/local/rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/panic_unwind)
    Compiling panic_abort v0.0.0 (/usr/local/rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/panic_abort)
    Compiling horizon-mod-source v0.1.0 (/src/horizon-nx/crates/horizon-mod-source)
+   Compiling cfg_aliases v0.2.2
+   Compiling unicode_names2_generator v2.0.0
    Compiling horizon-game-discovery v0.1.0 (/src/horizon-nx/crates/horizon-game-discovery)
    Compiling bytemuck_derive v1.12.1
    Compiling crc32fast v1.5.2
    Compiling unicode_names2 v2.0.0
    Compiling horizon-mod-point-shape v0.1.0 (/src/horizon-nx/crates/horizon-mod-point-shape)
-   Compiling wasmparser v0.261.0
    Compiling synstructure v0.14.0
+   Compiling wasmparser v0.261.0
    Compiling id-arena v2.3.0
    Compiling zerofrom-derive v0.1.8
    Compiling yoke-derive v0.8.4
    Compiling autocfg v1.5.1
-   Compiling zerovec-derive v0.11.6
    Compiling num-traits v0.2.19
+   Compiling zerovec-derive v0.11.6
    Compiling rustc_version v0.4.1
    Compiling regex-syntax v0.8.11
-   Compiling displaydoc v0.2.7
    Compiling proc_macro v0.0.0 (/usr/local/rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/proc_macro)
 warning: struct `stat` is never constructed
    --> /src/bevy-horizon/patches/libc/src/unix/newlib/horizon/mod.rs:118:16
@@ -179,12 +178,12 @@ warning: `libc` (lib) generated 1 warning
    Compiling subtle v2.6.1
    Compiling simd-adler32 v0.3.10
    Compiling bytemuck v1.25.2
-   Compiling phf v0.11.3
    Compiling wit-parser v0.261.0
+   Compiling phf v0.11.3
    Compiling zlib-rs v0.6.8
+   Compiling zerofrom v0.1.8
    Compiling horizon-core v0.1.0 (/src/horizon-nx/crates/horizon-core)
    Compiling stable_deref_trait v1.2.1
-   Compiling zerofrom v0.1.8
    Compiling yoke v0.8.3
    Compiling once_cell v1.21.4
    Compiling arrayvec v0.7.8
@@ -193,37 +192,38 @@ warning: `libc` (lib) generated 1 warning
    Compiling horizon-mod-api-gen v0.1.0 (/src/horizon-nx/crates/horizon-mod-api-gen)
    Compiling flate2 v1.1.10
    Compiling zeroize v1.9.1
+   Compiling displaydoc v0.2.7
    Compiling getrandom v0.4.3 (/src/bevy-horizon/patches/getrandom)
    Compiling bumpalo v3.20.3
    Compiling zopfli v0.8.4
    Compiling typed-path v0.13.0
    Compiling rustc-hash v1.1.0
    Compiling zerocopy-derive v0.8.60
-   Compiling fnv v1.0.7
    Compiling either v1.19.0
+   Compiling fnv v1.0.7
    Compiling rustversion v1.0.23
    Compiling itertools v0.14.0
    Compiling zip v9.1.3
    Compiling naga-types v30.0.1
    Compiling tinystr v0.8.4
-   Compiling writeable v0.6.4
    Compiling unicode-width v0.2.2
    Compiling bit-vec v0.9.1
-   Compiling scopeguard v1.2.0
-   Compiling litemap v0.8.3
+   Compiling writeable v0.6.4
    Compiling unicode-xid v0.2.6
+   Compiling scopeguard v1.2.0
    Compiling termcolor v1.4.1
+   Compiling litemap v0.8.3
    Compiling naga v30.0.1 (/src/horizon-nx/third_party/naga)
    Compiling aho-corasick v1.1.5
-   Compiling icu_locale_core v2.3.0
    Compiling codespan-reporting v0.13.1
+   Compiling icu_locale_core v2.3.0
+   Compiling half v2.7.1
    Compiling regex-automata v0.4.18
    Compiling pp-rs v0.2.1
    Compiling bit-set v0.10.0
-   Compiling half v2.7.1
    Compiling prost-derive v0.14.4
-   Compiling potential_utf v0.1.6
    Compiling zerotrie v0.2.5
+   Compiling potential_utf v0.1.6
    Compiling spirv v0.4.0+sdk-1.4.341.0
    Compiling utf8_iter v1.0.4
    Compiling icu_normalizer_data v2.3.0
@@ -242,22 +242,22 @@ warning: constant `REQUIRED` is never used
 
 warning: `horizon-guest-stack` (lib) generated 1 warning
    Compiling logos-codegen v0.15.1
+   Compiling bytes v1.12.1
    Compiling find-msvc-tools v0.1.14
    Compiling shlex v2.0.1
-   Compiling bytes v1.12.1
-   Compiling prost v0.14.4
    Compiling cc v1.6.0
+   Compiling prost v0.14.4
    Compiling rustix v1.1.5 (/src/bevy-horizon/patches/rustix)
    Compiling beef v0.5.2
    Compiling lazy_static v1.5.1
-   Compiling ring v0.17.14 (/src/bevy-horizon/patches/ring)
    Compiling icu_properties v2.3.0
    Compiling icu_normalizer v2.3.0
+   Compiling ring v0.17.14 (/src/bevy-horizon/patches/ring)
    Compiling prost-types v0.14.4
    Compiling logos-codegen v0.16.1
    Compiling horizon-assets v0.1.0 (/src/horizon-nx/crates/horizon-assets)
-   Compiling inout v0.1.4
    Compiling cobs v0.3.0
+   Compiling inout v0.1.4
    Compiling errno v0.3.14
    Compiling raw-window-handle v0.6.2 (/src/bevy-horizon/patches/raw-window-handle)
    Compiling libmimalloc-sys v0.1.49 (/src/horizon-nx/packaging/switch/stubs/libmimalloc-sys)
@@ -268,8 +268,8 @@ warning: `horizon-guest-stack` (lib) generated 1 warning
    Compiling horizon-world v0.1.0 (/src/horizon-nx/crates/horizon-world)
    Compiling miette v7.6.0
    Compiling horizon-threads v0.1.0 (/src/horizon-nx/crates/horizon-threads)
-   Compiling postcard v1.1.3
    Compiling cipher v0.4.4
+   Compiling postcard v1.1.3
    Compiling logos-derive v0.16.1
    Compiling idna_adapter v1.2.2
    Compiling logos-derive v0.15.1
@@ -280,29 +280,27 @@ warning: `horizon-guest-stack` (lib) generated 1 warning
    Compiling lz4_flex v0.14.0
    Compiling xxhash-rust v0.8.19
    Compiling horizon-mod-api-macros v0.1.0 (/src/horizon-nx/crates/horizon-mod-api-macros)
-   Compiling pkg-config v0.3.34
    Compiling foldhash v0.1.5
    Compiling linux-raw-sys v0.12.1
-   Compiling ash v0.38.0+1.3.281
    Compiling parking_lot_core v0.9.12
+   Compiling pkg-config v0.3.34
+   Compiling ash v0.38.0+1.3.281
    Compiling getrandom v0.3.4 (/src/horizon-nx/third_party/getrandom-0.3)
-   Compiling hashbrown v0.15.5
    Compiling wayland-sys v0.31.11
+   Compiling hashbrown v0.15.5
    Compiling png v0.18.1
    Compiling logos v0.15.1
    Compiling idna v1.1.0
    Compiling logos v0.16.1
    Compiling encoding_rs v0.8.42
+   Compiling static_assertions v1.1.0
    Compiling allocator-api2 v0.2.21
    Compiling untrusted v0.9.0
-   Compiling static_assertions v1.1.0
    Compiling fastrand v2.5.0
-   Compiling khronos-egl v6.0.0
    Compiling fixedbitset v0.5.7
+   Compiling khronos-egl v6.0.0
    Compiling tempfile v3.27.0
    Compiling petgraph v0.8.3
-   Compiling hashbrown v0.16.1
-   Compiling wgpu-types v30.0.1
 warning: hiding a lifetime that's elided elsewhere is confusing
   --> /src/bevy-horizon/patches/ring/src/polyfill/slice/as_chunks.rs:19:44
    |
@@ -429,20 +427,23 @@ help: use `'_` for type paths
 91 |     pub(super) fn value(&self, cpu_features: cpu::Features) -> bigint::Modulus<'_, N> {
    |                                                                                +++
 
+   Compiling hashbrown v0.16.1
+   Compiling wgpu-types v30.0.1
 warning: `ring` (lib) generated 9 warnings (run `cargo fix --lib -p ring` to apply 9 suggestions)
    Compiling protox-parse v0.9.0
    Compiling prost-reflect v0.16.5
    Compiling dlib v0.5.3
    Compiling regex v1.13.1
    Compiling lock_api v0.4.14
-   Compiling percent-encoding v2.3.2
    Compiling presser v0.3.1
-   Compiling bitflags v1.3.2
    Compiling simdutf8 v0.1.5
+   Compiling bitflags v1.3.2
+   Compiling percent-encoding v2.3.2
    Compiling wgpu-hal v30.0.1 (/src/horizon-nx/third_party/wgpu-hal)
    Compiling multiversion_no_op v1.0.0
    Compiling multimap v0.10.1
    Compiling rustls v0.23.46
+   Compiling prost-build v0.14.4
 warning: variants `Missing`, `Enumeration`, `EnumerationLimit`, and `InvalidKey` are never constructed
    --> crates/horizon-world/src/native_load_context.rs:462:5
     |
@@ -474,32 +475,31 @@ warning: function `sorted_names` is never used
 495 | fn sorted_names(
     |    ^^^^^^^^^^^^
 
-   Compiling prost-build v0.14.4
-   Compiling symphonia-core v0.5.5
    Compiling form_urlencoded v1.2.2
+   Compiling symphonia-core v0.5.5
    Compiling parking_lot v0.12.5
-   Compiling gpu-allocator v0.28.0
    Compiling protox v0.9.1
    Compiling wgpu-naga-bridge v30.0.1
+   Compiling gpu-allocator v0.28.0
    Compiling rustls-webpki v0.103.16
    Compiling webpki-roots v1.0.10
    Compiling ordered-float v5.5.0
    Compiling renderdoc-sys v1.1.0
-   Compiling glow v0.17.0
    Compiling profiling v1.0.18
+   Compiling glow v0.17.0
    Compiling webpki-roots v0.26.11
    Compiling horizon-perf-format v0.1.0 (/src/horizon-nx/crates/horizon-perf-format)
-   Compiling url v2.5.8
    Compiling symphonia-metadata v0.5.5
+   Compiling url v2.5.8
    Compiling aes v0.8.4
    Compiling sha1 v0.10.7
    Compiling socket2 v0.5.10 (/src/horizon-nx/third_party/socket2)
    Compiling const-default v1.0.0
    Compiling base64 v0.22.1
    Compiling wgpu-core v30.0.1 (/src/horizon-nx/third_party/wgpu-core)
-   Compiling horizon-nx v0.1.0 (/src/horizon-nx/crates/horizon-nx)
    Compiling litrs v1.0.0
    Compiling crossbeam-utils v0.8.23
+   Compiling horizon-nx v0.1.0 (/src/horizon-nx/crates/horizon-nx)
    Compiling document-features v0.2.12
    Compiling ureq v2.12.1
    Compiling rlsf v0.2.3 (/src/horizon-nx/third_party/rlsf)
@@ -540,12 +540,12 @@ warning: `rlsf` (lib) generated 2 warnings
    Compiling horizon-client-core v0.1.0 (/src/horizon-nx/crates/horizon-client-core)
    Compiling horizon-shader-api v0.1.0 (/src/horizon-nx/crates/horizon-shader-api)
    Compiling pin-project-lite v0.2.17
-   Compiling minisign-verify v0.3.0
    Compiling tracing-core v0.1.36
-   Compiling horizon-hooks v0.1.0 (/src/horizon-nx/crates/horizon-hooks)
+   Compiling minisign-verify v0.3.0
    Compiling horizon-system v0.1.0 (/src/horizon-nx/crates/horizon-system)
-   Compiling winit v0.30.13 (/src/horizon-nx/third_party/winit)
+   Compiling horizon-hooks v0.1.0 (/src/horizon-nx/crates/horizon-hooks)
    Compiling wgpu v30.0.1 (/src/horizon-nx/third_party/wgpu)
+   Compiling winit v0.30.13 (/src/horizon-nx/third_party/winit)
    Compiling crossbeam-epoch v0.9.21
    Compiling tracing v0.1.44
 warning: unnecessary qualification
@@ -577,32 +577,32 @@ help: remove the unnecessary path segments
 81 +                 .remove(InstanceFlags::VALIDATION_INDIRECT_CALL);
    |
 
+   Compiling horizon-mod-vocab v0.1.0 (/src/horizon-nx/crates/horizon-mod-vocab)
+   Compiling horizon-engine-slots v0.1.0 (/src/horizon-nx/crates/horizon-engine-slots)
 warning: `horizon-world` (lib) generated 3 warnings
-   Compiling cursor-icon v1.2.0
+   Compiling ttf-parser v0.25.1
    Compiling dpi v0.1.2
    Compiling smol_str v0.2.2
    Compiling horizon-switch v0.1.0 (/src/horizon-nx/crates/horizon-switch)
-   Compiling ttf-parser v0.25.1
-   Compiling cpal v0.17.3 (/src/bevy-horizon/patches/cpal)
+   Compiling cursor-icon v1.2.0
    Compiling crossbeam-deque v0.8.8
-   Compiling horizon-mod-vocab v0.1.0 (/src/horizon-nx/crates/horizon-mod-vocab)
-   Compiling horizon-engine-slots v0.1.0 (/src/horizon-nx/crates/horizon-engine-slots)
+   Compiling cpal v0.17.3 (/src/bevy-horizon/patches/cpal)
    Compiling owned_ttf_parser v0.25.1
-   Compiling symphonia-codec-vorbis v0.5.5
 warning: `wgpu-core` (lib) generated 2 warnings (run `cargo fix --lib -p wgpu-core` to apply 2 suggestions)
    Compiling symphonia-format-ogg v0.5.5
-   Compiling iana-time-zone v0.1.65
-   Compiling ab_glyph_rasterizer v0.1.10
+   Compiling symphonia-codec-vorbis v0.5.5
    Compiling horizon-addresses v0.1.0 (/src/horizon-nx/crates/horizon-addresses)
-   Compiling dasp_sample v0.11.0
-   Compiling zune-core v0.4.12
+   Compiling iana-time-zone v0.1.65
    Compiling byteorder-lite v0.1.0
    Compiling quick-error v2.0.1
+   Compiling zune-core v0.4.12
    Compiling arboard v3.7.0 (/src/horizon-nx/packaging/switch/stubs/arboard)
+   Compiling ab_glyph_rasterizer v0.1.10
+   Compiling dasp_sample v0.11.0
    Compiling rayon-core v1.13.0
-   Compiling image-webp v0.2.4
-   Compiling zune-jpeg v0.4.21
    Compiling ab_glyph v0.2.32
+   Compiling zune-jpeg v0.4.21
+   Compiling image-webp v0.2.4
    Compiling chrono v0.4.45
    Compiling symphonia v0.5.5
    Compiling horizon-hdr v0.1.0 (/src/horizon-nx/crates/horizon-hdr)
@@ -611,12 +611,14 @@ warning: `wgpu-core` (lib) generated 2 warnings (run `cargo fix --lib -p wgpu-co
    Compiling horizon-bench v0.1.0 (/src/horizon-nx/crates/horizon-bench)
    Compiling horizon-shaders v0.1.0 (/src/horizon-nx/crates/horizon-shaders)
    Compiling horizon-narrator v0.1.0 (/src/horizon-nx/crates/horizon-narrator)
-   Compiling horizon-java-properties v0.1.0 (/src/horizon-nx/crates/horizon-java-properties)
-   Compiling twox-hash v2.1.5
-   Compiling pollster v0.4.0
    Compiling uuid v1.28.0
    Compiling unicode-bidi v0.3.18
+   Compiling pollster v0.4.0
+   Compiling horizon-java-properties v0.1.0 (/src/horizon-nx/crates/horizon-java-properties)
+   Compiling twox-hash v2.1.5
    Compiling gilrs v0.11.2
+   Compiling ruzstd v0.9.1
+   Compiling horizon-server-files v0.1.0 (/src/horizon-nx/crates/horizon-server-files)
    Compiling gilrs-core v0.6.8 (/src/horizon-nx/third_party/gilrs-core)
 warning: unused `#[macro_use]` import
  --> third_party/gilrs-core/src/lib.rs:1:1
@@ -627,8 +629,6 @@ warning: unused `#[macro_use]` import
   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
 
 warning: `gilrs-core` (lib) generated 1 warning
-   Compiling ruzstd v0.9.1
-   Compiling horizon-server-files v0.1.0 (/src/horizon-nx/crates/horizon-server-files)
    Compiling horizon-platform v0.1.0 (/src/horizon-nx/crates/horizon-platform)
    Compiling vec_map v0.8.2
    Compiling curve25519-dalek v4.1.3
@@ -642,8 +642,8 @@ warning: `gilrs-core` (lib) generated 1 warning
    Compiling universal-hash v0.5.1
    Compiling horizon-mcp v0.1.0 (/src/horizon-nx/crates/horizon-mcp)
    Compiling mio v1.2.4 (/src/horizon-nx/third_party/mio)
-   Compiling opaque-debug v0.3.1
    Compiling fs4 v1.1.0 (/src/horizon-nx/packaging/switch/stubs/fs4)
+   Compiling opaque-debug v0.3.1
    Compiling poly1305 v0.8.0
    Compiling hkdf v0.12.4
    Compiling chacha20 v0.9.1
@@ -780,8 +780,8 @@ help: consider changing the field to be of unit type to suppress this warning wh
 205 +     Rumble(()),
     |
 
-warning: `horizon-dualsense` (lib) generated 3 warnings
    Compiling horizon-theme v0.1.0 (/src/horizon-nx/crates/horizon-theme)
+warning: `horizon-dualsense` (lib) generated 3 warnings
    Compiling horizon-mod-host v0.1.0 (/src/horizon-nx/crates/horizon-mod-host)
    Compiling horizon-game v0.1.0 (/src/horizon-nx/crates/horizon-game)
 warning: unused variable: `lock`
@@ -792,8 +792,8 @@ warning: unused variable: `lock`
     |
     = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
 
-   Compiling horizon-client-gameplay v0.1.0 (/src/horizon-nx/crates/horizon-client-gameplay)
    Compiling horizon-gameplay v0.1.0 (/src/horizon-nx/crates/horizon-gameplay)
+   Compiling horizon-client-gameplay v0.1.0 (/src/horizon-nx/crates/horizon-client-gameplay)
 warning: unused imports: `CONFIG_LIST_MAX` and `ConfigEntryKind`
  --> /src/horizon-nx/crates/horizon-client/src/game/modding/native_config_files.rs:9:22
   |
@@ -905,10 +905,10 @@ warning: methods `sign_text` and `sign_replace` are never used
 
 warning: `horizon-client-render` (lib) generated 7 warnings (run `cargo fix --lib -p horizon-client-render` to apply 1 suggestion)
 warning: `horizon-client` (lib) generated 14 warnings (run `cargo fix --lib -p horizon-client` to apply 5 suggestions)
-    Finished `release` profile [optimized] target(s) in 20m 30s
+    Finished `release` profile [optimized] target(s) in 19m 10s
 ==> packaging horizon.nro
 ==> checking the NRO's asset section (sphaira refuses an NRO without one)
-    ok: image 0x599d000 + ASET section, file 89.6 MiB
+    ok: image 0x59a2000 + ASET section, file 89.7 MiB
 ==> done: /home/runner/work/horizon-nx/horizon-nx/horizon-nx/target/aarch64-nintendo-horizon/release/horizon.nro (copy it to switch/horizon/ on the SD card; docs/switch.md)
-1953428c6dc56b8b2a7451b8cb3a52175f60d7a18a6d021cf0b35cfd78fb2f88  out/switch/horizon/horizon.nro
--rw-r--r-- 1 runner runner 1407649 Nov 22 13:35 symbols.txt.gz
+ddb2c9fe72dc0d10de19740e26d216470fcd89e577bf5ac232403d6d20621b6e  out/switch/horizon/horizon.nro
+-rw-r--r-- 1 runner runner 1408164 Nov 22 18:45 symbols.txt.gz
