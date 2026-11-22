@@ -25,6 +25,21 @@ pub fn set_name_servers(name_servers: fn() -> Vec<SocketAddr>) {
     let _ = PLATFORM_NAME_SERVERS.set(name_servers);
 }
 
+/// Whether each step of a lookup goes to the log: on a platform that gave its
+/// own name servers (the Switch), where a lookup once froze the console (#3)
+/// and the last step logged says where.
+pub(super) fn traced() -> bool {
+    PLATFORM_NAME_SERVERS.get().is_some()
+}
+
+macro_rules! trace {
+    ($($arg:tt)*) => {
+        if traced() {
+            log::info!("SRV lookup: {}", format_args!($($arg)*));
+        }
+    };
+}
+
 /// JNDI reads them from resolv.conf on Unix and from the network adapters on
 /// Windows, where it leaves out the scoped IPv6 ones.
 #[cfg(unix)]
@@ -94,14 +109,20 @@ pub(super) fn query_srv(
     let id = u16::from_be_bytes(id);
     let query = encode_query(id, name)?;
     for &server in servers {
+        trace!("asking {server} for {name}");
         let reply = match ask_udp(server, &query, timeout).map(|reply| parse_reply(id, &reply)) {
-            Some(Reply::Truncated) => ask_tcp(server, &query, timeout)
-                .map_or(Reply::Unusable, |reply| parse_reply(id, &reply)),
+            Some(Reply::Truncated) => {
+                trace!("truncated reply from {server}: asking again over TCP");
+                ask_tcp(server, &query, timeout)
+                    .map_or(Reply::Unusable, |reply| parse_reply(id, &reply))
+            }
             reply => reply.unwrap_or(Reply::Unusable),
         };
         if let Reply::Answer(srv) = reply {
+            trace!("{server} answered: {srv:?}");
             return srv;
         }
+        trace!("no usable reply from {server}");
     }
     None
 }
@@ -112,13 +133,20 @@ fn ask_udp(server: SocketAddr, query: &[u8], timeout: Duration) -> Option<Vec<u8
     } else {
         ([0u16; 8], 0).into()
     };
-    let socket = UdpSocket::bind(local).ok()?;
-    socket.set_read_timeout(Some(timeout)).ok()?;
-    socket.connect(server).ok()?;
-    socket.send(query).ok()?;
+    let step = |what: &str, result: std::io::Result<()>| {
+        trace!("UDP {what}: {result:?}");
+        result.ok()
+    };
+    let socket = UdpSocket::bind(local);
+    trace!("UDP socket: {:?}", socket.as_ref().map(|_| ()));
+    let socket = socket.ok()?;
+    step("read timeout", socket.set_read_timeout(Some(timeout)))?;
+    step("connect", socket.connect(server))?;
+    step("send", socket.send(query).map(drop))?;
     let mut buf = vec![0; 512];
-    let len = socket.recv(&mut buf).ok()?;
-    buf.truncate(len);
+    let len = socket.recv(&mut buf);
+    trace!("UDP recv: {len:?}");
+    buf.truncate(len.ok()?);
     Some(buf)
 }
 

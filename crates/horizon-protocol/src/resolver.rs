@@ -62,8 +62,37 @@ pub fn server_redirect(host: &str, port: u16) -> (String, u16) {
         .map_or_else(|_| (host.to_owned(), port), |r| (r.host, r.port))
 }
 
+/// The SRV question on a thread of its own, given up after a deadline: a lookup
+/// stuck inside the platform's network stack (the Switch's froze the console,
+/// #3) costs a few seconds and the original address, never the join itself.
 fn srv_redirect(name: &str) -> Option<(String, u16)> {
-    dns::query_srv(name, &dns::system_name_servers(), dns::SERVER_TIMEOUT)
+    let servers = dns::system_name_servers();
+    if servers.is_empty() {
+        return None;
+    }
+    // Each server gets a UDP try and, when truncated, a TCP connect and read.
+    let deadline = dns::SERVER_TIMEOUT * (3 * servers.len() as u32) + dns::SERVER_TIMEOUT;
+    let (tx, rx) = std::sync::mpsc::channel();
+    let owned = name.to_owned();
+    let spawned = std::thread::Builder::new()
+        .name("SRV lookup".into())
+        .stack_size(128 * 1024)
+        .spawn(move || {
+            let _ = tx.send(dns::query_srv(&owned, &servers, dns::SERVER_TIMEOUT));
+        });
+    if let Err(e) = spawned {
+        log::warn!("SRV lookup for {name} not started ({e}): joining the address as given");
+        return None;
+    }
+    match rx.recv_timeout(deadline) {
+        Ok(srv) => srv,
+        Err(_) => {
+            log::warn!(
+                "SRV lookup for {name} gave no answer in {deadline:?}: joining the address as given"
+            );
+            None
+        }
+    }
 }
 
 #[cfg(test)]

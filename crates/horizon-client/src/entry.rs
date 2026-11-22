@@ -31,11 +31,15 @@ pub fn prepare() -> Startup {
     // Switch: mount romfs, bring up BSD sockets, set the applet focus mode and open `log.txt`
     // before anything else. Also what pulls the libnx lifecycle hooks into the link.
     #[cfg(target_os = "horizon")]
-    horizon_nx::init();
-    // Not yet: asking the connection's DNS servers for a server's SRV record
-    // (`horizon_protocol::set_name_servers(horizon_nx::dns::name_servers)`, #3)
-    // froze the console as a server was joined (log of 22 November: nothing after
-    // "Connecting to …"); no SRV record is asked for until that is understood.
+    {
+        horizon_nx::init();
+        // No resolv.conf: a server's SRV record is asked of the connection's DNS servers,
+        // which nifm gives a thread of their own now, not the network thread at each join
+        // (that build froze the console on joining, #3). `HORIZON_NX_SRV=0` turns it off.
+        if horizon_nx::dns::start() {
+            horizon_protocol::set_name_servers(horizon_nx::dns::name_servers);
+        }
+    }
     #[cfg(not(target_os = "horizon"))]
     horizon_mod_package::holder::enter();
     let result: crate::Result<_> = (|| {

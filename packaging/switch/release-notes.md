@@ -18,7 +18,8 @@ Already on 1.0.0 or later? The title screen offers new releases itself (the butt
   the computer, replace `switch/horizon/resources/`, delete `resources.hzpak`).
 - **Servers with SRV records connect.** A server whose address points elsewhere by DNS (another
   host or port) refused the connection (os error 111): the Switch now asks its own DNS servers for
-  the record, as Minecraft does.
+  the record, as Minecraft does. If a lookup gets no answer within a few seconds, the game joins
+  the address as typed; `HORIZON_NX_SRV=0` in `switch/horizon/env.txt` turns the lookup off.
 
 ### New in 2.0.2
 
