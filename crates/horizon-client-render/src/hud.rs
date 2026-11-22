@@ -144,6 +144,15 @@ pub const GUI_ATLAS_LIMIT: u32 = if cfg!(target_os = "horizon") {
 } else {
     MAX_ATLAS_SIZE
 };
+/// The GUI atlas's widest: on the Switch 4096, so it is at most 4096x8192 (128 MiB). At
+/// 8192x8192 (256 MiB) MCC Island's reduced pack still ran the GPU out of memory as the
+/// renderer was made again for it, beside the old one's 463 MiB. The default resources with
+/// Horizon's own sprites are 4096 wide (4096x7168 there).
+const GUI_ATLAS_MAX_WIDTH: u32 = if cfg!(target_os = "horizon") {
+    4096
+} else {
+    u32::MAX
+};
 /// 128x128 atlas slots for map textures. A lobby paints its signs as walls of
 /// framed maps, so the pool holds a wall; too few slots re-upload every map
 /// every frame. 26.3's `MapTextureManager` keeps a texture per map instead.
@@ -1160,7 +1169,8 @@ impl HudAtlas {
     /// room: a pack of thousands of mixed sizes (server packs with custom
     /// items) fits where the shelves' ragged ends would not.
     fn layout(images: &[PackedImage], max: u32) -> Result<(u32, Vec<(u32, u32)>, u32)> {
-        let mut width = 4096.min(max);
+        let widest = max.min(GUI_ATLAS_MAX_WIDTH);
+        let mut width = 4096.min(widest);
         loop {
             let wide_enough = images.iter().all(|i| i.1 < width);
             if wide_enough {
@@ -1171,15 +1181,15 @@ impl HudAtlas {
                     }
                 }
             }
-            if width >= max {
+            if width >= widest {
                 let texels: u64 = images.iter().map(|i| u64::from(i.1) * u64::from(i.2)).sum();
                 return Err(format!(
-                    "the textures ({} images, {texels} texels) do not fit a {max}x{max} atlas",
+                    "the textures ({} images, {texels} texels) do not fit a {widest}x{max} atlas",
                     images.len()
                 )
                 .into());
             }
-            width = (width * 2).min(max);
+            width = (width * 2).min(widest);
         }
     }
     /// `layout`'s shelves at one width: the placements and the first row below
@@ -1560,11 +1570,20 @@ impl HudAtlas {
                         Ok(layout) => layout,
                         Err(_) => {
                             let keep = full_size_sprites(root, &images, &bordered);
+                            let mut shrinkable = mod_namespaces();
+                            // The Switch: a server's resource pack's own namespaces too, which
+                            // elsewhere keep their resolution. Its atlas is half a desktop's
+                            // (`GUI_ATLAS_MAX_WIDTH`), and a pack that can't fit it can't load.
+                            if cfg!(target_os = "horizon") {
+                                shrinkable.extend(images.iter().filter_map(|image| {
+                                    image.0.split_once(':').map(|(ns, _)| ns.to_owned())
+                                }));
+                            }
                             let layout = Self::layout_capping_mod_textures(
                                 &mut images,
                                 &mut gui_sizes,
                                 &keep,
-                                &mod_namespaces(),
+                                &shrinkable,
                                 GUI_ATLAS_LIMIT,
                             )?;
                             log::warn!(
