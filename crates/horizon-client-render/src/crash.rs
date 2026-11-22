@@ -864,6 +864,11 @@ pub fn report_error(
         let _ = write!(message, "\nCaused by: {e}");
         source = e.source();
     }
+    // The Switch can't run horizon-prepare: say what to do there instead. A crash report is
+    // English, as vanilla's are.
+    if cfg!(target_os = "horizon") && message.contains("horizon-prepare") {
+        message.push_str(SWITCH_PREPARE_AGAIN);
+    }
     deliver(
         home,
         Report {
@@ -879,6 +884,14 @@ pub fn report_error(
         },
     )
 }
+
+/// What a fatal error about the prepared game files means on the Switch, where they were copied
+/// from a computer: an update of the game (in-game, from 1.x) doesn't prepare them again.
+const SWITCH_PREPARE_AGAIN: &str = "\n\nOn the Switch: the game files in switch/horizon/resources \
+    were prepared by an older Horizon than this version needs. Update the Horizon launcher on your \
+    computer and press Play once to prepare them again, copy them to switch/horizon/resources \
+    (replacing the old ones), and delete switch/horizon/resources.hzpak so it is packed again. \
+    Horizon NX Companion can do the copying and packing.";
 
 /// Called every frame: panics once `HORIZON_DEBUG_CRASH` asks (development builds only).
 pub fn debug_crash_tick() {

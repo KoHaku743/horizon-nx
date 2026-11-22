@@ -10,6 +10,16 @@ On a Mac, run `dot_clean -m` on the SD card before ejecting it, or copy over FTP
 
 Already on 1.0.0 or later? The title screen offers new releases itself (the button left of Sign In, in Realms' place).
 
+### New in 2.0.3
+
+- **A clearer message when the game files are too old.** Updating from 1.x in the game replaces
+  `horizon.nro` but not the game files, and 2.0 needs files prepared by a current Horizon launcher:
+  a world that can't open for that reason now says on the Switch what to do (prepare them again on
+  the computer, replace `switch/horizon/resources/`, delete `resources.hzpak`).
+- **Servers with SRV records connect.** A server whose address points elsewhere by DNS (another
+  host or port) refused the connection (os error 111): the Switch now asks its own DNS servers for
+  the record, as Minecraft does.
+
 ### New in 2.0.2
 
 - **Splitscreen on the Switch.** A Pro Controller or a second pair of Joy-Con joins as player 2

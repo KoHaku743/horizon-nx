@@ -127,6 +127,10 @@ SD card
 
 Copy the *contents* of the prepared folder into `switch/horizon/resources/`, not the folder itself.
 
+> [!NOTE]
+> **Updating from 1.x?** Version 2.0 needs game files prepared by a Horizon launcher from November 2026 or later:
+> prepare them again and replace `resources/` (and delete `resources.hzpak`), or a world won't open.
+
 > [!WARNING]
 > **On a Mac**, Finder adds hidden `._` files next to every file it copies to the SD card, and the game can't read
 > them. Copy over FTP or MTP, or clean the card before ejecting it:
@@ -200,6 +204,17 @@ A text file `switch/horizon/env.txt`, next to `horizon.nro`, sets options at sta
 
 The game's logs are in `switch/horizon/`: `log.txt`, `logs/latest.log`, `panic.txt` and `crash-reports/`.
 Atmosphère's own reports are in `atmosphere/crash_reports/`.
+
+<details>
+<summary><b>The game closes when a world opens: "… re-run horizon-prepare" (after updating from 1.x)</b></summary>
+
+The game files in `switch/horizon/resources/` were prepared by an older Horizon than this version needs: an update
+in the game replaces `horizon.nro`, not the game files, which come from your own Minecraft. Update the Horizon
+launcher on your computer and press **Play** once to prepare them again (step 2), copy them to
+`switch/horizon/resources/` replacing the old ones (step 3), and delete `switch/horizon/resources.hzpak` so it's
+packed again. [Horizon NX Companion](https://github.com/KoHaku743/horizon-nx-companion) does the copying and
+packing.
+</details>
 
 <details>
 <summary><b>The game closes after loading with "expected value at line 1 column 1"</b></summary>
