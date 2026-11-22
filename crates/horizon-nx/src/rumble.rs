@@ -1,6 +1,6 @@
 //! HD rumble: steps played on the Joy-Cons' linear actuators through libnx's vibration API
 //! (`switch/services/hid.h`), each band with its own amplitude and frequency. Each controller
-//! (player 1 with the handheld Joy-Con, then players 2 to 4: splitscreen's) has a worker thread
+//! (the handheld Joy-Con, then players 1 to 4: splitscreen's) has a worker thread
 //! that plays one list of steps at a time; a new list cuts the one playing, and the motors stop
 //! at the end.
 use std::sync::mpsc::{Receiver, RecvTimeoutError, Sender, channel};
@@ -57,14 +57,15 @@ const STYLE_FULL_KEY: u32 = 1 << 0;
 const STYLE_HANDHELD: u32 = 1 << 1;
 const STYLE_JOY_DUAL: u32 = 1 << 2;
 
-/// The controllers that can vibrate: gamepad 0 (player 1, or the handheld Joy-Con) to 3.
-const PLAYERS: usize = 4;
+/// The controllers that can vibrate, as the controller reader numbers them: the handheld Joy-Con
+/// (0), then players 1 to 4.
+const PADS: usize = 5;
 
-/// Plays `steps` now on gamepad `pad`'s controller (0 = player 1 or the handheld Joy-Con, 1 to
-/// 3 = players 2 to 4, as the controller reader numbers them), cutting whatever plays there.
+/// Plays `steps` now on gamepad `pad`'s controller (0 = the handheld Joy-Con, 1 to 4 = players 1
+/// to 4, as the controller reader numbers them), cutting whatever plays there.
 pub fn play(pad: usize, steps: Vec<Step>) {
     type Worker = OnceLock<Option<Mutex<Sender<Vec<Step>>>>>;
-    static WORKERS: [Worker; PLAYERS] = [const { OnceLock::new() }; PLAYERS];
+    static WORKERS: [Worker; PADS] = [const { OnceLock::new() }; PADS];
     let Some(worker) = WORKERS.get(pad) else {
         return;
     };
@@ -144,19 +145,17 @@ impl Motors {
     }
 }
 
-/// The npad id and style gamepad `pad` vibrates: for gamepad 0 the handheld Joy-Con when
-/// attached, else player 1's; for the others players 2 to 4. Each a Pro Controller or Joy-Con
-/// pair: None for a single Joy-Con or no controller.
+/// The npad id and style gamepad `pad` vibrates: the handheld Joy-Con for gamepad 0, players 1
+/// to 4 for the others. For a player, a Pro Controller or Joy-Con pair: None for a single
+/// Joy-Con or no controller.
 fn target(pad: usize) -> Option<(u32, u32)> {
     if pad == 0 {
         // SAFETY: a plain libnx query.
         let handheld = unsafe { hidGetNpadStyleSet(HANDHELD) };
-        if handheld & STYLE_HANDHELD != 0 {
-            return Some((HANDHELD, STYLE_HANDHELD));
-        }
+        return (handheld & STYLE_HANDHELD != 0).then_some((HANDHELD, STYLE_HANDHELD));
     }
     // libnx `HidNpadIdType_No1` to `No8` are 0 to 7.
-    let id = u32::try_from(pad).ok()?;
+    let id = u32::try_from(pad - 1).ok()?;
     // SAFETY: a plain libnx query.
     let style = unsafe { hidGetNpadStyleSet(id) };
     if style & STYLE_FULL_KEY != 0 {

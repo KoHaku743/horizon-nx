@@ -7,10 +7,11 @@
 
 //! The npad through libnx's pad API (`switch/runtime/pad.h`).
 //!
-//! Up to `PLAYERS` gamepads, one per npad player: id 0 merges player 1 and the handheld Joy-Con
-//! (libnx's default pad), so a Pro Controller, a pair of Joy-Con held together or the console in
-//! handheld mode all come through it; ids 1 to 3 are players 2 to 4, each a controller of its own
-//! (splitscreen's other players). Buttons are reported by position (the bottom face button, Nintendo's B, is South; A
+//! A gamepad for the handheld Joy-Con (id 0) and one for each npad player (ids 1 to 4, players 1
+//! to 4): a Pro Controller or a pair of Joy-Con held together is a player, and the console's own
+//! Joy-Con are the handheld one. Kept apart, a Pro Controller connected while the Joy-Con are on
+//! the console (HID makes it player 1) is a second controller, splitscreen's player 2, instead of
+//! more buttons for the same player. Buttons are reported by position (the bottom face button, Nintendo's B, is South; A
 //! is East; Y is West; X is North), and the vendor id is Nintendo's, so a game that picks glyphs
 //! by vendor shows Nintendo's letters. The sticks run -32767..=32767 with up positive. No SDL
 //! mapping applies (the UUID is nil), so gilrs maps these native codes one to one.
@@ -65,11 +66,11 @@ extern "C" {
 
 /// libnx `HidNpadStyleSet_NpadStandard`: Pro Controller, handheld, dual Joy-Con, one Joy-Con.
 const STYLE_SET_STANDARD: u32 = 0x1F;
-/// The npad players read: player 1 (with the handheld controls) and up to three more.
+/// The npad players HID accepts, besides the handheld controls.
 const PLAYERS: usize = 4;
-/// Each gamepad's npads: player 1 and the handheld controls (libnx `padInitializeDefault`'s
-/// mask), then players 2, 3 and 4.
-const PAD_MASKS: [u64; PLAYERS] = [(1 << 0) | (1 << 32), 1 << 1, 1 << 2, 1 << 3];
+/// Each gamepad's npad: the handheld controls (`HidNpadIdType_Handheld`, bit 32), then players 1
+/// to 4.
+const PAD_MASKS: [u64; PLAYERS + 1] = [1 << 32, 1 << 0, 1 << 1, 1 << 2, 1 << 3];
 /// libnx `HidNpadAttribute_IsConnected`.
 const ATTRIBUTE_IS_CONNECTED: u32 = 1 << 0;
 /// libnx `HidNpadStyleTag`s that name the controller.

@@ -942,7 +942,7 @@ impl Game<'_> {
         {
             let _ = pulse;
             // This player's controller: the one splitscreen's router reads for it, else the
-            // one in use. The reader numbers them as the npad players (0 = player 1).
+            // one in use (the reader: 0 the handheld Joy-Con, 1 to 4 players 1 to 4).
             let Some(pad) = self.pad.feed_source.or(self.pad.devices.active) else {
                 return;
             };
