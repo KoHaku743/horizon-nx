@@ -819,7 +819,7 @@ pub mod horizon_stubs {
         if !failed && !super::thread_logging() {
             return;
         }
-        let mut out = FixedBuf::<384>::new();
+        let mut out = FixedBuf::<640>::new();
         let _ = write!(
             out,
             "[Thread] #{number}: threadCreate with a {} KiB stack, priority {prio:#x}, core {cpuid}{}: ",
@@ -841,8 +841,47 @@ pub mod horizon_stubs {
                 let _ = write!(out, " (applying the policy FAILED with {})", ResultCode(rc));
             }
         }
+        write_creator(&mut out);
         let _ = writeln!(out);
         write_log(out.as_bytes());
+    }
+
+    /// Appends who asked for the thread: the return addresses on the creating thread's frame
+    /// chain that lie in the NRO, as offsets for the CI's symbols file. A console froze on joining
+    /// a server right after dozens of threads started, and the log can't name a thread: Rust
+    /// names it only once it runs. The chain is followed only upward and inside the stack's own
+    /// mapping, so a C frame without a record (newlib's `pthread_create`) can't make it fault.
+    #[inline(never)]
+    fn write_creator<const N: usize>(out: &mut FixedBuf<N>) {
+        const MOST: usize = 12;
+        let (base, end) = (nro_base(), nro_end());
+        let mut fp: u64;
+        unsafe { asm!("mov {}, x29", out(reg) fp, options(nomem, nostack, preserves_flags)) };
+        let mut info = ffi::MemoryInfo::default();
+        let mut page_info = 0u32;
+        if unsafe { ffi::svcQueryMemory(&mut info, &mut page_info, fp) } != 0 || info.perm & 1 == 0 {
+            return;
+        }
+        let (low, high) = (info.addr, info.addr.saturating_add(info.size));
+        let _ = write!(out, "; from");
+        let mut found = 0;
+        while found < MOST && fp & 7 == 0 && fp >= low && fp.saturating_add(16) <= high {
+            // SAFETY: inside the readable mapping that holds this thread's stack, checked above.
+            let (next, ret) = unsafe {
+                (
+                    core::ptr::read_volatile(fp as *const u64),
+                    core::ptr::read_volatile((fp + 8) as *const u64),
+                )
+            };
+            if (base..end).contains(&ret) {
+                let _ = write!(out, " nro+{:#x}", ret - base);
+                found += 1;
+            }
+            if next <= fp {
+                break;
+            }
+            fp = next;
+        }
     }
 
     /// Runs on the new thread, after `set_thread_pointer`. Separate and not inlined so that
