@@ -203,9 +203,11 @@ pub(crate) fn end_on_input() {
         let state = pad.get_or_insert_with(|| {
             let mut state = PadState::default();
             // SAFETY: libnx's pad setup; the controllers' own reader does the same, which is
-            // harmless twice. `state` is a plain struct libnx fills.
+            // harmless twice. `state` is a plain struct libnx fills. Four players, as that reader
+            // sets: fewer, set later, would turn splitscreen's other controllers away (HID takes
+            // the last call), and the controller screen with them.
             unsafe {
-                padConfigureInput(1, STYLE_SET_STANDARD);
+                padConfigureInput(4, STYLE_SET_STANDARD);
                 padInitializeWithMask(&mut state, PAD_MASK);
             }
             state

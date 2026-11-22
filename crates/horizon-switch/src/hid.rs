@@ -136,7 +136,9 @@ impl Hid {
         // thread, before the first padUpdate.
         let mut pad = PadState::default();
         unsafe {
-            padConfigureInput(1, style::STANDARD);
+            // Four players, as the game's controller reader sets (HID takes the last call): one
+            // would turn splitscreen's other controllers away.
+            padConfigureInput(4, style::STANDARD);
             // Player 1 (bit 0) and the handheld controls (bit 32).
             padInitializeWithMask(&mut pad, 1 | (1 << 32));
             hidInitializeTouchScreen();
