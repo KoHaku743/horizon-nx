@@ -195,6 +195,51 @@ impl HudAtlas {
     }
 }
 
+impl HudAtlas {
+    /// The Switch's last resort, after mods' and packs' textures are at their smallest: leave
+    /// the largest bitmap font sheets in `fonts` out of the atlas until the rest fits. Their
+    /// glyphs are then read from the sheet itself and copied into the atlas's glyph rows when
+    /// first drawn (`font::load_bitmap`), at full resolution and with exact metrics, which
+    /// shrinking a sheet would not keep (its cells are the sheet's size over its grid). MCC
+    /// Island's pack has 37 million texels of font sheets, more than the 4096x8192 atlas.
+    /// Returns the layout and how many sheets were left out.
+    pub(super) fn layout_leaving_out_fonts(
+        images: &mut Vec<PackedImage>,
+        fonts: &HashSet<String>,
+        max: u32,
+        max_width: u32,
+    ) -> Result<((u32, Vec<(u32, u32)>, u32), usize)> {
+        let texels = |image: &PackedImage| u64::from(image.1) * u64::from(image.2);
+        let mut order: Vec<(u64, String)> = images
+            .iter()
+            .filter(|image| fonts.contains(&image.0) && !image.3.is_empty())
+            .map(|image| (texels(image), image.0.clone()))
+            .collect();
+        order.sort_by(|a, b| b.0.cmp(&a.0).then_with(|| a.1.cmp(&b.1)));
+        let mut order = order.into_iter();
+        // What the atlas holds below its glyph rows; shelves waste some of it.
+        let room = u64::from(max.min(max_width)) * u64::from(max.saturating_sub(super::GLYPH_ROWS));
+        let mut target = room * 85 / 100;
+        let mut left: u64 = images.iter().map(texels).sum();
+        let mut out: HashSet<String> = HashSet::new();
+        loop {
+            while left > target {
+                let Some((size, name)) = order.next() else {
+                    break;
+                };
+                left -= size;
+                out.insert(name);
+            }
+            images.retain(|image| !out.contains(&image.0));
+            match Self::layout(images, max) {
+                Ok(layout) => return Ok((layout, out.len())),
+                Err(error) if order.len() == 0 => return Err(error),
+                Err(_) => target = target * 9 / 10,
+            }
+        }
+    }
+}
+
 /// `pixels` (`from`, RGBA) at `to`, nearest texel.
 fn scaled(pixels: &[u8], from: (u32, u32), to: (u32, u32)) -> Vec<u8> {
     let ((w, h), (nw, nh)) = (from, to);

@@ -1579,13 +1579,36 @@ impl HudAtlas {
                                     image.0.split_once(':').map(|(ns, _)| ns.to_owned())
                                 }));
                             }
-                            let layout = Self::layout_capping_mod_textures(
+                            let capped = Self::layout_capping_mod_textures(
                                 &mut images,
                                 &mut gui_sizes,
                                 &keep,
                                 &shrinkable,
                                 GUI_ATLAS_LIMIT,
-                            )?;
+                            );
+                            let layout = match capped {
+                                Ok(layout) => layout,
+                                // The Switch: font sheets out of the atlas, the largest first.
+                                Err(capped_error) if cfg!(target_os = "horizon") => {
+                                    let fonts: HashSet<String> = keep
+                                        .iter()
+                                        .filter(|name| !bordered.contains(*name))
+                                        .cloned()
+                                        .collect();
+                                    let (layout, left_out) = Self::layout_leaving_out_fonts(
+                                        &mut images,
+                                        &fonts,
+                                        GUI_ATLAS_LIMIT,
+                                        GUI_ATLAS_MAX_WIDTH,
+                                    )
+                                    .map_err(|_| capped_error)?;
+                                    log::warn!(
+                                        "left {left_out} font sheets out of the GUI atlas: their glyphs are copied in as they are drawn"
+                                    );
+                                    layout
+                                }
+                                Err(capped_error) => return Err(capped_error),
+                            };
                             log::warn!(
                                 "reduced the resolution of mods' HUD textures to keep the resource packs: {error}"
                             );
@@ -5028,6 +5051,25 @@ texture=wide",
         assert!(HudAtlas::layout_reducing_models(&mut images, &mut sizes, &models, 1024).is_err());
         assert_eq!((images[0].1, images[0].2), (1024, 1024));
         assert_eq!(sizes["item/gem"], (16, 16));
+    }
+    #[test]
+    fn the_largest_font_sheets_leave_the_atlas_first_and_nothing_else_does() {
+        // 13.7 million texels for an atlas with 14.7 million below its glyph rows, 85% of
+        // which `layout_leaving_out_fonts` aims for: one sheet has to go, the largest.
+        let mut images: Vec<PackedImage> = vec![
+            ("font/big".into(), 2048, 2048, vec![1]),
+            ("gui/panel".into(), 4000, 1536, Vec::new()),
+            ("font/mid".into(), 2048, 1536, vec![1]),
+            ("font/small".into(), 512, 512, vec![1]),
+        ];
+        let fonts: HashSet<String> = ["font/big", "font/mid", "font/small"]
+            .map(String::from)
+            .into();
+        let (_, left_out) =
+            HudAtlas::layout_leaving_out_fonts(&mut images, &fonts, 4096, 4096).unwrap();
+        let kept: Vec<&str> = images.iter().map(|i| i.0.as_str()).collect();
+        assert_eq!(left_out, 1);
+        assert_eq!(kept, ["gui/panel", "font/mid", "font/small"]);
     }
     #[test]
     fn textures_that_cannot_fit_are_an_error_not_a_gpu_panic() {
