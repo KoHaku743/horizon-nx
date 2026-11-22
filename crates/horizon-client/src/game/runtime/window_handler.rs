@@ -525,6 +525,7 @@ impl ApplicationHandler for Game<'_> {
                 return;
             }
             horizon_nx::flush_logs();
+            self.log_memory_parts();
             // Opening a world is CPU-bound: the CPU boost goes back on while it opens.
             if self.integrated_starting.is_some() || self.pending_entry.is_some() {
                 horizon_nx::loading_world();

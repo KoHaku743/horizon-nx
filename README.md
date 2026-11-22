@@ -194,6 +194,7 @@ A text file `switch/horizon/env.txt`, next to `horizon.nro`, sets options at sta
 | `HORIZON_NX_GPU_CLOCKS=system` | The Switch's own handheld GPU speed (307.2 MHz) instead of 460.8 MHz. `max` also raises the memory to 1600 MHz. |
 | `HORIZON_NX_SPLIT_GPU_MHZ=…` | Splitscreen's handheld GPU speed in MHz (614.4 by default); `0` leaves the GPU at its normal speed. |
 | `HORIZON_NX_CPU_BOOST=0` | Keep normal CPU clocks while loading (they're raised by default). |
+| `HORIZON_NX_MEMORY_PARTS=SECONDS` | How often `log.txt` gets what holds the memory, by part (default 120, `0` for never). |
 | `HORIZON_NX_SRV=0` | Don't look up a server's SRV record: join the address as typed. |
 | `HORIZON_MSA_CLIENT_ID=…` | A different Azure app for the Microsoft sign-in. |
 | `HORIZON_NX_PACK=0` | Read the resources folder file by file instead of `resources.hzpak` (slow; only to rule the pack out). |

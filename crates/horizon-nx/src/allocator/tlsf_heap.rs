@@ -30,6 +30,9 @@ static LOCK: AtomicU32 = AtomicU32::new(0);
 
 /// Bytes taken from malloc for pools.
 pub(crate) static POOL_BYTES: AtomicUsize = AtomicUsize::new(0);
+/// Bytes in the heap's live blocks (their usable sizes), the small and medium caches' blocks
+/// included: the pools never shrink, so this says how much of them a session still uses.
+pub(crate) static LIVE_BYTES: AtomicUsize = AtomicUsize::new(0);
 
 unsafe extern "C" {
     fn memalign(align: usize, size: usize) -> *mut c_void;
@@ -83,14 +86,17 @@ pub(crate) unsafe fn alloc(layout: Layout, zeroed: bool) -> *mut u8 {
     let ptr = {
         let mut held = Locked::new();
         let heap = held.heap();
-        match heap.allocate(layout) {
+        let ptr = match heap.allocate(layout) {
             Some(ptr) => ptr,
             None if grow(heap, layout) => match heap.allocate(layout) {
                 Some(ptr) => ptr,
                 None => return core::ptr::null_mut(),
             },
             None => return core::ptr::null_mut(),
-        }
+        };
+        // SAFETY: a block the heap just gave.
+        LIVE_BYTES.fetch_add(unsafe { Heap::allocation_usable_size(ptr) }, Relaxed);
+        ptr
     };
     if zeroed {
         unsafe { ptr.as_ptr().write_bytes(0, layout.size()) };
@@ -102,6 +108,7 @@ pub(crate) unsafe fn alloc(layout: Layout, zeroed: bool) -> *mut u8 {
 pub(crate) unsafe fn free(ptr: *mut u8, align: usize) {
     let Some(ptr) = NonNull::new(ptr) else { return };
     let mut held = Locked::new();
+    LIVE_BYTES.fetch_sub(unsafe { Heap::allocation_usable_size(ptr) }, Relaxed);
     unsafe { held.heap().deallocate(ptr, align) };
 }
 
@@ -124,7 +131,11 @@ pub(crate) unsafe fn realloc(ptr: *mut u8, layout: Layout, new_size: usize) -> *
     };
     {
         let mut held = Locked::new();
+        let before = unsafe { Heap::allocation_usable_size(old) };
         if let Some(moved) = unsafe { held.heap().reallocate(old, new_layout) } {
+            let after = unsafe { Heap::allocation_usable_size(moved) };
+            LIVE_BYTES.fetch_add(after, Relaxed);
+            LIVE_BYTES.fetch_sub(before, Relaxed);
             return moved.as_ptr();
         }
     }

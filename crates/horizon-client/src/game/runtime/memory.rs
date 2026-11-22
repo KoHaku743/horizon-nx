@@ -686,6 +686,52 @@ impl Game<'_> {
     pub(super) fn memory_value(&self) -> Value {
         serde_json::to_value(self.memory_report()).unwrap_or(Value::Null)
     }
+
+    /// Switch: the report into `log.txt` every `HORIZON_NX_MEMORY_PARTS` seconds (120 unless set,
+    /// 0 for never) while a world is open, without the GPU's block list. The console has no
+    /// `horizon-ctl`, and its `[Memory]` line says only how much malloc and the GPU hold, not
+    /// what in the game holds it. The census asks the server thread once, a short wait.
+    #[cfg(target_os = "horizon")]
+    pub(in crate::game) fn log_memory_parts(&self) {
+        use std::cell::Cell;
+        use std::time::{Duration, Instant};
+        thread_local! {
+            static NEXT: Cell<Option<Instant>> = const { Cell::new(None) };
+            static EVERY: Cell<Option<Duration>> = const { Cell::new(None) };
+        }
+        if self.player.is_none() || self.renderer.is_none() {
+            return;
+        }
+        let every = EVERY.with(|cell| {
+            cell.get().unwrap_or_else(|| {
+                let secs = std::env::var("HORIZON_NX_MEMORY_PARTS")
+                    .ok()
+                    .and_then(|v| v.trim().parse::<u64>().ok())
+                    .unwrap_or(120);
+                let every = Duration::from_secs(secs);
+                cell.set(Some(every));
+                every
+            })
+        });
+        if every.is_zero() {
+            return;
+        }
+        let now = Instant::now();
+        // The first one a minute into the world, when its chunks have loaded.
+        let next = NEXT.with(|next| *next.get().get_or_insert(now + Duration::from_secs(60)));
+        if now < next {
+            return;
+        }
+        NEXT.with(|n| n.set(Some(now + every)));
+        let mut report = self.memory_value();
+        if let Some(gpu) = report
+            .pointer_mut("/renderer/gpu")
+            .and_then(Value::as_object_mut)
+        {
+            gpu.remove("blocks");
+        }
+        log::info!("[Memory by part] {report}");
+    }
 }
 
 #[cfg(test)]

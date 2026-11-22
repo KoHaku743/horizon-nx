@@ -133,6 +133,8 @@ pub(crate) struct Figures {
     pub(crate) small_rescues: usize,
     /// Bytes the TLSF heap took from malloc.
     pub(crate) heap_pools: u64,
+    /// Bytes in the TLSF heap's live blocks, cached ones included.
+    pub(crate) heap_live: u64,
     pub(crate) cache: small_blocks::Stats,
     pub(crate) medium: medium_blocks::Stats,
 }
@@ -145,6 +147,7 @@ pub(crate) fn figures() -> Figures {
         large_fallbacks: LARGE_FALLBACKS.load(Relaxed),
         small_rescues: SMALL_RESCUES.load(Relaxed),
         heap_pools: tlsf_heap::POOL_BYTES.load(Relaxed) as u64,
+        heap_live: tlsf_heap::LIVE_BYTES.load(Relaxed) as u64,
         cache: CACHE.stats(),
         medium: MCACHE.stats(),
     }

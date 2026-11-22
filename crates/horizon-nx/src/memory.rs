@@ -308,8 +308,9 @@ impl core::fmt::Display for MallocFigures {
             )?;
             write!(
                 f,
-                "; the TLSF heap has {:.1} MiB of pools from malloc",
+                "; the TLSF heap has {:.1} MiB of pools from malloc, {:.1} MiB of it in live blocks (the caches' included)",
                 mib(rust.heap_pools),
+                mib(rust.heap_live),
             )?;
             if rust.large_fallbacks != 0 {
                 write!(
