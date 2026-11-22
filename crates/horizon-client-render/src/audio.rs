@@ -1803,6 +1803,12 @@ impl Audio {
             self.devices_seen = output_devices();
             return true;
         }
+        // The Switch has one output, audren's, which the system moves between speakers,
+        // headphones and the TV itself: no device to look for, and looking started a thread
+        // every second (a console's log: about 700 threads in twelve minutes).
+        if cfg!(target_os = "horizon") {
+            return false;
+        }
         if let Some(pending) = &self.device_probe {
             let Some(probe) = pending.lock().ok().and_then(|mut found| found.take()) else {
                 return false;
