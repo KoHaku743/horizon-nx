@@ -188,8 +188,17 @@ const LATE_LAYERS: usize = 512;
 /// Edge length of vanilla's block textures: the smallest array layer.
 pub const SPRITE_SIZE: u32 = 16;
 /// The largest sprite array (all layers of the top mip level) when the settings leave it to
-/// Horizon: resource packs with bigger textures are sampled down to fit.
-pub const DEFAULT_TEXTURE_BUDGET: u64 = 256 << 20;
+/// Horizon: resource packs with bigger textures are sampled down to fit. The Switch keeps to 64
+/// MiB: a server pack at 128 px (MCC Island's, 1403 layers) made the game ask for one block of
+/// 352 MiB as it applied it, which the console's memory, shared with the GPU, didn't have in one
+/// piece (log of 22 November: "memory allocation of 369098776 bytes failed"); at 64 MiB that
+/// pack's textures are drawn at 64 px, as vanilla-sized packs' are. `textureBudgetMiB` still
+/// raises it.
+pub const DEFAULT_TEXTURE_BUDGET: u64 = if cfg!(target_os = "horizon") {
+    64 << 20
+} else {
+    256 << 20
+};
 /// The budget in bytes the next resource load keeps to (`set_texture_budget`).
 static TEXTURE_BUDGET: std::sync::atomic::AtomicU64 =
     std::sync::atomic::AtomicU64::new(DEFAULT_TEXTURE_BUDGET);
