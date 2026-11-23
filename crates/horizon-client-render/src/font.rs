@@ -875,6 +875,13 @@ impl Font {
     pub fn begin_frame(&self) {
         if self.cache.borrow().region.full {
             self.reset_cache();
+            // Into the log at the 1st, 2nd, 4th, 8th... time: a region too small for a
+            // screen's glyphs starts over every frame, and each time uploads them all again.
+            static STARTS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+            let n = STARTS.fetch_add(1, std::sync::atomic::Ordering::Relaxed) + 1;
+            if n.is_power_of_two() {
+                log::info!("Horizon: the glyph rows filled up and started over ({n} times so far)");
+            }
         }
     }
     /// Changes whenever a glyph may come out different: another font, a

@@ -1556,6 +1556,9 @@ impl HudAtlas {
             images.push(("horizon/recipes/settings".to_owned(), width, height, rgba));
         }
         images.sort_by(|a, b| b.2.cmp(&a.2).then(b.1.cmp(&a.1)));
+        // Whether font sheets left the atlas (the Switch's fallback): their glyphs then go
+        // through the run-time glyph rows, which get every row the atlas may still have.
+        let mut fonts_left_out = false;
         let (width, placements, glyph_region) =
             Self::layout_leaving_out(&mut images, &mut animated, &cit_names, GUI_ATLAS_LIMIT)
                 .or_else(|error| -> Result<_> {
@@ -1576,6 +1579,7 @@ impl HudAtlas {
                             GUI_ATLAS_MAX_WIDTH,
                         );
                         let left_out = before - images.len();
+                        fonts_left_out = left_out > 0;
                         if left_out > 0 {
                             log::warn!(
                                 "left {left_out} font sheets out of the GUI atlas: their glyphs are copied in as they are drawn"
@@ -1625,7 +1629,14 @@ impl HudAtlas {
                 })?;
         // A multiple of 1024 rather than a power of two: the default resources
         // need 4096x5120 (8192 rows before), Faithful 32x 4096x12288 (16384).
-        let height = (glyph_region + GLYPH_ROWS).next_multiple_of(1024);
+        let mut height = (glyph_region + GLYPH_ROWS).next_multiple_of(1024);
+        // Glyphs from sheets outside the atlas are copied into its glyph rows as they are
+        // drawn, and rows that fill up are all drawn again from the next frame on: MCC
+        // Island's UI, every glyph of it from such sheets, uploaded 5-8 times what a frame
+        // otherwise does and held 40 fps where single player held 60.
+        if fonts_left_out {
+            height = height.max(GUI_ATLAS_LIMIT);
+        }
         if full {
             log::info!(
                 "Horizon: GUI atlas {width}x{height} ({} MiB)",
