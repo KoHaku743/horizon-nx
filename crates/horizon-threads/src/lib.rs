@@ -544,10 +544,12 @@ fn idle() -> bool {
     unsafe { SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_IDLE) != 0 }
 }
 
-/// On the Switch the lowest priority an application may use (0x3f of its 0x18..=0x3f). Every
-/// thread starts at 0x3b, the render and server threads included, and the kernel runs a core's
-/// highest-priority ready thread first, so work like the stronghold ring search, which nothing
-/// waits for, runs only while the render and server threads wait.
+/// On the Switch the helpers' priority (0x3d, as `behind`). Every thread starts at 0x3b, the
+/// render and server threads included, and the kernel runs a core's highest-priority ready thread
+/// first, so work like the stronghold ring search runs only while the render and server threads
+/// wait. Not lower: a chunk near a stronghold ring waits for the searches this thread has taken,
+/// and at 0x3f, behind the busy chunk workers, they barely ran, so after a teleport into the ring
+/// zone its chunks loaded slowly.
 #[cfg(target_os = "horizon")]
 fn idle() -> bool {
     unsafe extern "C" {
@@ -555,7 +557,7 @@ fn idle() -> bool {
     }
     /// libnx `CUR_THREAD_HANDLE`: the calling thread.
     const CURRENT_THREAD: u32 = 0xFFFF_8000;
-    const IDLE_PRIORITY: u32 = 0x3f;
+    const IDLE_PRIORITY: u32 = 0x3d;
     // SAFETY: sets the calling thread's own priority; no pointers.
     unsafe { svcSetThreadPriority(CURRENT_THREAD, IDLE_PRIORITY) == 0 }
 }
