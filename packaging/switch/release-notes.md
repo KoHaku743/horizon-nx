@@ -20,6 +20,12 @@ Already on 1.0.0 or later? The title screen offers new releases itself (the butt
   host or port) refused the connection (os error 111): the Switch now asks its own DNS servers for
   the record, as Minecraft does. If a lookup gets no answer within a few seconds, the game joins
   the address as typed; `HORIZON_NX_SRV=0` in `switch/horizon/env.txt` turns the lookup off.
+- **Smoother frames.** The game no longer reads a file from the SD card on every frame (the
+  player's name, for the HUD), writes a log line to the SD card for every thread it starts, looks
+  for new audio devices every second, or times every frame on the GPU (only Dynamic Resolution
+  needs that now). Each of these stalled the frame on the Switch.
+- **MCC Island loads.** Its resource pack no longer runs the Switch out of memory: the GUI atlas
+  stays at most 4096x8192 there, and the pack's big font sheets are drawn from the pack instead.
 - **Less memory held back.** The game kept up to 176 MiB of freed memory aside for reuse, and a
   console held about 150 MiB of it for whole sessions; it now keeps at most 48 MiB, which leaves
   more room for the world and the GPU.

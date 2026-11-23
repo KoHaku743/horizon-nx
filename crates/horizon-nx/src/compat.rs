@@ -93,16 +93,28 @@ pub(crate) fn thread_cores_from_env() {
     }
 }
 
-static THREAD_LOGGING: CoreAtomicBool = CoreAtomicBool::new(true);
+static THREAD_LOGGING: CoreAtomicBool = CoreAtomicBool::new(false);
 
-/// Whether each new thread writes its two `[Thread]` lines to `log.txt` (on by default). Each
-/// line is a separate write to the SD card.
+/// Whether each new thread writes its two `[Thread]` lines to `log.txt`: off unless
+/// `HORIZON_NX_THREAD_LOG=1` (env.txt); a thread that fails to start is logged either way.
+/// Each line is a write to the SD card on the creating thread, outside the log's queue: in a
+/// console's 12-minute profile they were 12 s of the main thread's waits.
 pub fn set_thread_logging(enabled: bool) {
     THREAD_LOGGING.store(enabled, AtomicOrdering::Relaxed);
 }
 
 pub fn thread_logging() -> bool {
     THREAD_LOGGING.load(AtomicOrdering::Relaxed)
+}
+
+/// Applies `HORIZON_NX_THREAD_LOG=1`: every new thread's `[Thread]` lines, with who created it.
+pub fn thread_logging_from_env() {
+    if std::env::var_os("HORIZON_NX_THREAD_LOG").is_some_and(|v| v == "1") {
+        set_thread_logging(true);
+        crate::logging::write_log_line(format_args!(
+            "[Boot] HORIZON_NX_THREAD_LOG=1: every new thread is logged, with who created it"
+        ));
+    }
 }
 
 #[cfg(target_os = "horizon")]

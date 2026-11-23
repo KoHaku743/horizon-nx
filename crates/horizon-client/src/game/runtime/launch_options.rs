@@ -91,17 +91,26 @@ impl Options {
         self.execution_role.is_client() && !self.split_guest
     }
     /// The name to join servers with: the one given, else the offline name kept
-    /// next to options.txt (created on first use).
+    /// next to options.txt (created on first use), read from its file once per folder.
+    /// The HUD asks every frame: reading `horizon-player.txt` each time was ~13% of the
+    /// Switch's main-thread waits in a 12-minute profile, on an SD card read.
     pub(super) fn player_name(&self) -> String {
+        static KEPT: std::sync::Mutex<Option<(std::path::PathBuf, String)>> =
+            std::sync::Mutex::new(None);
         self.player_name.clone().unwrap_or_else(|| {
-            std::env::current_dir().map_or_else(
-                |_| horizon_client::offline_name::generate(0),
-                |_| {
-                    horizon_client::offline_name::load_or_create(
-                        &horizon_client::logging::player_dir(),
-                    )
-                },
-            )
+            if std::env::current_dir().is_err() {
+                return horizon_client::offline_name::generate(0);
+            }
+            let dir = horizon_client::logging::player_dir();
+            let mut kept = KEPT.lock().unwrap_or_else(|e| e.into_inner());
+            if let Some((at, name)) = kept.as_ref()
+                && *at == dir
+            {
+                return name.clone();
+            }
+            let name = horizon_client::offline_name::load_or_create(&dir);
+            *kept = Some((dir, name.clone()));
+            name
         })
     }
     /// The command line, then what it asks of the process: the game folder, the account.

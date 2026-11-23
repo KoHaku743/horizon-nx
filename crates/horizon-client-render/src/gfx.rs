@@ -2504,7 +2504,15 @@ impl Renderer {
         );
         let pipelines_step = crate::spans::startup::step("renderer.pipelines_textures");
         let terrain_step = crate::spans::startup::step("renderer.terrain_pipelines");
-        let gpu_timer = timing::GpuTimer::new(&device, &queue);
+        // The Switch times frames on the GPU only for Dynamic Resolution, which decides from
+        // them, or with HORIZON_NX_GPU_TIMER=1: each frame's timestamps, end-marker draw,
+        // readback and device poll cost NVK's emulated timeline semaphores a garbage-collect of
+        // kernel calls, and otherwise fed only the performance overlay.
+        let gpu_timer = (!cfg!(target_os = "horizon")
+            || settings.dynamic_resolution
+            || std::env::var_os("HORIZON_NX_GPU_TIMER").is_some_and(|v| v == "1"))
+        .then(|| timing::GpuTimer::new(&device, &queue))
+        .flatten();
         let shader = kept.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("Horizon terrain"),
             source: wgpu::ShaderSource::Wgsl(terrain_shader().into()),

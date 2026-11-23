@@ -161,6 +161,8 @@ pub fn init() {
         // Cores 0-2 for new threads unless HORIZON_NX_THREAD_CORES says otherwise (compat.rs);
         // before the profiler, so its thread follows the choice too.
         compat::thread_cores_from_env();
+        // Each new thread's [Thread] lines only with HORIZON_NX_THREAD_LOG=1 (compat.rs).
+        compat::thread_logging_from_env();
         // Read-only opens skip libnx's timestamp query unless HORIZON_NX_OPEN_STAMPS=1 (compat.rs).
         compat::horizon_stubs::open_stamps_from_env();
         // Only with HORIZON_CPU_PROFILE set (profiler.rs).
