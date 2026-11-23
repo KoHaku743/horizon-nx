@@ -25,7 +25,18 @@ Already on 1.0.0 or later? The title screen offers new releases itself (the butt
   for new audio devices every second, or times every frame on the GPU (only Dynamic Resolution
   needs that now). Each of these stalled the frame on the Switch.
 - **MCC Island loads.** Its resource pack no longer runs the Switch out of memory: the GUI atlas
-  stays at most 4096x8192 there, and the pack's big font sheets are drawn from the pack instead.
+  (the menus' and HUD's textures) stays at most 4096x8192 on the Switch. A server pack too big for
+  it keeps its font sheets out of the atlas first, drawing their glyphs from the pack as they're
+  shown, and only then lowers the resolution of its model textures: MCC Island's menus look a little
+  softer than on a computer.
+- **Faster in server lobbies.** On MCC Island the lobby went from about 40 to 56-57 fps in handheld
+  mode, and Hypixel's holds 60: the held items' data is no longer converted on every frame, the
+  scoreboard sidebar is laid out once a tick instead of every frame, animated menu textures are
+  copied instead of resized when they already fit, and a pack's glyphs no longer have to be
+  uploaded again every frame. Skins download two at a time.
+- **Smoother first minute in a new world.** The stronghold search and other background work now
+  run below the game's own threads, so the frame rate no longer drops to about 20 right after a
+  world opens (thanks to mrrobotroot-prog, #6).
 - **Less memory held back.** The game kept up to 176 MiB of freed memory aside for reuse, and a
   console held about 150 MiB of it for whole sessions; it now keeps at most 48 MiB, which leaves
   more room for the world and the GPU.

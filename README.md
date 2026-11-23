@@ -220,6 +220,17 @@ packing.
 </details>
 
 <details>
+<summary><b>The whole Switch freezes, in the game or when a homebrew app (Goldleaf) opens <code>switch/horizon</code></b></summary>
+
+Something in the `switch/horizon` folder makes the Switch's file system hang, so anything that reads it can freeze
+the console, the game included (for one player it froze on joining any server, as skins started to load). Rename
+the folder (for example to `horizon-old`) on your computer, install again with
+[Horizon NX Companion](https://github.com/KoHaku743/horizon-nx-companion), and check the game and Goldleaf work.
+Then copy back what you want to keep from `horizon-old` one item at a time (`saves/`, `account.json`,
+`options.txt`, `servers.dat`), opening the folder in Goldleaf after each, so the item that caused it stays out.
+</details>
+
+<details>
 <summary><b>The game closes after loading with "expected value at line 1 column 1"</b></summary>
 
 macOS's hidden `._` files are in the resources folder. Run `dot_clean -m` on the SD card (see
