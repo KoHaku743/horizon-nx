@@ -544,7 +544,23 @@ fn idle() -> bool {
     unsafe { SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_IDLE) != 0 }
 }
 
-#[cfg(not(any(target_os = "linux", target_vendor = "apple", windows)))]
+/// On the Switch the lowest priority an application may use (0x3f of its 0x18..=0x3f). Every
+/// thread starts at 0x3b, the render and server threads included, and the kernel runs a core's
+/// highest-priority ready thread first, so work like the stronghold ring search, which nothing
+/// waits for, runs only while the render and server threads wait.
+#[cfg(target_os = "horizon")]
+fn idle() -> bool {
+    unsafe extern "C" {
+        fn svcSetThreadPriority(handle: u32, priority: u32) -> u32;
+    }
+    /// libnx `CUR_THREAD_HANDLE`: the calling thread.
+    const CURRENT_THREAD: u32 = 0xFFFF_8000;
+    const IDLE_PRIORITY: u32 = 0x3f;
+    // SAFETY: sets the calling thread's own priority; no pointers.
+    unsafe { svcSetThreadPriority(CURRENT_THREAD, IDLE_PRIORITY) == 0 }
+}
+
+#[cfg(not(any(target_os = "linux", target_vendor = "apple", windows, target_os = "horizon")))]
 fn idle() -> bool {
     false
 }
