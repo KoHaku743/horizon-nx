@@ -932,16 +932,51 @@ impl Game<'_> {
         let Some(objective) = self.sidebar_objective() else {
             return;
         };
-        let draws = hud_overlays::sidebar(
-            batch.width as i32,
-            batch.height as i32,
-            board,
-            objective,
-            &self.gui.atlas.font,
+        // Laid out again at most once a tick (50 ms), not every frame: sorting the scores and
+        // resolving each row's team and legacy codes was 6.6% of the Switch's main thread on a
+        // server's lobby (MCC Island), for lines that change with the server's packets, which
+        // the client takes on its ticks. A new size, font or objective lays it out at once.
+        type Kept = Option<(
+            (i32, i32, u64, String, u32, u32),
+            std::time::Instant,
+            Vec<hud_layout::GuiDraw>,
+        )>;
+        thread_local! {
+            static KEPT: std::cell::RefCell<Kept> = const { std::cell::RefCell::new(None) };
+        }
+        let (background, header) = (
             self.settings.text_background(0.3),
             self.settings.text_background(0.4),
         );
-        hud_layout::paint(batch, &self.gui.atlas, &draws);
+        let key = (
+            batch.width as i32,
+            batch.height as i32,
+            self.gui.atlas.font.epoch(),
+            objective.name.clone(),
+            background,
+            header,
+        );
+        KEPT.with(|kept| {
+            let mut kept = kept.borrow_mut();
+            let fresh = kept.as_ref().is_some_and(|(at_key, at, _)| {
+                *at_key == key && at.elapsed() < std::time::Duration::from_millis(50)
+            });
+            if !fresh {
+                let draws = hud_overlays::sidebar(
+                    key.0,
+                    key.1,
+                    board,
+                    objective,
+                    &self.gui.atlas.font,
+                    background,
+                    header,
+                );
+                *kept = Some((key, std::time::Instant::now(), draws));
+            }
+            if let Some((_, _, draws)) = kept.as_ref() {
+                hud_layout::paint(batch, &self.gui.atlas, draws);
+            }
+        });
     }
 }
 
@@ -1378,9 +1413,9 @@ mod criterion_tests;
 #[cfg(test)]
 mod empty_tag_tests;
 #[cfg(test)]
-mod team_without_members_tests;
-#[cfg(test)]
 mod guest_advancement_tests;
+#[cfg(test)]
+mod team_without_members_tests;
 
 #[cfg(test)]
 mod source_holder_tests;
