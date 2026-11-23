@@ -88,15 +88,27 @@ impl SpriteAnimation {
         let [fw, fh] = self
             .shape
             .unwrap_or_else(|| [(source.len() / 4).isqrt() as u32; 2]);
+        // A frame already at its slot's size is copied as it is: every animated GUI sprite of a
+        // server's pack is resized again each time its frame changes, a sixteenth of the
+        // Switch's render thread on MCC Island (a console's profile), most of them 1:1.
+        // Square only: a frame squared to its longer side need not map 1:1 at its own size.
+        if fw == fh && fw == width && fh == height && source.len() == (width * height * 4) as usize
+        {
+            return source.to_vec();
+        }
         let side = u64::from(fw.max(fh));
         let pick = |i: u32, extent: u32, along: u32| {
             u64::from(i) * side / u64::from(extent) * u64::from(along) / side
         };
+        // Each column's source texel once, not once per row.
+        let columns: Vec<usize> = (0..width)
+            .map(|x| pick(x, width, fw) as usize * 4)
+            .collect();
         let mut out = Vec::with_capacity(width as usize * height as usize * 4);
         for y in 0..height {
-            let row = pick(y, height, fh) * u64::from(fw);
-            for x in 0..width {
-                let offset = ((row + pick(x, width, fw)) * 4) as usize;
+            let row = pick(y, height, fh) as usize * fw as usize * 4;
+            for &column in &columns {
+                let offset = row + column;
                 out.extend_from_slice(&source[offset..offset + 4]);
             }
         }

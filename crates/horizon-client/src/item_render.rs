@@ -1203,6 +1203,39 @@ pub fn stack_view(stack: &crate::items::ItemStack) -> StackView {
     view
 }
 
+/// [`stack_view`], kept per thread for the stacks drawn lately. Drawing resolves every stack
+/// shown on every frame (the hotbar, open slots, what mobs and players hold), and turning a
+/// stack's components into JSON each time was a tenth of the Switch's main thread on a server
+/// whose items carry many (a console's profile on MCC Island). A stack is found by its hash and
+/// compared whole, so a hash shared by two stacks can't hand back the other's view.
+pub fn stack_view_cached(stack: &crate::items::ItemStack) -> Arc<StackView> {
+    use std::hash::{Hash, Hasher};
+    /// Past this many stacks the thread's views are dropped and kept again as they're drawn.
+    const KEPT: usize = 512;
+    thread_local! {
+        static VIEWS: std::cell::RefCell<
+            std::collections::HashMap<u64, (crate::items::ItemStack, Arc<StackView>)>,
+        > = std::cell::RefCell::new(std::collections::HashMap::new());
+    }
+    let mut hasher = horizon_core::fast_hash::FxHasher::default();
+    stack.hash(&mut hasher);
+    let key = hasher.finish();
+    VIEWS.with(|views| {
+        let mut views = views.borrow_mut();
+        if let Some((kept, view)) = views.get(&key)
+            && kept == stack
+        {
+            return view.clone();
+        }
+        if views.len() >= KEPT {
+            views.clear();
+        }
+        let view = Arc::new(stack_view(stack));
+        views.insert(key, (stack.clone(), view.clone()));
+        view
+    })
+}
+
 // ---------------------------------------------------------------------------
 // World drawing
 // ---------------------------------------------------------------------------

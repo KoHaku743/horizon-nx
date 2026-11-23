@@ -547,7 +547,7 @@ impl Game<'_> {
             )
         });
         let mut state = renderer.resolve_with_rule(
-            &item_render::stack_view(stack),
+            &item_render::stack_view_cached(stack),
             display,
             owner,
             Some(&level),
