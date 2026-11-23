@@ -1853,8 +1853,12 @@ impl Game<'_> {
             Arriving::Pearl(mut pearl) => {
                 horizon_client::end_gateway::place_pearl(&mut pearl, at);
                 // ThrownEnderpearl.teleport: placePortalTicket where it came out.
+                // `end.tickets` keeps the chunks loaded; the level's PORTAL
+                // ticket makes them tick entities, as for a walking traveller,
+                // or the pearl hangs at the exit and never takes its owner there.
                 self.end.tickets.retain(|(c, _)| *c != key);
                 self.end.tickets.push((key, PORTAL_TICKET));
+                self.place_portal_ticket(key);
                 self.add_projectile(*pearl);
             }
         }

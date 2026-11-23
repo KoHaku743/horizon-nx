@@ -96,6 +96,45 @@ fn items_past_the_simulation_distance_enter_no_end_gateway() {
     assert!(game.dropped.iter().any(|d| d.id == 2));
 }
 
+/// `ThrownEnderpearl.teleport` places a PORTAL ticket where the pearl comes
+/// out: far from its owner, the exit ticks entities, so the pearl falls, lands
+/// and takes its owner to the outer End.
+#[test]
+#[ignore = "daily"]
+fn a_pearl_out_of_a_far_gateway_keeps_ticking_at_its_exit() {
+    use horizon_client::projectiles::{Projectile, ProjectileKind};
+    let mut resources = None;
+    let mut game = server_game(&mut resources);
+    game.dim = Dim::End;
+    game.settings.simulation_distance = 4;
+    game.player = Some(
+        horizon_client::motion::PlayerMotion::new(game.motion, Vec3::new(8.5, 65.0, 8.5)).unwrap(),
+    );
+    // The exit, 1000 blocks out: chunk (62, 0), loaded.
+    let exit = [1000, 70, 8];
+    game.world
+        .chunks
+        .insert((62, 0), Arc::new(Chunk::empty(62, 0)));
+    game.update_chunk_tickets();
+    assert!(!game.entity_ticking_area()(1000, 8), "nothing ticks out there yet");
+    let pearl = Projectile::new(
+        ProjectileKind::EnderPearl,
+        Vec3::new(700.5, 100.3, 0.5),
+        Some(horizon_client::mobs::Who::Player),
+    );
+    let arrival = super::GatewayArrival {
+        traveller: super::Arriving::Pearl(Box::new(pearl)),
+        job: super::GatewayJob::Known { exit, exact: true },
+        target: horizon_client::end_gateway::bottom_center(exit),
+    };
+    assert!(game.arrive_through_gateway(arrival).is_none(), "the pearl came out");
+    game.update_chunk_tickets();
+    assert!(
+        game.entity_ticking_area()(1000, 8),
+        "the pearl's exit ticks entities"
+    );
+}
+
 /// `TheEndGatewayBlockEntity.portalTick` counts the Age up in the block entity
 /// itself, so `/data get block` reads 0, then 5, then 25 (#13202), also far
 /// from the player, where nothing draws the gateway.
