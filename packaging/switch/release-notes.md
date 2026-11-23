@@ -10,7 +10,7 @@ On a Mac, run `dot_clean -m` on the SD card before ejecting it, or copy over FTP
 
 Already on 1.0.0 or later? The title screen offers new releases itself (the button left of Sign In, in Realms' place).
 
-### New in 2.0.3
+### New in 2.1.0
 
 - **A clearer message when the game files are too old.** Updating from 1.x in the game replaces
   `horizon.nro` but not the game files, and 2.0 needs files prepared by a current Horizon launcher:

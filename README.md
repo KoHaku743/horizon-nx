@@ -42,7 +42,7 @@ No Java, no emulation, no streaming: [Horizon](https://github.com/horizon-rust/h
 
 ## Status
 
-Tested on a Switch OLED with Atmosphère, November 2026. Current release: **v2.0.2**.
+Tested on a Switch OLED with Atmosphère, November 2026. Current release: **v2.1.0**.
 
 | | |
 |---|---|
@@ -305,7 +305,7 @@ Every push to `switch-v010` and `switch-next` runs the same build in
 [GitHub Actions](.github/workflows/switch-nro.yml) (the `horizon-switch-…` file at the bottom of a run; you need to
 be signed in to GitHub). Its log and the build's function symbols (for naming the offsets in a crash report or a
 `cpu-profile.txt`) are kept on the `ci-logs` branch. To publish a release, run the "Switch NRO" workflow by hand
-(**Run workflow**) on `switch-v010` with a version in `release` (for example `v2.0.2`): it builds, tags the commit
+(**Run workflow**) on `switch-v010` with a version in `release` (for example `v2.1.0`): it builds, tags the commit
 and attaches the zip. Details: [docs/switch.md](docs/switch.md).
 
 ### Branches
