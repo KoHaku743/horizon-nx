@@ -278,6 +278,29 @@ pub fn favour_current() -> bool {
     favour()
 }
 
+/// Called by single player's server thread as it starts: [`favour_current`], as vanilla raises
+/// its server thread. On the Switch the thread goes one step behind the render thread instead
+/// (0x3c, the render thread keeping 0x3b and the helpers 0x3d): its 3 cores carry the render
+/// thread, the server thread and the chunk workers, and at equal priority a server thread
+/// sharing the render thread's core took turns with it, so a frame waited behind mob ticks
+/// while new terrain generated after a teleport (a console's profile of 24 November: 33-54 fps
+/// for two minutes). A tick that runs late is caught up; a late frame is seen.
+pub fn integrated_server_current() -> bool {
+    #[cfg(target_os = "horizon")]
+    {
+        unsafe extern "C" {
+            fn svcSetThreadPriority(handle: u32, priority: u32) -> u32;
+        }
+        /// libnx `CUR_THREAD_HANDLE`: the calling thread.
+        const CURRENT_THREAD: u32 = 0xFFFF_8000;
+        const SERVER_PRIORITY: u32 = 0x3c;
+        // SAFETY: sets the calling thread's own priority; no pointers.
+        unsafe { svcSetThreadPriority(CURRENT_THREAD, SERVER_PRIORITY) == 0 }
+    }
+    #[cfg(not(target_os = "horizon"))]
+    favour_current()
+}
+
 #[cfg(target_vendor = "apple")]
 fn favour() -> bool {
     // SAFETY: sets the calling thread's own QoS class; no pointers.
