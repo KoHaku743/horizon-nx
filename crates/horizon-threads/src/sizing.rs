@@ -36,7 +36,12 @@ pub fn sizing(battery: bool, cores: usize, pool: Pool) -> usize {
         Pool::Net => cores.div_ceil(2),
         Pool::ChunkEncode => cores.saturating_sub(1),
     };
-    if battery { auto.div_ceil(2) } else { auto }
+    // On the Switch the chunk workers keep their count: its 3 cores are the game's whatever
+    // the mode, and halved its 2 workers became 1, which did all generation and meshing while
+    // the cores sat half idle (a console's profile of 24 November: chunks loaded slowly in
+    // flight and after a teleport).
+    let keep = cfg!(target_os = "horizon") && matches!(pool, Pool::Jobs);
+    if battery && !keep { auto.div_ceil(2) } else { auto }
 }
 
 /// Battery Mode as the pools were sized with it: the first answer fixes it, since
