@@ -27,6 +27,7 @@ mod io_stats;
 pub(crate) mod pack;
 #[cfg(target_os = "horizon")]
 mod pack_device;
+mod sjis;
 #[cfg(target_os = "horizon")]
 pub use pack_device::{build_in_background as build_pack_in_background, use_cache_pack, use_pack};
 #[cfg(target_os = "horizon")]

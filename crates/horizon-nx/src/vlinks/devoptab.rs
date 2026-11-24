@@ -120,7 +120,7 @@ impl Store for Sd {
             return None;
         }
         let found = (|| {
-            let path = CString::new(super::join(dir, MANIFEST)).ok()?;
+            let path = c(&super::join(dir, MANIFEST));
             let o = original();
             let mut file = Sd::file_struct();
             let r = unsafe { __getreent() };
@@ -152,7 +152,7 @@ impl Store for Sd {
         };
         if self.open.as_ref().is_none_or(|(open, _)| open != dir) {
             self.release();
-            let path = CString::new(super::join(dir, MANIFEST)).map_err(|_| super::EINVAL)?;
+            let path = c(&super::join(dir, MANIFEST));
             let mut file = Sd::file_struct();
             let fd = file.as_mut_ptr().cast::<c_void>();
             if unsafe { open_r(r, fd, path.as_ptr(), libc::O_WRONLY | libc::O_CREAT, 0o666) } == -1
@@ -184,7 +184,7 @@ impl Store for Sd {
     fn remove(&mut self, dir: &str) -> Result<(), i32> {
         // The file system won't delete an open file.
         self.release();
-        let path = CString::new(super::join(dir, MANIFEST)).map_err(|_| super::EINVAL)?;
+        let path = c(&super::join(dir, MANIFEST));
         let r = unsafe { __getreent() };
         let Some(unlink_r) = original().unlink_r else {
             return Err(super::EIO);
@@ -198,7 +198,7 @@ impl Store for Sd {
     }
 
     fn kind(&mut self, path: &str) -> Option<bool> {
-        let path = CString::new(path).ok()?;
+        let path = c(path);
         let mut st: Stat = unsafe { core::mem::zeroed() };
         let r = unsafe { __getreent() };
         if unsafe { original().stat_r?(r, path.as_ptr(), &mut st) } == -1 {
@@ -245,9 +245,10 @@ unsafe fn parts(path: *const c_char) -> Option<Parts> {
     Some(normalize(path, &cwd()))
 }
 
+/// `path` as the SD card's file system takes it: in Shift-JIS (`sjis.rs`, #7).
 fn c(path: &str) -> CString {
-    // From parts of a C string: no NUL inside.
-    CString::new(path).unwrap_or_default()
+    // From parts of a C string: no NUL inside, and Shift-JIS adds none.
+    CString::new(super::sjis::to_fs(path).into_owned()).unwrap_or_default()
 }
 
 /// Calls `f` with `path` gone through the links (with `follow`, its last part too).
@@ -720,8 +721,21 @@ unsafe fn dirnext_inner(r: R, dir: *mut DirIter, name: *mut c_char, st: *mut Sta
     while !listing.real_done {
         let rc = unsafe { original().dirnext_r.unwrap()(r, dir, name, st) };
         if rc == 0 {
-            if unsafe { CStr::from_ptr(name) }.to_bytes() == MANIFEST.as_bytes() {
+            let listed = unsafe { CStr::from_ptr(name) }.to_bytes();
+            if listed == MANIFEST.as_bytes() {
                 continue;
+            }
+            // The file system's Shift-JIS name, in UTF-8 (#7). One that won't fit readdir's
+            // buffer, or isn't Shift-JIS, stays as it came: passed back, it opens as it is.
+            if !listed.is_ascii()
+                && let Some(utf8) = super::sjis::from_fs(listed)
+                && utf8.len() < 256
+            {
+                let utf8 = utf8.into_owned();
+                unsafe {
+                    core::ptr::copy_nonoverlapping(utf8.as_ptr(), name.cast::<u8>(), utf8.len());
+                    *name.add(utf8.len()) = 0;
+                }
             }
             return 0;
         }
