@@ -10,6 +10,17 @@ On a Mac, run `dot_clean -m` on the SD card before ejecting it, or copy over FTP
 
 Already on 1.0.0 or later? The title screen offers new releases itself (the button left of Sign In, in Realms' place).
 
+### New in 2.1.1
+
+- **Ender pearls go through End gateways.** A pearl thrown into a gateway came out at its far
+  exit but hung there and never landed, so it never took you to the outer End; walking in worked.
+  It now falls and brings you along, as in Minecraft.
+- **Chunks load at full speed in Battery Mode.** Battery Mode halved the chunk workers, and on the
+  Switch that left one thread to generate and mesh every chunk while the cores sat half idle: new
+  terrain filled in slowly when flying or after a teleport. Battery Mode now keeps both workers
+  and still caps the frame rate. To choose smoother frames over faster chunks while new terrain
+  loads, set Graphics > Worker threads to 1.
+
 ### New in 2.1.0
 
 - **A clearer message when the game files are too old.** Updating from 1.x in the game replaces
