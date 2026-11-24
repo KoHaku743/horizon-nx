@@ -570,9 +570,8 @@ impl Game<'_> {
         let server_flags = flags.clone();
         let run_server = move |_: &()| {
             let _finished = Finished(server_flags.clone());
-            // MinecraftServer.spin's Thread.setPriority(8); on the Switch, one step behind
-            // the render thread instead (`integrated_server_current`).
-            horizon_threads::integrated_server_current();
+            // MinecraftServer.spin's Thread.setPriority(8).
+            horizon_threads::favour_current();
             let result = serve(
                 &res,
                 pack,
