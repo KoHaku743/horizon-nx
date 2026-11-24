@@ -1200,6 +1200,10 @@ impl Graphics {
                         .filter(|q| SCREENSHOT_QUALITIES.contains(q))
                         .unwrap_or(1)
                 }
+                // Not offered on the Switch (graphics_ui): a file that turned it on there reads Off.
+                "frameGeneration" if cfg!(target_os = "horizon") => {
+                    g.frame_generation = FrameGeneration::Off
+                }
                 "frameGeneration" => g.frame_generation = FrameGeneration::parse(value),
                 "hdr" => g.hdr = HdrMode::parse(value, g.hdr),
                 "hdrLook" => look = HdrLook::parse(value),
