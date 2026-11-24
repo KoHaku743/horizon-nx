@@ -364,6 +364,22 @@ impl Game<'_> {
         )
     }
 
+    /// The name a hint gives a key mapping (`KeyMapping.getTranslatedKeyMessage`): on the Switch,
+    /// where the player holds a pad, the button the pad plays it with ("R3" for sneaking, not
+    /// "Left Shift"); elsewhere, or for an action the pad leaves unbound, the keyboard's key.
+    pub(in crate::game) fn key_hint(&self, mapping: &str) -> horizon_client::text::Text {
+        if cfg!(target_os = "horizon")
+            && let Some(action) = gamepad::ACTIONS
+                .iter()
+                .map(|(a, _)| *a)
+                .find(|a| *a == mapping)
+            && let Some(glyph) = self.glyph(GlyphOf::Bound(action))
+        {
+            return horizon_client::text::Text::literal(glyph.label());
+        }
+        horizon_client::keybinds::display_name(self.settings.keys.get(mapping))
+    }
+
     /// A menu job's glyph in this player's glyphs.
     pub(super) fn menu_glyph(&self, job: MenuJob) -> Glyph {
         Glyph::menu(job, self.ui.options.pad_glyphs)

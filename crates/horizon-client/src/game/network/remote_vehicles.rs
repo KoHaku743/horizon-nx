@@ -16,7 +16,7 @@
 use super::{Game, Keys, ray_box};
 use crate::Result;
 use horizon_client::mobs::{Mob, equine, happy_ghast};
-use horizon_client::{keybinds, text::Text};
+use horizon_client::text::Text;
 use horizon_core::geometry::{Aabb, Vec3};
 use horizon_protocol::packets::play::{self, Serverbound as S};
 
@@ -229,7 +229,7 @@ impl Game<'_> {
                 };
                 let message = Text::translate(
                     key,
-                    &[keybinds::display_name(self.settings.keys.get("key.sneak"))],
+                    &[self.key_hint("key.sneak")],
                 );
                 self.say_system_now(&message);
                 self.titles.set_overlay(message, false);

@@ -374,8 +374,8 @@ impl super::Game<'_> {
     }
 
     fn tutorial_toast(&self, hint: Hint, progress: Option<f32>) -> Option<HintToast> {
-        use horizon_client::{keybinds, text::Text};
-        let key = |mapping: &str| keybinds::display_name(self.settings.keys.get(mapping)).plain();
+        use horizon_client::text::Text;
+        let key = |mapping: &str| self.key_hint(mapping).plain();
         let (title_key, fallback, description_key, description, icon_args) = match hint {
             Hint::Move => (
                 "tutorial.move.title",

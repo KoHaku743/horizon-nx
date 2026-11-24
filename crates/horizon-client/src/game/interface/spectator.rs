@@ -3,7 +3,7 @@
 use super::Game;
 use horizon_client::{
     hud::HudBatch,
-    hud_layout, keybinds,
+    hud_layout,
     scoreboard::{comp_text, team_color_rgb},
     spectator_menu::{Member, Outcome, SpectatorMenu, Team},
     tab_list::{SPECTATOR, TabPlayer},
@@ -97,7 +97,7 @@ impl Game<'_> {
         let (w, h) = (batch.width as i32, batch.height as i32);
         let now = self.spectator_now();
         let labels: Vec<Text> = (1..=9)
-            .map(|n| keybinds::display_name(self.settings.keys.get(&format!("key.hotbar.{n}"))))
+            .map(|n| self.key_hint(&format!("key.hotbar.{n}")))
             .collect();
         let font = &self.gui.atlas.font;
         let mut draws = self
