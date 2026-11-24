@@ -245,10 +245,10 @@ unsafe fn parts(path: *const c_char) -> Option<Parts> {
     Some(normalize(path, &cwd()))
 }
 
-/// `path` as the SD card's file system takes it: in Shift-JIS (`sjis.rs`, #7).
+/// `path` as it goes to the SD card: its non-ASCII parts in ASCII (`names.rs`, #7).
 fn c(path: &str) -> CString {
-    // From parts of a C string: no NUL inside, and Shift-JIS adds none.
-    CString::new(super::sjis::to_fs(path).into_owned()).unwrap_or_default()
+    // From parts of a C string: no NUL inside, and the ASCII form adds none.
+    CString::new(super::names::to_fs(path).into_owned()).unwrap_or_default()
 }
 
 /// Calls `f` with `path` gone through the links (with `follow`, its last part too).
@@ -725,13 +725,12 @@ unsafe fn dirnext_inner(r: R, dir: *mut DirIter, name: *mut c_char, st: *mut Sta
             if listed == MANIFEST.as_bytes() {
                 continue;
             }
-            // The file system's Shift-JIS name, in UTF-8 (#7). One that won't fit readdir's
-            // buffer, or isn't Shift-JIS, stays as it came: passed back, it opens as it is.
-            if !listed.is_ascii()
-                && let Some(utf8) = super::sjis::from_fs(listed)
+            // A non-ASCII name the card holds in its ASCII form, as the name it stands for (#7).
+            // One that won't fit readdir's buffer stays as it came: passed back, it opens as it is.
+            if let Ok(listed) = core::str::from_utf8(listed)
+                && let Some(utf8) = super::names::from_fs(listed)
                 && utf8.len() < 256
             {
-                let utf8 = utf8.into_owned();
                 unsafe {
                     core::ptr::copy_nonoverlapping(utf8.as_ptr(), name.cast::<u8>(), utf8.len());
                     *name.add(utf8.len()) = 0;

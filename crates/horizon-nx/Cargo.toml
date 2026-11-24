@@ -19,8 +19,6 @@ top_down_alloc = ["vulkan"]
 
 [dependencies]
 log = "0.4"
-# Shift-JIS paths for the SD card (vlinks/sjis.rs).
-encoding_rs = "0.8"
 
 [target.'cfg(target_os = "horizon")'.dependencies]
 # newlib's `struct stat` and constants (bevy-horizon's patched libc), for `vlinks`.

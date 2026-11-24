@@ -44,9 +44,6 @@ pub mod controllers;
 /// The console's DNS servers, for SRV records.
 #[cfg(target_os = "horizon")]
 pub mod dns;
-/// What the FS service lists for a non-ASCII name (#7), with HORIZON_NX_PATH_PROBE=1.
-#[cfg(target_os = "horizon")]
-mod path_probe;
 
 pub use compat::{
     ThreadCorePolicy, set_thread_core_policy, set_thread_logging, thread_core_policy,
@@ -161,8 +158,6 @@ pub fn init() {
                 )),
             }
         }
-        // Only with HORIZON_NX_PATH_PROBE=1: saves/ listed two ways, names as bytes (#7).
-        path_probe::run_from_env();
         // Cores 0-2 for new threads unless HORIZON_NX_THREAD_CORES says otherwise (compat.rs);
         // before the profiler, so its thread follows the choice too.
         compat::thread_cores_from_env();

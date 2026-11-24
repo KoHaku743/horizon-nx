@@ -2570,7 +2570,6 @@ dependencies = [
 name = "horizon-nx"
 version = "0.1.0"
 dependencies = [
- "encoding_rs",
  "libc",
  "log",
  "rlsf",
