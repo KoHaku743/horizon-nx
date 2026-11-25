@@ -10,6 +10,26 @@ On a Mac, run `dot_clean -m` on the SD card before ejecting it, or copy over FTP
 
 Already on 1.0.0 or later? The title screen offers new releases itself (the button left of Sign In, in Realms' place).
 
+### New in 2.2.0
+
+- **Type in your own language.** The on-screen keyboard now opens on the letters of the game's
+  language: Russian (and Bulgarian), Ukrainian, Belarusian and Greek get their own layout, with
+  every letter of the alphabet. The Layer key (or RB) goes from those letters to Latin ones,
+  then symbols, and back. Set it with Options > Language; other languages keep the keyboard as it
+  was. Thanks to Rodion0585 for asking for it (#7).
+- **Worlds with Cyrillic and other non-Latin names save and show up.** The Switch's file system
+  can't keep a name that isn't plain ASCII: it garbled it on saving and then hid the folder, so
+  the world vanished from the list. Such names are now stored in an ASCII form (Punycode, the way
+  web addresses keep "мир.рф"): the game shows "Мир", while the folder on the card is named
+  `xn--o0a0dya`. This covers worlds, resource packs, mods and screenshots. A folder put on the
+  card by a computer with a non-ASCII name still can't be seen by the Switch. Thanks to Rodion0585
+  for the report and for finding the garbled folders on the card (#7).
+- **Hints name the controller's buttons.** "Press Left Shift to Dismount" and the like now name
+  the button on your controller (R3), in the tutorial, the creative hotbar's messages and the
+  spectator menu too.
+- **Frame generation is gone from the Switch's settings.** The Switch's GPU can't keep up with it:
+  turned on, the game dropped to about 10 fps. A settings file that had it on now reads off.
+
 ### New in 2.1.1
 
 - **Ender pearls go through End gateways.** A pearl thrown into a gateway came out at its far
