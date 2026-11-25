@@ -654,15 +654,6 @@ pub fn rows() -> Vec<(Page, Vec<(&'static str, Vec<Setting>)>)> {
             rows.retain(|r| !matches!(r.item, Item::Horizon(H::ParallelTick)));
         }
     }
-    // The Switch's GPU can't afford frame generation: a console with it on waited 70-82 ms on
-    // the GPU per frame, about 10 fps (24 November), so it isn't offered there.
-    if cfg!(target_os = "horizon") {
-        for (_, groups) in &mut pages {
-            for (_, rows) in groups {
-                rows.retain(|r| !matches!(r.item, Item::Horizon(H::FrameGeneration)));
-            }
-        }
-    }
     // Only Windows and Linux have more than one graphics API, translucent batching (Metal
     // draws flat) and GPU culling (Metal draws no count the GPU wrote).
     if cfg!(target_os = "macos") {
