@@ -10,6 +10,13 @@ On a Mac, run `dot_clean -m` on the SD card before ejecting it, or copy over FTP
 
 Already on 1.0.0 or later? The title screen offers new releases itself (the button left of Sign In, in Realms' place).
 
+### New in 2.2.1
+
+- **Frame generation is back** in the Graphics settings, off by default. It costs GPU time: with a
+  light shader pack it can make 20-40 fps look smoother, but one console at 60 fps without shaders
+  fell to about 10 fps with it. If the game gets slower, turn it off. Thanks to bovorapha-glitch
+  for asking (#9).
+
 ### New in 2.2.0
 
 - **Type in your own language.** The on-screen keyboard now opens on the letters of the game's
