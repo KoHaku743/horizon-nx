@@ -174,6 +174,244 @@ const SYMBOLS: [Row; 5] = [
 const LETTERS_LINES: [Row; 5] = [LETTERS[0], LETTERS[1], LETTERS[2], LETTERS[3], BOTTOM_LINES];
 const SYMBOLS_LINES: [Row; 5] = [SYMBOLS[0], SYMBOLS[1], SYMBOLS[2], SYMBOLS[3], BOTTOM_LINES];
 
+/// A key of a native alphabet's rows, which hold 12 keys in the same 10 units.
+const N: f32 = 10.0 / 12.0;
+const fn n(ch: char) -> (Key, f32) {
+    (Key::Char(ch), N)
+}
+
+/// The letters of a language whose alphabet isn't Latin, on a layer of their own: the game's
+/// language picks them (`lang::code`), and the keyboard opens on them. Rows of 12 so a whole
+/// alphabet fits beside `. , -`, laid out as the language's own keyboard is.
+#[derive(Debug, PartialEq)]
+struct Native {
+    /// What the Layer key shows on the layer before this one.
+    label: &'static str,
+    rows: [Row; 3],
+    /// The whole layer: the digits, these letters, the bottom row; and with New Line.
+    keys: [Row; 5],
+    keys_lines: [Row; 5],
+}
+
+const fn native(label: &'static str, rows: [Row; 3]) -> Native {
+    Native {
+        label,
+        rows,
+        keys: [LETTERS[0], rows[0], rows[1], rows[2], BOTTOM],
+        keys_lines: [LETTERS[0], rows[0], rows[1], rows[2], BOTTOM_LINES],
+    }
+}
+
+const RUSSIAN: Native = native(
+    "абв",
+    [
+        &[
+            n('й'),
+            n('ц'),
+            n('у'),
+            n('к'),
+            n('е'),
+            n('н'),
+            n('г'),
+            n('ш'),
+            n('щ'),
+            n('з'),
+            n('х'),
+            n('ъ'),
+        ],
+        &[
+            n('ф'),
+            n('ы'),
+            n('в'),
+            n('а'),
+            n('п'),
+            n('р'),
+            n('о'),
+            n('л'),
+            n('д'),
+            n('ж'),
+            n('э'),
+            n('.'),
+        ],
+        &[
+            n('я'),
+            n('ч'),
+            n('с'),
+            n('м'),
+            n('и'),
+            n('т'),
+            n('ь'),
+            n('б'),
+            n('ю'),
+            n('ё'),
+            n(','),
+            n('-'),
+        ],
+    ],
+);
+const UKRAINIAN: Native = native(
+    "абв",
+    [
+        &[
+            n('й'),
+            n('ц'),
+            n('у'),
+            n('к'),
+            n('е'),
+            n('н'),
+            n('г'),
+            n('ш'),
+            n('щ'),
+            n('з'),
+            n('х'),
+            n('ї'),
+        ],
+        &[
+            n('ф'),
+            n('і'),
+            n('в'),
+            n('а'),
+            n('п'),
+            n('р'),
+            n('о'),
+            n('л'),
+            n('д'),
+            n('ж'),
+            n('є'),
+            n('.'),
+        ],
+        &[
+            n('я'),
+            n('ч'),
+            n('с'),
+            n('м'),
+            n('и'),
+            n('т'),
+            n('ь'),
+            n('б'),
+            n('ю'),
+            n('ґ'),
+            n(','),
+            n('-'),
+        ],
+    ],
+);
+const BELARUSIAN: Native = native(
+    "абв",
+    [
+        &[
+            n('й'),
+            n('ц'),
+            n('у'),
+            n('к'),
+            n('е'),
+            n('н'),
+            n('г'),
+            n('ш'),
+            n('ў'),
+            n('з'),
+            n('х'),
+            n('\''),
+        ],
+        &[
+            n('ф'),
+            n('ы'),
+            n('в'),
+            n('а'),
+            n('п'),
+            n('р'),
+            n('о'),
+            n('л'),
+            n('д'),
+            n('ж'),
+            n('э'),
+            n('.'),
+        ],
+        &[
+            n('я'),
+            n('ч'),
+            n('с'),
+            n('м'),
+            n('і'),
+            n('т'),
+            n('ь'),
+            n('б'),
+            n('ю'),
+            n('ё'),
+            n(','),
+            n('-'),
+        ],
+    ],
+);
+const GREEK: Native = native(
+    "αβγ",
+    [
+        &[
+            n('ς'),
+            n('ε'),
+            n('ρ'),
+            n('τ'),
+            n('υ'),
+            n('θ'),
+            n('ι'),
+            n('ο'),
+            n('π'),
+            n('ά'),
+            n('έ'),
+            n('ή'),
+        ],
+        &[
+            n('α'),
+            n('σ'),
+            n('δ'),
+            n('φ'),
+            n('γ'),
+            n('η'),
+            n('ξ'),
+            n('κ'),
+            n('λ'),
+            n('ί'),
+            n('ό'),
+            n('.'),
+        ],
+        &[
+            n('ζ'),
+            n('χ'),
+            n('ψ'),
+            n('ω'),
+            n('β'),
+            n('ν'),
+            n('μ'),
+            n('ύ'),
+            n('ώ'),
+            n('ϊ'),
+            n(','),
+            n('-'),
+        ],
+    ],
+);
+
+/// The native letters for a language code (`ru_ru`...), when its alphabet isn't Latin and has a
+/// layout here.
+fn native_for(code: &str) -> Option<&'static Native> {
+    match code {
+        "ru_ru" | "bg_bg" => Some(&RUSSIAN),
+        "uk_ua" => Some(&UKRAINIAN),
+        "be_by" => Some(&BELARUSIAN),
+        "el_gr" => Some(&GREEK),
+        _ => None,
+    }
+}
+
+/// Which keys the keyboard shows.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Layer {
+    /// The game language's own letters ([`Native`]).
+    Native,
+    Letters,
+    Symbols,
+}
+
 /// The panel's padding around the keys and the hints, the gap between them, and a hint line's
 /// height in its text size, all in dp (a line box is 1.45 sizes; the pack's font can be a
 /// little taller).
@@ -240,7 +478,10 @@ const STICK_REST: f32 = 0.3;
 pub struct Keyboard {
     row: usize,
     col: usize,
-    symbols: bool,
+    layer: Layer,
+    /// The game language's letters, when it has a layer of them.
+    native: Option<&'static Native>,
+
     /// The next letter is upper case (Shift), or every letter (double Shift).
     shift: bool,
     caps: bool,
@@ -277,7 +518,8 @@ impl Default for Keyboard {
         Self {
             row: 1,
             col: 0,
-            symbols: false,
+            layer: Layer::Letters,
+            native: None,
             shift: false,
             caps: false,
             lines: false,
@@ -324,19 +566,51 @@ impl Keyboard {
     }
     /// A keyboard over a field of many `lines` (New Line beside Done), and one with
     /// suggestions (`suggests`: RT and the right stick reach them).
+    /// It opens on the letters of the game's language (`lang::code`) where that alphabet isn't
+    /// Latin and has a layout.
     pub fn new(lines: bool, suggests: bool) -> Self {
+        Self::in_language(lines, suggests, &crate::lang::code())
+    }
+    fn in_language(lines: bool, suggests: bool, code: &str) -> Self {
+        let native = native_for(code);
         Self {
             lines,
             suggests,
+            layer: if native.is_some() {
+                Layer::Native
+            } else {
+                Layer::Letters
+            },
+            native,
             ..Self::default()
         }
     }
     fn rows(&self) -> &'static [Row; 5] {
-        match (self.symbols, self.lines) {
-            (false, false) => &LETTERS,
-            (true, false) => &SYMBOLS,
-            (false, true) => &LETTERS_LINES,
-            (true, true) => &SYMBOLS_LINES,
+        match (self.layer, self.lines) {
+            (Layer::Native, false) if let Some(n) = self.native => &n.keys,
+            (Layer::Native, true) if let Some(n) = self.native => &n.keys_lines,
+            (Layer::Symbols, false) => &SYMBOLS,
+            (Layer::Symbols, true) => &SYMBOLS_LINES,
+            (_, false) => &LETTERS,
+            (_, true) => &LETTERS_LINES,
+        }
+    }
+    /// The Layer key: the native letters (where there are), the Latin ones, the symbols, around.
+    fn next_layer(&mut self) {
+        self.layer = match (self.layer, self.native.is_some()) {
+            (Layer::Native, _) => Layer::Letters,
+            (Layer::Letters, _) => Layer::Symbols,
+            (Layer::Symbols, true) => Layer::Native,
+            (Layer::Symbols, false) => Layer::Letters,
+        };
+        self.col = self.col.min(self.rows()[self.row].len() - 1);
+    }
+    /// The layer a keyboard opens on.
+    fn home(&self) -> Layer {
+        if self.native.is_some() {
+            Layer::Native
+        } else {
+            Layer::Letters
         }
     }
     /// The right stick's height (up is +): the suggestion before or after, once per push.
@@ -419,8 +693,7 @@ impl Keyboard {
                 None
             }
             Key::Layer => {
-                self.symbols = !self.symbols;
-                self.col = self.col.min(self.rows()[self.row].len() - 1);
+                self.next_layer();
                 None
             }
             Key::Space => Some(Output::Text(" ".into())),
@@ -445,8 +718,7 @@ impl Keyboard {
                 None
             }
             Some(MenuJob::PageNext | MenuJob::PagePrev) => {
-                self.symbols = !self.symbols;
-                self.col = self.col.min(self.rows()[self.row].len() - 1);
+                self.next_layer();
                 None
             }
             _ if matches!(
@@ -501,7 +773,12 @@ impl Keyboard {
         self.drawn.set(Some(Drawn {
             x0,
             y0,
-            plate: (x0 - PANEL_PAD, y0 - PANEL_PAD, width + 2.0 * PANEL_PAD, height),
+            plate: (
+                x0 - PANEL_PAD,
+                y0 - PANEL_PAD,
+                width + 2.0 * PANEL_PAD,
+                height,
+            ),
         }));
         ui.rounded(
             x0 - PANEL_PAD,
@@ -527,7 +804,7 @@ impl Keyboard {
                 let w = units * UNIT + (units - 1.0) * GAP;
                 let focused = r == self.row && i == self.col;
                 let lit = matches!(key, Key::Shift) && (self.shift || self.caps)
-                    || matches!(key, Key::Layer) && self.symbols;
+                    || matches!(key, Key::Layer) && self.layer != self.home();
                 let (plate, ink) = if focused {
                     (color::accent(), color::on_accent())
                 } else if lit {
@@ -540,8 +817,13 @@ impl Keyboard {
                     Key::Char(ch) => self.letter(*ch),
                     Key::Shift if self.caps => "CAPS".into(),
                     Key::Shift => tr("horizon.osk.shift", "Shift"),
-                    Key::Layer if self.symbols => "abc".into(),
-                    Key::Layer => "&123".into(),
+                    // What the key switches to.
+                    Key::Layer => match (self.layer, self.native) {
+                        (Layer::Native, _) => "abc".into(),
+                        (Layer::Letters, _) => "&123".into(),
+                        (Layer::Symbols, Some(native)) => native.label.into(),
+                        (Layer::Symbols, None) => "abc".into(),
+                    },
                     Key::Space => tr("horizon.osk.space", "Space"),
                     Key::Backspace => tr("horizon.osk.delete", "Delete"),
                     Key::NewLine => tr("horizon.osk.new_line", "New Line"),
@@ -590,6 +872,63 @@ mod tests {
                 assert_eq!(units, 10.0);
             }
         }
+        for native in [&RUSSIAN, &UKRAINIAN, &BELARUSIAN, &GREEK] {
+            for row in native.rows {
+                let units: f32 = row.iter().map(|k| k.1).sum();
+                assert!((units - 10.0).abs() < 1e-4, "{}: {units}", native.label);
+            }
+        }
+    }
+
+    /// Every letter of each alphabet has a key, so each can be typed in full.
+    #[test]
+    fn native_layouts_hold_their_whole_alphabet() {
+        let alphabets = [
+            (&RUSSIAN, "абвгдеёжзийклмнопрстуфхцчшщъыьэюя"),
+            (&UKRAINIAN, "абвгґдеєжзиіїйклмнопрстуфхцчшщьюя"),
+            (&BELARUSIAN, "абвгдеёжзійклмнопрстуўфхцчшыьэюя"),
+            (&GREEK, "αβγδεζηθικλμνξοπρσςτυφχψω"),
+        ];
+        for (native, letters) in alphabets {
+            let keys: Vec<char> = native
+                .rows
+                .iter()
+                .flat_map(|row| row.iter())
+                .filter_map(|(k, _)| if let Key::Char(c) = k { Some(*c) } else { None })
+                .collect();
+            for letter in letters.chars() {
+                assert!(
+                    keys.contains(&letter),
+                    "{}: no key for {letter}",
+                    native.label
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn a_russian_game_opens_on_its_letters_and_cycles_through_latin_and_symbols() {
+        let mut k = Keyboard::in_language(false, false, "ru_ru");
+        assert_eq!(k.press(), Some(Output::Text("й".into())));
+        k.button(Button::LeftTrigger);
+        assert_eq!(
+            k.press(),
+            Some(Output::Text("Й".into())),
+            "shift gives the capital"
+        );
+        // Native, then Latin, then symbols, then native again.
+        k.button(Button::RightBumper);
+        assert_eq!(k.press(), Some(Output::Text("q".into())));
+        k.button(Button::RightBumper);
+        assert_eq!(k.press(), Some(Output::Text("/".into())));
+        k.button(Button::RightBumper);
+        assert_eq!(k.press(), Some(Output::Text("й".into())));
+        // A Latin-alphabet language keeps the keyboard it had.
+        let mut k = Keyboard::in_language(false, false, "cs_cz");
+        assert_eq!(k.press(), Some(Output::Text("q".into())));
+        k.button(Button::RightBumper);
+        k.button(Button::RightBumper);
+        assert_eq!(k.press(), Some(Output::Text("q".into())));
     }
 
     #[test]
