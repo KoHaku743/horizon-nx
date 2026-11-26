@@ -10,6 +10,12 @@ On a Mac, run `dot_clean -m` on the SD card before ejecting it, or copy over FTP
 
 Already on 1.0.0 or later? The title screen offers new releases itself (the button left of Sign In, in Realms' place).
 
+### New in 2.2.2
+
+- **Horizon's own settings in Russian.** Gyro Aiming, the Radial Menu, touch controls and the rest
+  of Horizon's extra settings and screens no longer fall back to English, and the older Russian
+  text was corrected. Thanks to Rodion0585 for translating and checking all of it.
+
 ### New in 2.2.1
 
 - **Frame generation is back** in the Graphics settings, off by default. It costs GPU time: with a
